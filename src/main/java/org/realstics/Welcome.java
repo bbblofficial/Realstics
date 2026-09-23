@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Custom join/quit messages per world's game mode.
+ * Custom join/quit messages (global).
  */
 public class Welcome implements Listener {
 
@@ -33,7 +33,6 @@ public class Welcome implements Listener {
 
         event.setJoinMessage(null);
 
-        // Use default config.yml message (Platform) — global join/quit
         FileConfiguration config = this.plugin.getConfig();
         String joinMessage = config.getString("join-message",
                 "&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)");

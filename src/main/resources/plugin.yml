@@ -27,7 +27,7 @@ permissions:
     description: Set a world's game mode
     default: op
   realstics.setspawn:
-    description: Set spawn for the current world's mode
+    description: Set spawn for a mode
     default: op
   realstics.setvoid:
     description: Set void Y level

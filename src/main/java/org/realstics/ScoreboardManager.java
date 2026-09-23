@@ -1,6 +1,5 @@
 package org.realstics;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,10 +23,6 @@ import org.bukkit.scoreboard.Team;
 
 /**
  * Per-world scoreboard driven by each mode's scoreboard file.
- *   Platform  -> scoreboard.yml
- *   LowMid    -> sb-lowmid.yml
- *   OneWide   -> sb-onewide.yml
- *   BlockFight-> sb-blockfight.yml
  */
 public class ScoreboardManager implements Listener {
 
@@ -60,7 +55,6 @@ public class ScoreboardManager implements Listener {
         if (this.taskId != -1) {
             Bukkit.getScheduler().cancelTask(this.taskId);
         }
-        // Use default config interval (Platform)
         int interval = plugin.getConfig().getInt("scoreboard.update-interval", 10);
         if (interval < 1) interval = 10;
 
@@ -96,9 +90,6 @@ public class ScoreboardManager implements Listener {
         this.hiddenPlayers.remove(id);
     }
 
-    // ============================================================
-    //  CREATE / UPDATE
-    // ============================================================
     public void createScoreboard(Player player) {
         if (this.hiddenPlayers.contains(player.getUniqueId())) return;
 

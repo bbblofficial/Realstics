@@ -20,7 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * Combo System — globally shared, config from default config.yml.
+ * Combo System — globally shared.
  */
 public class ComboSystem implements Listener {
 
@@ -48,7 +48,7 @@ public class ComboSystem implements Listener {
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
         this.broadcastMessage = config.getString("combo.broadcast-message",
                 "&8&m-------------------------------\n"
-              + "&6&l⚔ COMBO &e&l%combo%x\n"
+              + "&6&lCOMBO &e&l%combo%x\n"
               + "&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n"
               + "&8&m-------------------------------");
         this.soundEnabled   = config.getBoolean("combo.sound-enabled", true);

@@ -1,45 +1,19 @@
 
 #!/usr/bin/env python3
 """
-create.py — Realstics Plugin Generator
+create.py — Realstics Plugin Generator (COMPLETE / FULLY FIXED)
 
 Creates the complete Realstics plugin with 4 game modes:
-  • Platform  (default, enabled)
+  • Platform   (default, enabled)
   • LowMid
   • OneWide
   • BlockFight
 
-Structure:
-  Realstics/
-  ├── pom.xml
-  ├── plugin.yml
-  ├── README.md
-  ├── create.py                 (this file)
-  └── src/main/
-      ├── java/org/realstics/
-      │   ├── Realstics.java
-      │   ├── GameMode.java
-      │   ├── GameModeManager.java
-      │   ├── RealsticsCommand.java
-      │   ├── PlayerJoin.java
-      │   ├── NoDamage.java
-      │   ├── Protection.java
-      │   ├── KitRestore.java
-      │   ├── Welcome.java
-      │   ├── Void.java
-      │   ├── ComboSystem.java
-      │   └── ScoreboardManager.java
-      └── resources/
-          ├── config.yml            (Platform)
-          ├── scoreboard.yml        (Platform SB)
-          ├── lowmid.yml
-          ├── sb-lowmid.yml
-          ├── onewide.yml
-          ├── sb-onewide.yml
-          ├── blockfight.yml
-          └── sb-blockfight.yml
+FIX: plugin.yml now goes into src/main/resources/ so Maven
+     packages it into the JAR (fixes "Jar does not contain plugin.yml").
 
 Run:  python3 create.py
+Then: mvn clean package     (or push to GitHub for Actions build)
 """
 
 import os
@@ -52,6 +26,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DIRS = [
     "src/main/java/org/realstics",
     "src/main/resources",
+    ".github/workflows",
 ]
 
 # ==============================================================
@@ -129,7 +104,7 @@ POM_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 '''
 
 # ==============================================================
-#  PLUGIN.YML
+#  PLUGIN.YML  (goes into src/main/resources/)
 # ==============================================================
 PLUGIN_YML = '''name: Realstics
 version: 1.0
@@ -160,7 +135,7 @@ permissions:
     description: Set a world's game mode
     default: op
   realstics.setspawn:
-    description: Set spawn for the current world's mode
+    description: Set spawn for a mode
     default: op
   realstics.setvoid:
     description: Set void Y level
@@ -197,6 +172,71 @@ permissions:
 '''
 
 # ==============================================================
+#  GITHUB ACTIONS WORKFLOW
+# ==============================================================
+GITHUB_WORKFLOW = '''name: Build Realstics
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build with Maven
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml
+
+      - name: Upload JAR as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Realstics-JAR
+          path: target/Realstics.jar
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Realstics-JAR
+          path: ./release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release/Realstics.jar
+          name: Realstics ${{ github.ref_name }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+'''
+
+# ==============================================================
 #  JAVA FILES
 # ==============================================================
 JAVA = {}
@@ -208,14 +248,14 @@ JAVA["GameMode.java"] = r'''package org.realstics;
  *
  * PLATFORM is the default and enabled automatically.
  * LOWMID, ONEWIDE, BLOCKFIGHT must be assigned to a world first
- * with  /realstics setworld <worldname> <mode>
+ * with  /realstics setworld [world] <mode>
  */
 public enum GameMode {
 
-    PLATFORM("platform",   "Platform",   "config.yml",      "scoreboard.yml"),
-    LOWMID  ("lowmid",     "LowMid",     "lowmid.yml",      "sb-lowmid.yml"),
-    ONEWIDE ("onewide",    "OneWide",    "onewide.yml",     "sb-onewide.yml"),
-    BLOCKFIGHT("blockfight","BlockFight","blockfight.yml",  "sb-blockfight.yml");
+    PLATFORM  ("platform",   "Platform",   "config.yml",      "scoreboard.yml"),
+    LOWMID    ("lowmid",     "LowMid",     "lowmid.yml",      "sb-lowmid.yml"),
+    ONEWIDE   ("onewide",    "OneWide",    "onewide.yml",     "sb-onewide.yml"),
+    BLOCKFIGHT("blockfight", "BlockFight", "blockfight.yml",  "sb-blockfight.yml");
 
     private final String id;
     private final String displayName;
@@ -592,7 +632,8 @@ public final class Realstics extends JavaPlugin {
         setIfMissing(cfg, "combo.broadcast-message",
                 "&8&m-------------------------------\\n&6&lCOMBO &e&l%combo%x\\n&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\\n&8&m-------------------------------");
 
-        // ---- default world mapping ----
+        setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
+
         setIfMissing(cfg, "worlds.world", "platform");
 
         try {
@@ -613,11 +654,11 @@ public final class Realstics extends JavaPlugin {
         }
     }
 
-    public PlayerJoin getPlayerJoin()                         { return playerJoin; }
-    public ScoreboardManager getScoreboardManager()           { return scoreboardManager; }
-    public Void getVoidSystem()                               { return voidSystem; }
-    public ComboSystem getComboSystem()                       { return comboSystem; }
-    public GameModeManager getGameModeManager()               { return gameModeManager; }
+    public PlayerJoin getPlayerJoin()               { return playerJoin; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
+    public Void getVoidSystem()                     { return voidSystem; }
+    public ComboSystem getComboSystem()             { return comboSystem; }
+    public GameModeManager getGameModeManager()     { return gameModeManager; }
 }
 '''
 
@@ -643,18 +684,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Gives the correct cosmetic kit per game mode.
- *
- *  PLATFORM  : Leather Helmet + Chestplate (Prot III, red, Unbreakable)
- *              Iron Leggings + Boots (Prot III, Unbreakable)
- *              Wooden Sword (Sharpness I, Unbreakable)
- *
- *  LOWMID    : Wooden Sword (Sharpness I, 5.25 dmg, Unbreakable)
- *
- *  ONEWIDE   : Iron Sword (6 dmg, Unbreakable) - hidden while in spawn zone
- *
- *  BLOCKFIGHT: Diamond Sword (Sharpness IV, 12+ dmg, Unbreakable) slot 1
- *              64 Wool (never decreases)                         slot 2
- *              Shears (Unbreakable)                              slot 3
  */
 public class PlayerJoin implements Listener {
 
@@ -700,17 +729,14 @@ public class PlayerJoin implements Listener {
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         switch (mode) {
-            case LOWMID:    giveLowMidKit(player);     break;
-            case ONEWIDE:   giveOneWideKit(player);    break;
-            case BLOCKFIGHT:giveBlockFightKit(player); break;
+            case LOWMID:     giveLowMidKit(player);     break;
+            case ONEWIDE:    giveOneWideKit(player);    break;
+            case BLOCKFIGHT: giveBlockFightKit(player); break;
             case PLATFORM:
-            default:        givePlatformKit(player);   break;
+            default:         givePlatformKit(player);   break;
         }
     }
 
-    // ============================================================
-    //  PLATFORM
-    // ============================================================
     private void givePlatformKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -728,9 +754,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  LOWMID
-    // ============================================================
     private void giveLowMidKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -743,11 +766,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  ONEWIDE
-    //  Sword is given only when player leaves the spawn zone.
-    //  Spawn zone = Z threshold set via /realstics setzshowsword
-    // ============================================================
     private void giveOneWideKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -759,9 +777,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  BLOCKFIGHT
-    // ============================================================
     private void giveBlockFightKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -866,7 +881,7 @@ import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Cosmetic PvP rules (applies to ALL modes):
+ * Cosmetic PvP rules (ALL modes):
  *   - PvP fully functional (hits + knockback)
  *   - HP never drops
  *   - Fall damage off
@@ -1117,7 +1132,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Custom join/quit messages per world's game mode.
+ * Custom join/quit messages (global).
  */
 public class Welcome implements Listener {
 
@@ -1137,7 +1152,6 @@ public class Welcome implements Listener {
 
         event.setJoinMessage(null);
 
-        // Use default config.yml message (Platform) — global join/quit
         FileConfiguration config = this.plugin.getConfig();
         String joinMessage = config.getString("join-message",
                 "&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)");
@@ -1194,8 +1208,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Per-mode void system.
- * Reads kill-height from the current world's mode config file.
- * Falls below => teleport to spawn, heal, kit restore.
  */
 public class Void implements Listener {
 
@@ -1212,7 +1224,7 @@ public class Void implements Listener {
     }
 
     public void reloadConfig() {
-        // Nothing to cache — read live from mode config
+        // Nothing cached
     }
 
     public double getKillHeight(World world) {
@@ -1309,7 +1321,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * Combo System — globally shared, config from default config.yml.
+ * Combo System — globally shared.
  */
 public class ComboSystem implements Listener {
 
@@ -1337,7 +1349,7 @@ public class ComboSystem implements Listener {
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
         this.broadcastMessage = config.getString("combo.broadcast-message",
                 "&8&m-------------------------------\n"
-              + "&6&l⚔ COMBO &e&l%combo%x\n"
+              + "&6&lCOMBO &e&l%combo%x\n"
               + "&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n"
               + "&8&m-------------------------------");
         this.soundEnabled   = config.getBoolean("combo.sound-enabled", true);
@@ -1468,7 +1480,6 @@ public class ComboSystem implements Listener {
 
 JAVA["ScoreboardManager.java"] = r'''package org.realstics;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1492,10 +1503,6 @@ import org.bukkit.scoreboard.Team;
 
 /**
  * Per-world scoreboard driven by each mode's scoreboard file.
- *   Platform  -> scoreboard.yml
- *   LowMid    -> sb-lowmid.yml
- *   OneWide   -> sb-onewide.yml
- *   BlockFight-> sb-blockfight.yml
  */
 public class ScoreboardManager implements Listener {
 
@@ -1528,7 +1535,6 @@ public class ScoreboardManager implements Listener {
         if (this.taskId != -1) {
             Bukkit.getScheduler().cancelTask(this.taskId);
         }
-        // Use default config interval (Platform)
         int interval = plugin.getConfig().getInt("scoreboard.update-interval", 10);
         if (interval < 1) interval = 10;
 
@@ -1564,9 +1570,6 @@ public class ScoreboardManager implements Listener {
         this.hiddenPlayers.remove(id);
     }
 
-    // ============================================================
-    //  CREATE / UPDATE
-    // ============================================================
     public void createScoreboard(Player player) {
         if (this.hiddenPlayers.contains(player.getUniqueId())) return;
 
@@ -1777,15 +1780,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * /realstics <mode> <subcommand>
+ * /realstics [world] <mode> <subcommand>
  *
- *   /realstics setworld <world> <mode>     - assign a world to a mode
+ *   /realstics setworld [world] <mode>     - assign a world to a mode
  *   /realstics <mode> setspawn             - set spawn for that mode
  *   /realstics <mode> setvoid [y]          - set void Y for that mode
- *   /realstics <mode> setzshowsword <z>    - OneWide only
+ *   /realstics onewide setzshowsword <z>   - OneWide only
  *   /realstics <mode> kit [player]         - give kit
- *   /realstics <mode> sb                   - toggle scoreboard
- *   /realstics <mode> sb reload            - reload mode scoreboard
+ *   /realstics <mode> sb [reload]          - toggle scoreboard
  *   /realstics reload                      - reload everything
  *   /realstics creator                     - credits
  *   /realstics help
@@ -1810,9 +1812,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  onCommand
-    // ============================================================
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
@@ -1861,33 +1860,56 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         String action = args[1].toLowerCase();
 
-        if (action.equals("setspawn"))       return handleSetSpawn(sender, mode);
-        if (action.equals("setvoid"))        return handleSetVoid(sender, mode, args);
-        if (action.equals("setzshowsword"))  return handleSetZShowSword(sender, mode, args);
-        if (action.equals("kit"))            return handleKit(sender, mode, args);
+        if (action.equals("setspawn"))      return handleSetSpawn(sender, mode);
+        if (action.equals("setvoid"))       return handleSetVoid(sender, mode, args);
+        if (action.equals("setzshowsword")) return handleSetZShowSword(sender, mode, args);
+        if (action.equals("kit"))           return handleKit(sender, mode, args);
         if (action.equals("sb") || action.equals("scoreboard"))
-                                             return handleScoreboard(sender, mode, args);
+                                            return handleScoreboard(sender, mode, args);
 
         sender.sendMessage(colorize("&cUnknown action. Use /realstics help"));
         return true;
     }
 
     // ============================================================
-    //  /realstics setworld <world> <mode>
+    //  /realstics setworld [world] <mode>
     // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
 
-        if (args.length < 3) {
-            sender.sendMessage(colorize("&cUsage: /realstics setworld <world> <mode>"));
-            sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
-            return true;
-        }
+        String worldName;
+        GameMode mode;
 
-        String worldName = args[1].toLowerCase();
-        GameMode mode = GameMode.fromId(args[2]);
-        if (mode == null) {
-            sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
+        // Case 1: /realstics setworld <mode>  (player uses current world)
+        if (args.length == 2) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(colorize("&cUsage from console: /realstics setworld <world> <mode>"));
+                return true;
+            }
+            Player player = (Player) sender;
+            worldName = player.getWorld().getName().toLowerCase();
+            mode = GameMode.fromId(args[1]);
+
+            if (mode == null) {
+                sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
+                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                return true;
+            }
+        }
+        // Case 2: /realstics setworld <world> <mode>
+        else if (args.length >= 3) {
+            worldName = args[1].toLowerCase();
+            mode = GameMode.fromId(args[2]);
+
+            if (mode == null) {
+                sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
+                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                return true;
+            }
+        }
+        // Case 3: wrong args
+        else {
+            sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
             return true;
         }
@@ -1898,10 +1920,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // If sender is a player, teleport them to that world
+        // If sender is a player, teleport them to that world (if not already there)
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            player.teleport(world.getSpawnLocation());
+            if (!player.getWorld().equals(world)) {
+                player.teleport(world.getSpawnLocation());
+            }
             player.sendMessage(colorize("&aTeleported to &e" + world.getName()
                     + "&a. Now run &e/realstics " + mode.getId() + " setspawn"));
         }
@@ -2094,7 +2118,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
         sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
-        sender.sendMessage(colorize("&e/realstics setworld <world> <mode> &7- Assign a world"));
+        sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&e/realstics <mode> setspawn &7- Set spawn"));
@@ -2148,7 +2172,15 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
 
             if (sub.equals("setworld")) {
-                for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                // Suggest modes (players can use current world directly)
+                out.add("platform");
+                out.add("lowmid");
+                out.add("onewide");
+                out.add("blockfight");
+                // Also suggest world names
+                for (World w : Bukkit.getWorlds()) {
+                    out.add(w.getName().toLowerCase());
+                }
                 return out;
             }
 
@@ -2224,7 +2256,7 @@ RESOURCES["config.yml"] = r'''# ================================================
 # ==========================================================
 
 # ----------------------------------------------------------
-#  Spawn (used by Platform mode)
+#  Spawn (Platform mode)
 #  Set with /realstics platform setspawn
 # ----------------------------------------------------------
 spawn:
@@ -2267,7 +2299,7 @@ scoreboard:
 # ----------------------------------------------------------
 #  World -> Game Mode mapping
 #  Default: world = platform
-#  Set others with: /realstics setworld <world> <mode>
+#  Set others with: /realstics setworld [world] <mode>
 #  Valid modes: platform, lowmid, onewide, blockfight
 # ----------------------------------------------------------
 worlds:
@@ -2527,13 +2559,12 @@ All modes share:
 /realstics help
 /realstics creator
 /realstics reload
-/realstics setworld <world> <mode>          # assign a world to a mode
+/realstics setworld [world] <mode>          # assign a world to a mode
 
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
 /realstics <mode> kit [player]
-/realstics <mode> sb
-/realstics <mode> sb reload
+/realstics <mode> sb [reload]
 /realstics onewide setzshowsword <z>
 ```
 
@@ -2565,11 +2596,16 @@ Aliases: `/rs`, `/rl`
 4. Default world (`world`) uses **Platform** automatically
 5. For other modes:
    ```
-   /realstics setworld <world> lowmid
+   # Standing in the target world:
+   /realstics setworld lowmid
    /realstics lowmid setspawn
    /realstics lowmid setvoid -13
+
+   # Or with explicit world name:
+   /realstics setworld world_nether onewide
+   /realstics onewide setspawn
+   /realstics onewide setzshowsword 100
    ```
-   Same for `onewide` and `blockfight`.
 
 ## Building
 
@@ -2578,6 +2614,8 @@ mvn clean package
 ```
 
 Output: `target/Realstics.jar`
+
+Or push to GitHub — the included workflow builds automatically.
 
 ## Credits
 
@@ -2595,32 +2633,42 @@ def write_file(rel_path, content):
     print("  + " + rel_path)
 
 def main():
-    print("Realstics plugin generator")
-    print("=" * 50)
+    print("Realstics plugin generator (COMPLETE)")
+    print("=" * 55)
 
-    print("\n[1/4] Creating directories...")
+    print("\n[1/5] Creating directories...")
     for d in DIRS:
         full = os.path.join(BASE, d)
         os.makedirs(full, exist_ok=True)
         print("  + " + d + "/")
 
-    print("\n[2/4] Writing pom.xml, plugin.yml, README.md...")
+    print("\n[2/5] Writing pom.xml, README.md...")
     write_file("pom.xml", POM_XML)
-    write_file("plugin.yml", PLUGIN_YML)
     write_file("README.md", README)
 
-    print("\n[3/4] Writing Java sources...")
+    print("\n[3/5] Writing GitHub Actions workflow...")
+    write_file(".github/workflows/build.yml", GITHUB_WORKFLOW)
+
+    print("\n[4/5] Writing Java sources...")
     for name, content in JAVA.items():
         write_file(os.path.join("src/main/java/org/realstics", name), content)
 
-    print("\n[4/4] Writing resources...")
+    print("\n[5/5] Writing resources (plugin.yml + configs)...")
+    # plugin.yml goes into resources (FIX!)
+    write_file(os.path.join("src/main/resources", "plugin.yml"), PLUGIN_YML)
     for name, content in RESOURCES.items():
         write_file(os.path.join("src/main/resources", name), content)
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 55)
     print("Done! Realstics plugin generated.")
-    print("Build with:  mvn clean package")
-    print("Output:      target/Realstics.jar")
+    print("")
+    print("Next steps:")
+    print("  1) mvn clean package        (or push to GitHub)")
+    print("  2) Copy target/Realstics.jar into plugins/")
+    print("  3) Restart server")
+    print("")
+    print("Verify plugin.yml is inside the JAR:")
+    print("  jar tf target/Realstics.jar | findstr plugin.yml")
 
 if __name__ == "__main__":
     main()

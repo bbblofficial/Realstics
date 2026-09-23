@@ -20,18 +20,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Gives the correct cosmetic kit per game mode.
- *
- *  PLATFORM  : Leather Helmet + Chestplate (Prot III, red, Unbreakable)
- *              Iron Leggings + Boots (Prot III, Unbreakable)
- *              Wooden Sword (Sharpness I, Unbreakable)
- *
- *  LOWMID    : Wooden Sword (Sharpness I, 5.25 dmg, Unbreakable)
- *
- *  ONEWIDE   : Iron Sword (6 dmg, Unbreakable) - hidden while in spawn zone
- *
- *  BLOCKFIGHT: Diamond Sword (Sharpness IV, 12+ dmg, Unbreakable) slot 1
- *              64 Wool (never decreases)                         slot 2
- *              Shears (Unbreakable)                              slot 3
  */
 public class PlayerJoin implements Listener {
 
@@ -77,17 +65,14 @@ public class PlayerJoin implements Listener {
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         switch (mode) {
-            case LOWMID:    giveLowMidKit(player);     break;
-            case ONEWIDE:   giveOneWideKit(player);    break;
-            case BLOCKFIGHT:giveBlockFightKit(player); break;
+            case LOWMID:     giveLowMidKit(player);     break;
+            case ONEWIDE:    giveOneWideKit(player);    break;
+            case BLOCKFIGHT: giveBlockFightKit(player); break;
             case PLATFORM:
-            default:        givePlatformKit(player);   break;
+            default:         givePlatformKit(player);   break;
         }
     }
 
-    // ============================================================
-    //  PLATFORM
-    // ============================================================
     private void givePlatformKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -105,9 +90,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  LOWMID
-    // ============================================================
     private void giveLowMidKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -120,11 +102,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  ONEWIDE
-    //  Sword is given only when player leaves the spawn zone.
-    //  Spawn zone = Z threshold set via /realstics setzshowsword
-    // ============================================================
     private void giveOneWideKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -136,9 +113,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  BLOCKFIGHT
-    // ============================================================
     private void giveBlockFightKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);

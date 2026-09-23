@@ -30,13 +30,12 @@ All modes share:
 /realstics help
 /realstics creator
 /realstics reload
-/realstics setworld <world> <mode>          # assign a world to a mode
+/realstics setworld [world] <mode>          # assign a world to a mode
 
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
 /realstics <mode> kit [player]
-/realstics <mode> sb
-/realstics <mode> sb reload
+/realstics <mode> sb [reload]
 /realstics onewide setzshowsword <z>
 ```
 
@@ -68,11 +67,16 @@ Aliases: `/rs`, `/rl`
 4. Default world (`world`) uses **Platform** automatically
 5. For other modes:
    ```
-   /realstics setworld <world> lowmid
+   # Standing in the target world:
+   /realstics setworld lowmid
    /realstics lowmid setspawn
    /realstics lowmid setvoid -13
+
+   # Or with explicit world name:
+   /realstics setworld world_nether onewide
+   /realstics onewide setspawn
+   /realstics onewide setzshowsword 100
    ```
-   Same for `onewide` and `blockfight`.
 
 ## Building
 
@@ -81,6 +85,8 @@ mvn clean package
 ```
 
 Output: `target/Realstics.jar`
+
+Or push to GitHub — the included workflow builds automatically.
 
 ## Credits
 

@@ -34,13 +34,6 @@ jobs:
           path: target/Realstics.jar
           if-no-files-found: error
 
-      - name: Upload full target folder
-        uses: actions/upload-artifact@v4
-        with:
-          name: Realstics-target
-          path: target/
-          if-no-files-found: warn
-
   release:
     name: Publish Release
     needs: build

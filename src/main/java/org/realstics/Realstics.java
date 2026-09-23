@@ -116,7 +116,8 @@ public final class Realstics extends JavaPlugin {
         setIfMissing(cfg, "combo.broadcast-message",
                 "&8&m-------------------------------\\n&6&lCOMBO &e&l%combo%x\\n&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\\n&8&m-------------------------------");
 
-        // ---- default world mapping ----
+        setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
+
         setIfMissing(cfg, "worlds.world", "platform");
 
         try {
@@ -137,9 +138,9 @@ public final class Realstics extends JavaPlugin {
         }
     }
 
-    public PlayerJoin getPlayerJoin()                         { return playerJoin; }
-    public ScoreboardManager getScoreboardManager()           { return scoreboardManager; }
-    public Void getVoidSystem()                               { return voidSystem; }
-    public ComboSystem getComboSystem()                       { return comboSystem; }
-    public GameModeManager getGameModeManager()               { return gameModeManager; }
+    public PlayerJoin getPlayerJoin()               { return playerJoin; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
+    public Void getVoidSystem()                     { return voidSystem; }
+    public ComboSystem getComboSystem()             { return comboSystem; }
+    public GameModeManager getGameModeManager()     { return gameModeManager; }
 }

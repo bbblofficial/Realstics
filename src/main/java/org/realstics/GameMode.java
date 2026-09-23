@@ -5,14 +5,14 @@ package org.realstics;
  *
  * PLATFORM is the default and enabled automatically.
  * LOWMID, ONEWIDE, BLOCKFIGHT must be assigned to a world first
- * with  /realstics setworld <worldname> <mode>
+ * with  /realstics setworld [world] <mode>
  */
 public enum GameMode {
 
-    PLATFORM("platform",   "Platform",   "config.yml",      "scoreboard.yml"),
-    LOWMID  ("lowmid",     "LowMid",     "lowmid.yml",      "sb-lowmid.yml"),
-    ONEWIDE ("onewide",    "OneWide",    "onewide.yml",     "sb-onewide.yml"),
-    BLOCKFIGHT("blockfight","BlockFight","blockfight.yml",  "sb-blockfight.yml");
+    PLATFORM  ("platform",   "Platform",   "config.yml",      "scoreboard.yml"),
+    LOWMID    ("lowmid",     "LowMid",     "lowmid.yml",      "sb-lowmid.yml"),
+    ONEWIDE   ("onewide",    "OneWide",    "onewide.yml",     "sb-onewide.yml"),
+    BLOCKFIGHT("blockfight", "BlockFight", "blockfight.yml",  "sb-blockfight.yml");
 
     private final String id;
     private final String displayName;

@@ -15,15 +15,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * /realstics <mode> <subcommand>
+ * /realstics [world] <mode> <subcommand>
  *
- *   /realstics setworld <world> <mode>     - assign a world to a mode
+ *   /realstics setworld [world] <mode>     - assign a world to a mode
  *   /realstics <mode> setspawn             - set spawn for that mode
  *   /realstics <mode> setvoid [y]          - set void Y for that mode
- *   /realstics <mode> setzshowsword <z>    - OneWide only
+ *   /realstics onewide setzshowsword <z>   - OneWide only
  *   /realstics <mode> kit [player]         - give kit
- *   /realstics <mode> sb                   - toggle scoreboard
- *   /realstics <mode> sb reload            - reload mode scoreboard
+ *   /realstics <mode> sb [reload]          - toggle scoreboard
  *   /realstics reload                      - reload everything
  *   /realstics creator                     - credits
  *   /realstics help
@@ -48,9 +47,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  onCommand
-    // ============================================================
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
@@ -99,33 +95,56 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         String action = args[1].toLowerCase();
 
-        if (action.equals("setspawn"))       return handleSetSpawn(sender, mode);
-        if (action.equals("setvoid"))        return handleSetVoid(sender, mode, args);
-        if (action.equals("setzshowsword"))  return handleSetZShowSword(sender, mode, args);
-        if (action.equals("kit"))            return handleKit(sender, mode, args);
+        if (action.equals("setspawn"))      return handleSetSpawn(sender, mode);
+        if (action.equals("setvoid"))       return handleSetVoid(sender, mode, args);
+        if (action.equals("setzshowsword")) return handleSetZShowSword(sender, mode, args);
+        if (action.equals("kit"))           return handleKit(sender, mode, args);
         if (action.equals("sb") || action.equals("scoreboard"))
-                                             return handleScoreboard(sender, mode, args);
+                                            return handleScoreboard(sender, mode, args);
 
         sender.sendMessage(colorize("&cUnknown action. Use /realstics help"));
         return true;
     }
 
     // ============================================================
-    //  /realstics setworld <world> <mode>
+    //  /realstics setworld [world] <mode>
     // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
 
-        if (args.length < 3) {
-            sender.sendMessage(colorize("&cUsage: /realstics setworld <world> <mode>"));
-            sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
-            return true;
-        }
+        String worldName;
+        GameMode mode;
 
-        String worldName = args[1].toLowerCase();
-        GameMode mode = GameMode.fromId(args[2]);
-        if (mode == null) {
-            sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
+        // Case 1: /realstics setworld <mode>  (player uses current world)
+        if (args.length == 2) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(colorize("&cUsage from console: /realstics setworld <world> <mode>"));
+                return true;
+            }
+            Player player = (Player) sender;
+            worldName = player.getWorld().getName().toLowerCase();
+            mode = GameMode.fromId(args[1]);
+
+            if (mode == null) {
+                sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
+                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                return true;
+            }
+        }
+        // Case 2: /realstics setworld <world> <mode>
+        else if (args.length >= 3) {
+            worldName = args[1].toLowerCase();
+            mode = GameMode.fromId(args[2]);
+
+            if (mode == null) {
+                sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
+                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                return true;
+            }
+        }
+        // Case 3: wrong args
+        else {
+            sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
             return true;
         }
@@ -136,10 +155,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // If sender is a player, teleport them to that world
+        // If sender is a player, teleport them to that world (if not already there)
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            player.teleport(world.getSpawnLocation());
+            if (!player.getWorld().equals(world)) {
+                player.teleport(world.getSpawnLocation());
+            }
             player.sendMessage(colorize("&aTeleported to &e" + world.getName()
                     + "&a. Now run &e/realstics " + mode.getId() + " setspawn"));
         }
@@ -332,7 +353,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
         sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
-        sender.sendMessage(colorize("&e/realstics setworld <world> <mode> &7- Assign a world"));
+        sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&e/realstics <mode> setspawn &7- Set spawn"));
@@ -386,7 +407,15 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
 
             if (sub.equals("setworld")) {
-                for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                // Suggest modes (players can use current world directly)
+                out.add("platform");
+                out.add("lowmid");
+                out.add("onewide");
+                out.add("blockfight");
+                // Also suggest world names
+                for (World w : Bukkit.getWorlds()) {
+                    out.add(w.getName().toLowerCase());
+                }
                 return out;
             }
 

@@ -16,8 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Per-mode void system.
- * Reads kill-height from the current world's mode config file.
- * Falls below => teleport to spawn, heal, kit restore.
  */
 public class Void implements Listener {
 
@@ -34,7 +32,7 @@ public class Void implements Listener {
     }
 
     public void reloadConfig() {
-        // Nothing to cache — read live from mode config
+        // Nothing cached
     }
 
     public double getKillHeight(World world) {

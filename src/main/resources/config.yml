@@ -6,7 +6,7 @@
 # ==========================================================
 
 # ----------------------------------------------------------
-#  Spawn (used by Platform mode)
+#  Spawn (Platform mode)
 #  Set with /realstics platform setspawn
 # ----------------------------------------------------------
 spawn:
@@ -49,7 +49,7 @@ scoreboard:
 # ----------------------------------------------------------
 #  World -> Game Mode mapping
 #  Default: world = platform
-#  Set others with: /realstics setworld <world> <mode>
+#  Set others with: /realstics setworld [world] <mode>
 #  Valid modes: platform, lowmid, onewide, blockfight
 # ----------------------------------------------------------
 worlds:
