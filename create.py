@@ -1,28 +1,28 @@
 
 #!/usr/bin/env python3
 """
-create.py — Realstics Plugin Generator (FULLY COMPLETE + ALL FIXES)
+create.py — Realstics Plugin Generator (FULLY COMPLETE)
 
 FEATURES:
-  1. plugin.yml goes into src/main/resources/ → Maven packs into JAR
-  2. WorldLoader auto-creates/loads missing worlds
-  3. /realstics setworld [world] <mode>  → auto-loads world
-  4. /realstics join <mode>              → teleport player + kit + scoreboard
-  5. /realstics worlds                   → list loaded worlds
-  6. Protection: BlockFight wool can be placed AND broken
-  7. Safe auto-merge for every config
+  1. plugin.yml inside src/main/resources/ → Maven packs into JAR
+  2. WorldLoader auto-loads/creates missing worlds
+  3. /realstics join <mode>       → teleport + kit + scoreboard
+  4. /realstics worlds            → list loaded worlds
+  5. /realstics setworld [world] <mode> → auto-loads world
+  6. BlockFight: ONLY light-blue wool (data=3) breakable
+  7. BlockFight: wool is infinite (always 64)
+  8. BlockFight: broken wool drops NOTHING
+  9. Auto-fill EMPTY combo message on load (1.8.8 compatible)
+ 10. Aqua + White theme by default in ALL configs
 
 Run:   python3 create.py
-Build: mvn clean package    (or push to GitHub)
+Build: mvn clean package
 """
 
 import os
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-# ==============================================================
-#  DIRECTORIES
-# ==============================================================
 DIRS = [
     "src/main/java/org/realstics",
     "src/main/resources",
@@ -589,7 +589,6 @@ public final class Realstics extends JavaPlugin {
         this.gameModeManager = new GameModeManager(this, this.worldLoader);
         this.gameModeManager.init();
 
-        // Auto-load any world listed in config that isn't loaded yet
         for (String worldName : this.gameModeManager.getWorldModes().keySet()) {
             if (this.worldLoader.findLoaded(worldName) == null) {
                 this.worldLoader.ensureLoaded(worldName);
@@ -633,6 +632,9 @@ public final class Realstics extends JavaPlugin {
         getLogger().info("Realstics disabled.");
     }
 
+    // ============================================================
+    //  DEFAULT config.yml AUTO-MERGE
+    // ============================================================
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
         boolean isNew = !configFile.exists();
@@ -655,6 +657,7 @@ public final class Realstics extends JavaPlugin {
             cfg.setDefaults(defaults);
         }
 
+        // ---- spawn ----
         setIfMissing(cfg, "spawn.world", "world");
         setIfMissing(cfg, "spawn.x", Double.valueOf(0.5D));
         setIfMissing(cfg, "spawn.y", Double.valueOf(100.0D));
@@ -662,22 +665,32 @@ public final class Realstics extends JavaPlugin {
         setIfMissing(cfg, "spawn.yaw", Float.valueOf(0.0F));
         setIfMissing(cfg, "spawn.pitch", Float.valueOf(0.0F));
 
+        // ---- void ----
         setIfMissing(cfg, "void.kill-height", Double.valueOf(-13.0D));
 
-        setIfMissing(cfg, "join-message",
-                "&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)");
-        setIfMissing(cfg, "quit-message",
-                "&b%player% &7left the game &8(&b%online%&7/&b%max_online%&8)");
+        // ---- messages (Aqua + White) ----
+        setIfMissingOrEmpty(cfg, "join-message",
+                "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
+        setIfMissingOrEmpty(cfg, "quit-message",
+                "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
+        // ---- combo ----
         setIfMissing(cfg, "combo.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "combo.step", Integer.valueOf(10));
         setIfMissing(cfg, "combo.reset-time", Long.valueOf(3000L));
         setIfMissing(cfg, "combo.sound-enabled", Boolean.valueOf(true));
-        setIfMissing(cfg, "combo.broadcast-message",
-                "&8&m-------------------------------\\n&6&lCOMBO &e&l%combo%x\\n&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\\n&8&m-------------------------------");
 
+        String defaultComboMsg =
+                "&b&m-------------------------------\n"
+              + "&bCOMBO &f%combo%x\n"
+              + "&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n"
+              + "&b&m-------------------------------";
+        setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
+
+        // ---- scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
+        // ---- worlds ----
         setIfMissing(cfg, "worlds.world", "platform");
 
         try {
@@ -690,6 +703,28 @@ public final class Realstics extends JavaPlugin {
     private void setIfMissing(FileConfiguration cfg, String path, Object value) {
         if (!cfg.contains(path)) {
             cfg.set(path, value);
+        }
+    }
+
+    /**
+     * Set value only if the key is missing OR the value is empty.
+     * Useful for auto-fixing empty messages after upgrades.
+     */
+    private void setIfMissingOrEmpty(FileConfiguration cfg, String path, Object defaultValue) {
+        if (!cfg.contains(path)) {
+            cfg.set(path, defaultValue);
+            return;
+        }
+        Object existing = cfg.get(path);
+        if (existing == null) {
+            cfg.set(path, defaultValue);
+            return;
+        }
+        if (existing instanceof String) {
+            String s = (String) existing;
+            if (s.trim().isEmpty()) {
+                cfg.set(path, defaultValue);
+            }
         }
     }
 
@@ -727,7 +762,8 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680;
+    private static final int LEATHER_COLOR = 16711680; // 0xFF0000
+    private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -819,7 +855,10 @@ public class PlayerJoin implements Listener {
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 4);
         player.getInventory().setItem(0, unbreakable(sword));
 
-        player.getInventory().setItem(1, new ItemStack(Material.WOOL, 64));
+        ItemStack wool = new ItemStack(Material.WOOL, 64);
+        wool.setDurability(LIGHT_BLUE_WOOL_DATA);
+        player.getInventory().setItem(1, wool);
+
         player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
 
         refillFood(player);
@@ -954,6 +993,9 @@ public class NoDamage implements Listener {
 
 JAVA["Protection.java"] = r'''package org.realstics;
 
+import java.util.HashSet;
+import java.util.Set;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -965,24 +1007,27 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Protection rules:
- *   - Cannot break map blocks   (realstics.break)
- *   - Cannot place blocks       (realstics.place)
- *   - Cannot drop items         (realstics.drop)
- *   - realstics.bypass bypasses all
+ * Protection rules for Realstics (Spigot 1.8.8 compatible).
  *
- * Special rules:
- *   - BlockFight mode: wool can be placed AND broken by anyone
- *   - All other modes: wool can be placed but NOT broken
+ * BlockFight:
+ *   - Only PLAYER-PLACED LIGHT BLUE wool (data=3) is breakable
+ *   - Broken wool does NOT drop, does NOT go to inventory
+ *   - Light blue wool is infinite (always stays at 64)
  */
 public class Protection implements Listener {
 
     @SuppressWarnings("unused")
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
+
+    private final Set<String> playerPlacedWool = new HashSet<String>();
+
+    private static final byte LIGHT_BLUE_DATA = 3;
 
     private static final String PERM_BYPASS = "realstics.bypass";
     private static final String PERM_BREAK  = "realstics.break";
@@ -1002,45 +1047,79 @@ public class Protection implements Listener {
         return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
     }
 
-    // ============================================================
-    //  BREAK
-    //  - Bypass / realstics.break     → allow
-    //  - BlockFight + block is WOOL   → allow
-    //  - Everything else              → cancel
-    // ============================================================
+    private String locKey(Block block) {
+        return block.getWorld().getName()
+                + ":" + block.getX()
+                + ":" + block.getY()
+                + ":" + block.getZ();
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean isLightBlueWool(Block block) {
+        if (block.getType() != Material.WOOL) return false;
+        return block.getData() == LIGHT_BLUE_DATA;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean isLightBlueWoolItem(ItemStack item) {
+        if (item == null) return false;
+        if (item.getType() != Material.WOOL) return false;
+        return item.getData().getData() == LIGHT_BLUE_DATA;
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        Player player = event.getPlayer();
-        Block block = event.getBlock();
+        final Player player = event.getPlayer();
+        final Block block = event.getBlock();
 
         if (hasBypass(player)) return;
         if (player.hasPermission(PERM_BREAK)) return;
 
-        // BlockFight exception: wool is breakable
-        if (isBlockFight(block.getWorld())
-                && block.getType() == Material.WOOL) {
+        if (isBlockFight(block.getWorld()) && isLightBlueWool(block)) {
+            String key = locKey(block);
+            if (playerPlacedWool.contains(key)) {
+                event.setCancelled(true);
+                block.setType(Material.AIR);
+                playerPlacedWool.remove(key);
+                Bukkit.getScheduler().scheduleSyncDelayedTask(
+                        this.plugin, new Runnable() {
+                            @Override
+                            public void run() {
+                                refillWool(player);
+                            }
+                        }, 1L);
+                return;
+            }
+            event.setCancelled(true);
+            player.sendMessage(colorize("&cYou can only break light blue wool placed by players!"));
             return;
         }
 
         event.setCancelled(true);
-        player.sendMessage(colorize("&cYou cannot break blocks here!"));
+        player.sendMessage(colorize("&cYou can only break light blue wool!"));
     }
 
-    // ============================================================
-    //  PLACE
-    //  - Bypass / realstics.place → allow
-    //  - WOOL (any mode)          → allow
-    //  - Everything else          → cancel
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent event) {
-        Player player = event.getPlayer();
+    public void onBlockPlace(final BlockPlaceEvent event) {
+        final Player player = event.getPlayer();
+        final World world = event.getBlock().getWorld();
 
         if (hasBypass(player)) return;
 
-        // Wool is always placeable (all modes)
         Material type = event.getBlock().getType();
-        if (type == Material.WOOL) return;
+        if (type == Material.WOOL) {
+            if (isBlockFight(world) && isLightBlueWool(event.getBlock())) {
+                playerPlacedWool.add(locKey(event.getBlock()));
+                Bukkit.getScheduler().scheduleSyncDelayedTask(
+                        this.plugin, new Runnable() {
+                            @Override
+                            public void run() {
+                                refillWool(player);
+                            }
+                        }, 1L);
+            }
+            return;
+        }
 
         if (player.hasPermission(PERM_PLACE)) return;
 
@@ -1048,9 +1127,6 @@ public class Protection implements Listener {
         player.sendMessage(colorize("&cYou cannot place blocks here!"));
     }
 
-    // ============================================================
-    //  DROP
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
@@ -1059,6 +1135,28 @@ public class Protection implements Listener {
 
         event.setCancelled(true);
         player.sendMessage(colorize("&cYou cannot drop items here!"));
+    }
+
+    private void refillWool(Player player) {
+        if (player == null || !player.isOnline()) return;
+
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (isLightBlueWoolItem(item)) {
+                if (item.getAmount() < 64) {
+                    item.setAmount(64);
+                    inv.setItem(i, item);
+                    player.updateInventory();
+                }
+                return;
+            }
+        }
+
+        ItemStack wool = new ItemStack(Material.WOOL, 64);
+        wool.setDurability(LIGHT_BLUE_DATA);
+        inv.setItem(1, wool);
+        player.updateInventory();
     }
 
     private String colorize(String message) {
@@ -1143,7 +1241,7 @@ public class KitRestore implements Listener {
         playerJoin.giveKit(player);
 
         if (notifyPlayer) {
-            player.sendMessage(colorize("&aYour cosmetic kit has been restored."));
+            player.sendMessage(colorize("&bYour kit has been restored."));
         }
     }
 
@@ -1199,7 +1297,7 @@ public class Welcome implements Listener {
 
         FileConfiguration config = this.plugin.getConfig();
         String joinMessage = config.getString("join-message",
-                "&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)");
+                "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
 
         String rendered = colorize(joinMessage)
                 .replace("%player%", player.getName())
@@ -1216,7 +1314,7 @@ public class Welcome implements Listener {
 
         FileConfiguration config = this.plugin.getConfig();
         String quitMessage = config.getString("quit-message",
-                "&b%player% &7left the game &8(&b%online%&7/&b%max_online%&8)");
+                "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
         int onlineAfter = Math.max(0, Bukkit.getOnlinePlayers().size() - 1);
 
@@ -1363,6 +1461,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class ComboSystem implements Listener {
 
+    private static final String DEFAULT_MESSAGE =
+            "&b&m-------------------------------\n"
+          + "&bCOMBO &f%combo%x\n"
+          + "&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n"
+          + "&b&m-------------------------------";
+
     private final JavaPlugin plugin;
 
     private final Map<UUID, Integer> combos = new HashMap<UUID, Integer>();
@@ -1385,16 +1489,20 @@ public class ComboSystem implements Listener {
         this.enabled        = config.getBoolean("combo.enabled", true);
         this.comboStep      = config.getInt("combo.step", 10);
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
-        this.broadcastMessage = config.getString("combo.broadcast-message",
-                "&8&m-------------------------------\n"
-              + "&6&lCOMBO &e&l%combo%x\n"
-              + "&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n"
-              + "&8&m-------------------------------");
-        this.soundEnabled   = config.getBoolean("combo.sound-enabled", true);
+
+        // Read message — fallback if missing / null / empty
+        String msg = config.getString("combo.broadcast-message", null);
+        if (msg == null || msg.trim().isEmpty()) {
+            msg = DEFAULT_MESSAGE;
+        }
+        this.broadcastMessage = msg;
+
+        this.soundEnabled = config.getBoolean("combo.sound-enabled", true);
 
         if (this.comboStep < 1) this.comboStep = 10;
         if (this.comboResetTime < 500L) this.comboResetTime = 3000L;
 
+        // Convert literal "\n" from YAML into real newlines
         if (this.broadcastMessage != null) {
             this.broadcastMessage = this.broadcastMessage.replace("\\n", "\n");
         }
@@ -1695,10 +1803,10 @@ public class ScoreboardManager implements Listener {
     private String getTitle(FileConfiguration sb) {
         if (sb.getBoolean("title.animated", true)) {
             List<String> frames = sb.getStringList("title.frames");
-            if (frames == null || frames.isEmpty()) return "&6&lRealstics";
+            if (frames == null || frames.isEmpty()) return "&bRealstics";
             return frames.get(this.animationFrame % frames.size());
         }
-        return sb.getString("title.static", "&6&lRealstics");
+        return sb.getString("title.static", "&bRealstics");
     }
 
     private String[] splitLine(String line) {
@@ -1855,7 +1963,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             this.gameModeManager.reloadAll();
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             if (this.voidSystem != null) this.voidSystem.reloadConfig();
-            sender.sendMessage(colorize("&aRealstics configuration reloaded."));
+            sender.sendMessage(colorize("&bRealstics configuration reloaded."));
             return true;
         }
 
@@ -1885,16 +1993,16 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleWorlds(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fLoaded Worlds"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bLoaded Worlds"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
 
         for (World w : Bukkit.getWorlds()) {
             GameMode mode = gameModeManager.getModeForWorld(w);
-            sender.sendMessage(colorize("&e" + w.getName() + " &7→ &f" + mode.getDisplayName()));
+            sender.sendMessage(colorize("&b" + w.getName() + " &f» &b" + mode.getDisplayName()));
         }
 
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
         return true;
     }
 
@@ -1924,8 +2032,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         String worldName = gameModeManager.getWorldForMode(mode);
 
         if (worldName == null) {
-            player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
-                    + "&7 has no world yet. Auto-creating..."));
+            player.sendMessage(colorize("&bMode &f" + mode.getDisplayName()
+                    + "&b has no world yet. Auto-creating..."));
             World world = worldLoader.ensureLoaded(mode.getId());
             if (world == null) {
                 player.sendMessage(colorize("&cCould not create world for &e" + mode.getId()));
@@ -1942,7 +2050,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         }
 
         if (player.getWorld().equals(targetWorld)) {
-            player.sendMessage(colorize("&7You are already in &e"
+            player.sendMessage(colorize("&7You are already in &b"
                     + mode.getDisplayName() + "&7."));
             return true;
         }
@@ -1964,8 +2072,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         }, 3L);
 
-        player.sendMessage(colorize("&aJoined &e" + mode.getDisplayName()
-                + " &7(world: &f" + finalWorld.getName() + "&7)"));
+        player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
+                + " &b(world: &f" + finalWorld.getName() + "&b)"));
         return true;
     }
 
@@ -1979,7 +2087,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             mode = GameMode.fromId(args[1]);
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
-                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
                 return true;
             }
             if (!(sender instanceof Player)) {
@@ -1993,26 +2101,26 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             mode = GameMode.fromId(args[2]);
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
-                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
                 return true;
             }
         }
         else {
             sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
-            sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
             return true;
         }
 
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
-            sender.sendMessage(colorize("&7World '&e" + worldName
-                    + "&7' is not loaded. Auto-loading..."));
+            sender.sendMessage(colorize("&bWorld '&f" + worldName
+                    + "&b' is not loaded. Auto-loading..."));
             world = worldLoader.ensureLoaded(worldName);
         }
 
         if (world == null) {
             sender.sendMessage(colorize("&cCould not load or create world: &e" + worldName));
-            sender.sendMessage(colorize("&7Loaded worlds: &e" + worldLoader.listLoadedWorldNames()));
+            sender.sendMessage(colorize("&7Loaded worlds: &f" + worldLoader.listLoadedWorldNames()));
             return true;
         }
 
@@ -2024,12 +2132,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (!player.getWorld().equals(world)) {
                 player.teleport(world.getSpawnLocation());
             }
-            player.sendMessage(colorize("&aWorld &e" + world.getName()
-                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
-            player.sendMessage(colorize("&7Next: &e/realstics " + mode.getId() + " setspawn"));
+            player.sendMessage(colorize("&bWorld &f" + world.getName()
+                    + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
+            player.sendMessage(colorize("&7Next: &f/realstics " + mode.getId() + " setspawn"));
         } else {
-            sender.sendMessage(colorize("&aWorld &e" + world.getName()
-                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
+            sender.sendMessage(colorize("&bWorld &f" + world.getName()
+                    + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
         }
 
         return true;
@@ -2055,9 +2163,9 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         config.set("spawn.pitch", Float.valueOf(loc.getPitch()));
         gameModeManager.saveModeConfig(mode);
 
-        player.sendMessage(colorize("&a[" + mode.getDisplayName() + "] Spawn set to &e"
+        player.sendMessage(colorize("&b[" + mode.getDisplayName() + "] &fSpawn set to &b"
                 + loc.getWorld().getName() + " "
-                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "&a."));
+                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "&b."));
         return true;
     }
 
@@ -2086,8 +2194,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         cfg.set("void.kill-height", Double.valueOf(y));
         gameModeManager.saveModeConfig(mode);
 
-        sender.sendMessage(colorize("&a[" + mode.getDisplayName() + "] Void kill height set to &e"
-                + y + "&a."));
+        sender.sendMessage(colorize("&b[" + mode.getDisplayName() + "] &fVoid kill height set to &b"
+                + y + "&b."));
         return true;
     }
 
@@ -2119,7 +2227,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         cfg.set("zshowsword", Double.valueOf(z));
         gameModeManager.saveModeConfig(mode);
 
-        sender.sendMessage(colorize("&a[OneWide] Sword will appear once Z passes &e" + z + "&a."));
+        sender.sendMessage(colorize("&b[OneWide] &fSword will appear once Z passes &b" + z + "&b."));
         return true;
     }
 
@@ -2145,12 +2253,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         playerJoin.giveKit(target);
 
         if (sender.equals(target)) {
-            sender.sendMessage(colorize("&aYour " + mode.getDisplayName() + " kit has been restored."));
+            sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));
         } else {
-            sender.sendMessage(colorize("&aGave " + mode.getDisplayName() + " kit to &e"
-                    + target.getName() + "&a."));
-            target.sendMessage(colorize("&aYour " + mode.getDisplayName()
-                    + " kit has been restored."));
+            sender.sendMessage(colorize("&bGave &f" + mode.getDisplayName() + " &bkit to &f"
+                    + target.getName() + "&b."));
+            target.sendMessage(colorize("&bYour &f" + mode.getDisplayName()
+                    + " &bkit has been restored."));
         }
         return true;
     }
@@ -2166,58 +2274,58 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
             gameModeManager.reloadMode(mode);
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
-            player.sendMessage(colorize("&a[" + mode.getDisplayName()
-                    + "] Scoreboard configuration reloaded."));
+            player.sendMessage(colorize("&b[" + mode.getDisplayName()
+                    + "] &fScoreboard configuration reloaded."));
             return true;
         }
 
         boolean nowVisible = this.scoreboardManager.toggleScoreboard(player);
-        if (nowVisible) player.sendMessage(colorize("&aScoreboard &lENABLED&a."));
-        else            player.sendMessage(colorize("&cScoreboard &lDISABLED&c."));
+        if (nowVisible) player.sendMessage(colorize("&bScoreboard &fENABLED&b."));
+        else            player.sendMessage(colorize("&cScoreboard &fDISABLED&c."));
         return true;
     }
 
     private boolean handleCreator(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fCreated by &bMuvixo"));
-        sender.sendMessage(colorize("&7Version: &f1.0"));
-        sender.sendMessage(colorize("&7Modes: &fPlatform, LowMid, OneWide, BlockFight"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bCreated by &fMuvixo"));
+        sender.sendMessage(colorize("&bVersion: &f1.0"));
+        sender.sendMessage(colorize("&bModes: &fPlatform, LowMid, OneWide, BlockFight"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
         return true;
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics join <mode> &7- Join a game mode"));
-        sender.sendMessage(colorize("&e/realstics worlds &7- List loaded worlds"));
-        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
-        sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
-        sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bCommands"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics join <mode> &f- Join a game mode"));
+        sender.sendMessage(colorize("&b/realstics worlds &f- List loaded worlds"));
+        sender.sendMessage(colorize("&b/realstics creator &f- Show plugin credits"));
+        sender.sendMessage(colorize("&b/realstics reload &f- Reload all configs"));
+        sender.sendMessage(colorize("&b/realstics setworld [world] <mode> &f- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics <mode> setspawn &7- Set spawn"));
-        sender.sendMessage(colorize("&e/realstics <mode> setvoid [y] &7- Set void Y"));
-        sender.sendMessage(colorize("&e/realstics <mode> kit [player] &7- Give kit"));
-        sender.sendMessage(colorize("&e/realstics <mode> sb &7- Toggle scoreboard"));
-        sender.sendMessage(colorize("&e/realstics onewide setzshowsword <z> &7- OneWide only"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics <mode> setspawn &f- Set spawn"));
+        sender.sendMessage(colorize("&b/realstics <mode> setvoid [y] &f- Set void Y"));
+        sender.sendMessage(colorize("&b/realstics <mode> kit [player] &f- Give kit"));
+        sender.sendMessage(colorize("&b/realstics <mode> sb &f- Toggle scoreboard"));
+        sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z> &f- OneWide only"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     private void sendModeHelp(CommandSender sender, GameMode mode) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &f" + mode.getDisplayName()));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics join " + mode.getId()));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setspawn"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setvoid [y]"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " kit [player]"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " sb [reload]"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &b" + mode.getDisplayName()));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics join " + mode.getId()));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setspawn"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setvoid [y]"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " kit [player]"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " sb [reload]"));
         if (mode == GameMode.ONEWIDE) {
-            sender.sendMessage(colorize("&e/realstics onewide setzshowsword <z>"));
+            sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z>"));
         }
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     @Override
@@ -2300,10 +2408,15 @@ RESOURCES = {}
 RESOURCES["config.yml"] = r'''# ==========================================================
 #  Realstics Configuration — Platform (default mode)
 #  Version: 1.0
+#  Theme: Aqua + White
 # ==========================================================
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
 
+# ----------------------------------------------------------
+#  Spawn (Platform mode)
+#  Set with: /realstics platform setspawn
+# ----------------------------------------------------------
 spawn:
   world: world
   x: 0.5
@@ -2312,27 +2425,42 @@ spawn:
   yaw: 0.0
   pitch: 0.0
 
+# ----------------------------------------------------------
+#  Void (Platform)
+#  Set with: /realstics platform setvoid [y]
+# ----------------------------------------------------------
 void:
   kill-height: -13.0
 
-join-message: '&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)'
-quit-message: '&b%player% &7left the game &8(&b%online%&7/&b%max_online%&8)'
-
+# ----------------------------------------------------------
+#  Combo System (global — all modes)
+#  Placeholders: %combo%, %attacker%, %victim%
+#  Use "\n" inside double quotes for a new line.
+# ----------------------------------------------------------
 combo:
   enabled: true
   step: 10
   reset-time: 3000
   sound-enabled: true
-  broadcast-message: "&8&m-------------------------------\n&6&lCOMBO &e&l%combo%x\n&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n&8&m-------------------------------"
+  broadcast-message: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
 
+# ----------------------------------------------------------
+#  Scoreboard (global)
+# ----------------------------------------------------------
 scoreboard:
   update-interval: 10
 
 # ----------------------------------------------------------
+#  Join / Quit messages (global — all modes)
+#  Placeholders: %player%, %online%, %max_online%
+# ----------------------------------------------------------
+join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
+quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
+
+# ----------------------------------------------------------
 #  World -> Game Mode mapping
-#  Default: world = platform
-#  Assign others with: /realstics setworld [world] <mode>
-#  Auto-loads the world if it exists in server folder.
+#  Valid modes: platform, lowmid, onewide, blockfight
+#  Assign with: /realstics setworld [world] <mode>
 # ----------------------------------------------------------
 worlds:
   world: platform
@@ -2340,6 +2468,7 @@ worlds:
 
 RESOURCES["scoreboard.yml"] = r'''# ==========================================================
 #  Realstics Scoreboard — Platform mode
+#  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
 update-interval: 10
@@ -2347,30 +2476,32 @@ join-delay: 5
 
 title:
   animated: true
-  static: '&6Platform'
+  static: '&bPlatform'
   frames:
-    - '&6P&flatform'
-    - '&6Pl&fatForm'
-    - '&6Pla&ftform'
-    - '&6Plat&fform'
-    - '&6Platf&form'
-    - '&6Platfo&frm'
-    - '&6Platfor&fm'
-    - '&6Platform'
+    - '&bP&flatform'
+    - '&bPl&fatForm'
+    - '&bPla&ftform'
+    - '&bPlat&fform'
+    - '&bPlatf&form'
+    - '&bPlatfo&frm'
+    - '&bPlatfor&fm'
+    - '&bPlatform'
+    - '&fPlatform'
+    - '&bPlatform'
 
 lines:
-  - '&8&m----------------'
-  - '&6Player &8» &f%player%'
-  - '&6World  &8» &f%world%'
-  - '&6Ping   &8» &f%ping%ms'
-  - '&6Health &8» &f%health%'
-  - '&6Food   &8» &f%food%'
-  - '&6Y      &8» &f%y%'
-  - '&8&m----------------'
-  - '&6Online &8» &f%online%&7/&f%max_online%'
-  - '&8&m----------------'
-  - '&6Play.MineStorm.iR'
-  - '&8&m----------------'
+  - '&b&m---------------------'
+  - '&bPlatform &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
 
 allow-toggle: true
 toggle-permission: 'realstics.scoreboard'
@@ -2378,7 +2509,9 @@ toggle-permission: 'realstics.scoreboard'
 
 RESOURCES["lowmid.yml"] = r'''# ==========================================================
 #  Realstics — LowMid mode
+#  Theme: Aqua + White
 # ==========================================================
+
 spawn:
   world: world
   x: 0.5
@@ -2393,6 +2526,7 @@ void:
 
 RESOURCES["sb-lowmid.yml"] = r'''# ==========================================================
 #  Realstics Scoreboard — LowMid mode
+#  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
 update-interval: 10
@@ -2400,27 +2534,30 @@ join-delay: 5
 
 title:
   animated: true
-  static: '&6LowMid'
+  static: '&bLowMid'
   frames:
-    - '&6L&fowMid'
-    - '&6Lo&fwMid'
-    - '&6Low&fMid'
-    - '&6LowM&fid'
-    - '&6LowMi&fd'
-    - '&6LowMid'
+    - '&bL&fowmid'
+    - '&bLo&f&lwmid'
+    - '&bLow&fmid'
+    - '&bLowM&fid'
+    - '&bLowMi&fd'
+    - '&bLowMid'
+    - '&fLowMid'
+    - '&bLowMid'
 
 lines:
-  - '&8&m----------------'
-  - '&6Mode   &8» &f%mode%'
-  - '&6Player &8» &f%player%'
-  - '&6World  &8» &f%world%'
-  - '&6Ping   &8» &f%ping%ms'
-  - '&6Y      &8» &f%y%'
-  - '&8&m----------------'
-  - '&6Online &8» &f%online%&7/&f%max_online%'
-  - '&8&m----------------'
-  - '&6Play.MineStorm.iR'
-  - '&8&m----------------'
+  - '&b&m---------------------'
+  - '&bLowMid &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
 
 allow-toggle: true
 toggle-permission: 'realstics.scoreboard'
@@ -2428,7 +2565,9 @@ toggle-permission: 'realstics.scoreboard'
 
 RESOURCES["onewide.yml"] = r'''# ==========================================================
 #  Realstics — OneWide mode
+#  Theme: Aqua + White
 # ==========================================================
+
 spawn:
   world: world
   x: 0.5
@@ -2445,6 +2584,7 @@ zshowsword: 0.0
 
 RESOURCES["sb-onewide.yml"] = r'''# ==========================================================
 #  Realstics Scoreboard — OneWide mode
+#  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
 update-interval: 10
@@ -2452,28 +2592,31 @@ join-delay: 5
 
 title:
   animated: true
-  static: '&6OneWide'
+  static: '&bOneWide'
   frames:
-    - '&6O&fneWide'
-    - '&6On&feWide'
-    - '&6One&fWide'
-    - '&6OneW&fide'
-    - '&6OneWi&fde'
-    - '&6OneWid&fe'
-    - '&6OneWide'
+    - '&bO&fneWide'
+    - '&bOn&feWide'
+    - '&bOne&fWide'
+    - '&bOneW&fide'
+    - '&bOneWi&fde'
+    - '&bOneWid&fe'
+    - '&bOneWide'
+    - '&fOneWide'
+    - '&bOneWide'
 
 lines:
-  - '&8&m----------------'
-  - '&6Mode   &8» &f%mode%'
-  - '&6Player &8» &f%player%'
-  - '&6World  &8» &f%world%'
-  - '&6Ping   &8» &f%ping%ms'
-  - '&6Y      &8» &f%y%'
-  - '&8&m----------------'
-  - '&6Online &8» &f%online%&7/&f%max_online%'
-  - '&8&m----------------'
-  - '&6Play.MineStorm.iR'
-  - '&8&m----------------'
+  - '&b&m---------------------'
+  - '&bOneWide &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
 
 allow-toggle: true
 toggle-permission: 'realstics.scoreboard'
@@ -2481,7 +2624,9 @@ toggle-permission: 'realstics.scoreboard'
 
 RESOURCES["blockfight.yml"] = r'''# ==========================================================
 #  Realstics — BlockFight mode
+#  Theme: Aqua + White
 # ==========================================================
+
 spawn:
   world: world
   x: 0.5
@@ -2498,6 +2643,7 @@ sety: -13.0
 
 RESOURCES["sb-blockfight.yml"] = r'''# ==========================================================
 #  Realstics Scoreboard — BlockFight mode
+#  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
 update-interval: 10
@@ -2505,31 +2651,34 @@ join-delay: 5
 
 title:
   animated: true
-  static: '&6BlockFight'
+  static: '&bBlockFight'
   frames:
-    - '&6B&flockFight'
-    - '&6Bl&fockFight'
-    - '&6Blo&fckFight'
-    - '&6Bloc&fkFight'
-    - '&6Block&fFight'
-    - '&6BlockF&fight'
-    - '&6BlockFi&fght'
-    - '&6BlockFig&fht'
-    - '&6BlockFigh&ft'
-    - '&6BlockFight'
+    - '&bB&flockFight'
+    - '&bBl&fockFight'
+    - '&bBlo&fckFight'
+    - '&bBloc&fkFight'
+    - '&bBlock&fFight'
+    - '&bBlockF&fight'
+    - '&bBlockFi&fght'
+    - '&bBlockFig&fht'
+    - '&bBlockFigh&ft'
+    - '&bBlockFight'
+    - '&fBlockFight'
+    - '&bBlockFight'
 
 lines:
-  - '&8&m----------------'
-  - '&6Mode   &8» &f%mode%'
-  - '&6Player &8» &f%player%'
-  - '&6World  &8» &f%world%'
-  - '&6Ping   &8» &f%ping%ms'
-  - '&6Y      &8» &f%y%'
-  - '&8&m----------------'
-  - '&6Online &8» &f%online%&7/&f%max_online%'
-  - '&8&m----------------'
-  - '&6Play.MineStorm.iR'
-  - '&8&m----------------'
+  - '&b&m---------------------'
+  - '&bBlockFight &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
 
 allow-toggle: true
 toggle-permission: 'realstics.scoreboard'
@@ -2542,15 +2691,26 @@ README = '''# Realstics Plugin v1.0
 
 Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot compatible.
 
+**Created by Muvixo**
+
+## Game Modes
+
+| Mode | Status | Description |
+|------|--------|-------------|
+| **Platform** | Default / enabled | Leather + Iron armor (Prot III), Wooden Sword (Sharp I) |
+| **LowMid** | Must be set up | Wooden Sword only (Sharp I) |
+| **OneWide** | Must be set up | Iron Sword, hidden in spawn zone |
+| **BlockFight** | Must be set up | Diamond Sword (Sharp IV), 64 Light Blue Wool (infinite), Shears |
+
 ## Features
 
-- 4 game modes in one JAR: **Platform, LowMid, OneWide, BlockFight**
 - **Auto-loads worlds** — no need to edit bukkit.yml
 - **`/realstics join <mode>`** — players teleport with one command
 - PvP with no HP loss (knockback works)
 - No fall damage, infinite food
-- **BlockFight**: wool can be placed AND broken; other blocks protected
-- All other modes: only wool placeable, nothing breakable
+- **BlockFight**: only light-blue wool breakable, no drop, infinite
+- **Aqua + White theme** in all configs by default
+- Auto-fills empty messages on plugin update
 - Per-mode kits, configs, scoreboards
 
 ## Commands
@@ -2593,6 +2753,8 @@ mvn clean package
 
 Output: `target/Realstics.jar`
 
+Or push to GitHub — Actions builds automatically.
+
 ## Credits
 
 - **Muvixo** — Creator
@@ -2629,7 +2791,7 @@ def main():
     for name, content in JAVA.items():
         write_file(os.path.join("src/main/java/org/realstics", name), content)
 
-    print("\n[5/5] Writing resources (plugin.yml + configs)...")
+    print("\n[5/5] Writing resources...")
     write_file(os.path.join("src/main/resources", "plugin.yml"), PLUGIN_YML)
     for name, content in RESOURCES.items():
         write_file(os.path.join("src/main/resources", name), content)
@@ -2637,12 +2799,11 @@ def main():
     print("\n" + "=" * 60)
     print("Done! Realstics plugin generated.")
     print("")
-    print("Behavior summary:")
-    print("  BlockFight  → wool placeable + breakable")
-    print("  Other modes → wool placeable, nothing breakable")
-    print("  Bypass perm → everything allowed")
+    print("Theme: Aqua + White (default)")
+    print("Empty combo message auto-fill: ENABLED")
+    print("BlockFight: light-blue wool only, infinite, no drop")
     print("")
-    print("Build: mvn clean package  (or push to GitHub)")
+    print("Build: mvn clean package")
 
 if __name__ == "__main__":
     main()

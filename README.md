@@ -2,15 +2,26 @@
 
 Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot compatible.
 
+**Created by Muvixo**
+
+## Game Modes
+
+| Mode | Status | Description |
+|------|--------|-------------|
+| **Platform** | Default / enabled | Leather + Iron armor (Prot III), Wooden Sword (Sharp I) |
+| **LowMid** | Must be set up | Wooden Sword only (Sharp I) |
+| **OneWide** | Must be set up | Iron Sword, hidden in spawn zone |
+| **BlockFight** | Must be set up | Diamond Sword (Sharp IV), 64 Light Blue Wool (infinite), Shears |
+
 ## Features
 
-- 4 game modes in one JAR: **Platform, LowMid, OneWide, BlockFight**
 - **Auto-loads worlds** — no need to edit bukkit.yml
 - **`/realstics join <mode>`** — players teleport with one command
 - PvP with no HP loss (knockback works)
 - No fall damage, infinite food
-- **BlockFight**: wool can be placed AND broken; other blocks protected
-- All other modes: only wool placeable, nothing breakable
+- **BlockFight**: only light-blue wool breakable, no drop, infinite
+- **Aqua + White theme** in all configs by default
+- Auto-fills empty messages on plugin update
 - Per-mode kits, configs, scoreboards
 
 ## Commands
@@ -52,6 +63,8 @@ mvn clean package
 ```
 
 Output: `target/Realstics.jar`
+
+Or push to GitHub — Actions builds automatically.
 
 ## Credits
 

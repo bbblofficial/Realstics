@@ -177,10 +177,10 @@ public class ScoreboardManager implements Listener {
     private String getTitle(FileConfiguration sb) {
         if (sb.getBoolean("title.animated", true)) {
             List<String> frames = sb.getStringList("title.frames");
-            if (frames == null || frames.isEmpty()) return "&6&lRealstics";
+            if (frames == null || frames.isEmpty()) return "&bRealstics";
             return frames.get(this.animationFrame % frames.size());
         }
-        return sb.getString("title.static", "&6&lRealstics");
+        return sb.getString("title.static", "&bRealstics");
     }
 
     private String[] splitLine(String line) {

@@ -21,6 +21,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class ComboSystem implements Listener {
 
+    private static final String DEFAULT_MESSAGE =
+            "&b&m-------------------------------\n"
+          + "&bCOMBO &f%combo%x\n"
+          + "&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n"
+          + "&b&m-------------------------------";
+
     private final JavaPlugin plugin;
 
     private final Map<UUID, Integer> combos = new HashMap<UUID, Integer>();
@@ -43,16 +49,20 @@ public class ComboSystem implements Listener {
         this.enabled        = config.getBoolean("combo.enabled", true);
         this.comboStep      = config.getInt("combo.step", 10);
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
-        this.broadcastMessage = config.getString("combo.broadcast-message",
-                "&8&m-------------------------------\n"
-              + "&6&lCOMBO &e&l%combo%x\n"
-              + "&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n"
-              + "&8&m-------------------------------");
-        this.soundEnabled   = config.getBoolean("combo.sound-enabled", true);
+
+        // Read message — fallback if missing / null / empty
+        String msg = config.getString("combo.broadcast-message", null);
+        if (msg == null || msg.trim().isEmpty()) {
+            msg = DEFAULT_MESSAGE;
+        }
+        this.broadcastMessage = msg;
+
+        this.soundEnabled = config.getBoolean("combo.sound-enabled", true);
 
         if (this.comboStep < 1) this.comboStep = 10;
         if (this.comboResetTime < 500L) this.comboResetTime = 3000L;
 
+        // Convert literal "\n" from YAML into real newlines
         if (this.broadcastMessage != null) {
             this.broadcastMessage = this.broadcastMessage.replace("\\n", "\n");
         }

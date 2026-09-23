@@ -1,5 +1,6 @@
 # ==========================================================
 #  Realstics Scoreboard — Platform mode
+#  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
 update-interval: 10
@@ -7,30 +8,32 @@ join-delay: 5
 
 title:
   animated: true
-  static: '&6Platform'
+  static: '&bPlatform'
   frames:
-    - '&6P&flatform'
-    - '&6Pl&fatForm'
-    - '&6Pla&ftform'
-    - '&6Plat&fform'
-    - '&6Platf&form'
-    - '&6Platfo&frm'
-    - '&6Platfor&fm'
-    - '&6Platform'
+    - '&bP&flatform'
+    - '&bPl&fatForm'
+    - '&bPla&ftform'
+    - '&bPlat&fform'
+    - '&bPlatf&form'
+    - '&bPlatfo&frm'
+    - '&bPlatfor&fm'
+    - '&bPlatform'
+    - '&fPlatform'
+    - '&bPlatform'
 
 lines:
-  - '&8&m----------------'
-  - '&6Player &8» &f%player%'
-  - '&6World  &8» &f%world%'
-  - '&6Ping   &8» &f%ping%ms'
-  - '&6Health &8» &f%health%'
-  - '&6Food   &8» &f%food%'
-  - '&6Y      &8» &f%y%'
-  - '&8&m----------------'
-  - '&6Online &8» &f%online%&7/&f%max_online%'
-  - '&8&m----------------'
-  - '&6Play.MineStorm.iR'
-  - '&8&m----------------'
+  - '&b&m---------------------'
+  - '&bPlatform &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
 
 allow-toggle: true
 toggle-permission: 'realstics.scoreboard'

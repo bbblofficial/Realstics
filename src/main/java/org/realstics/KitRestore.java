@@ -74,7 +74,7 @@ public class KitRestore implements Listener {
         playerJoin.giveKit(player);
 
         if (notifyPlayer) {
-            player.sendMessage(colorize("&aYour cosmetic kit has been restored."));
+            player.sendMessage(colorize("&bYour kit has been restored."));
         }
     }
 

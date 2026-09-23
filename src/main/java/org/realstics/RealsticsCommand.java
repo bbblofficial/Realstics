@@ -55,7 +55,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             this.gameModeManager.reloadAll();
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             if (this.voidSystem != null) this.voidSystem.reloadConfig();
-            sender.sendMessage(colorize("&aRealstics configuration reloaded."));
+            sender.sendMessage(colorize("&bRealstics configuration reloaded."));
             return true;
         }
 
@@ -85,16 +85,16 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleWorlds(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fLoaded Worlds"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bLoaded Worlds"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
 
         for (World w : Bukkit.getWorlds()) {
             GameMode mode = gameModeManager.getModeForWorld(w);
-            sender.sendMessage(colorize("&e" + w.getName() + " &7→ &f" + mode.getDisplayName()));
+            sender.sendMessage(colorize("&b" + w.getName() + " &f» &b" + mode.getDisplayName()));
         }
 
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
         return true;
     }
 
@@ -124,8 +124,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         String worldName = gameModeManager.getWorldForMode(mode);
 
         if (worldName == null) {
-            player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
-                    + "&7 has no world yet. Auto-creating..."));
+            player.sendMessage(colorize("&bMode &f" + mode.getDisplayName()
+                    + "&b has no world yet. Auto-creating..."));
             World world = worldLoader.ensureLoaded(mode.getId());
             if (world == null) {
                 player.sendMessage(colorize("&cCould not create world for &e" + mode.getId()));
@@ -142,7 +142,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         }
 
         if (player.getWorld().equals(targetWorld)) {
-            player.sendMessage(colorize("&7You are already in &e"
+            player.sendMessage(colorize("&7You are already in &b"
                     + mode.getDisplayName() + "&7."));
             return true;
         }
@@ -164,8 +164,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         }, 3L);
 
-        player.sendMessage(colorize("&aJoined &e" + mode.getDisplayName()
-                + " &7(world: &f" + finalWorld.getName() + "&7)"));
+        player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
+                + " &b(world: &f" + finalWorld.getName() + "&b)"));
         return true;
     }
 
@@ -179,7 +179,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             mode = GameMode.fromId(args[1]);
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
-                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
                 return true;
             }
             if (!(sender instanceof Player)) {
@@ -193,26 +193,26 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             mode = GameMode.fromId(args[2]);
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
-                sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+                sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
                 return true;
             }
         }
         else {
             sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
-            sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
             return true;
         }
 
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
-            sender.sendMessage(colorize("&7World '&e" + worldName
-                    + "&7' is not loaded. Auto-loading..."));
+            sender.sendMessage(colorize("&bWorld '&f" + worldName
+                    + "&b' is not loaded. Auto-loading..."));
             world = worldLoader.ensureLoaded(worldName);
         }
 
         if (world == null) {
             sender.sendMessage(colorize("&cCould not load or create world: &e" + worldName));
-            sender.sendMessage(colorize("&7Loaded worlds: &e" + worldLoader.listLoadedWorldNames()));
+            sender.sendMessage(colorize("&7Loaded worlds: &f" + worldLoader.listLoadedWorldNames()));
             return true;
         }
 
@@ -224,12 +224,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (!player.getWorld().equals(world)) {
                 player.teleport(world.getSpawnLocation());
             }
-            player.sendMessage(colorize("&aWorld &e" + world.getName()
-                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
-            player.sendMessage(colorize("&7Next: &e/realstics " + mode.getId() + " setspawn"));
+            player.sendMessage(colorize("&bWorld &f" + world.getName()
+                    + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
+            player.sendMessage(colorize("&7Next: &f/realstics " + mode.getId() + " setspawn"));
         } else {
-            sender.sendMessage(colorize("&aWorld &e" + world.getName()
-                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
+            sender.sendMessage(colorize("&bWorld &f" + world.getName()
+                    + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
         }
 
         return true;
@@ -255,9 +255,9 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         config.set("spawn.pitch", Float.valueOf(loc.getPitch()));
         gameModeManager.saveModeConfig(mode);
 
-        player.sendMessage(colorize("&a[" + mode.getDisplayName() + "] Spawn set to &e"
+        player.sendMessage(colorize("&b[" + mode.getDisplayName() + "] &fSpawn set to &b"
                 + loc.getWorld().getName() + " "
-                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "&a."));
+                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "&b."));
         return true;
     }
 
@@ -286,8 +286,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         cfg.set("void.kill-height", Double.valueOf(y));
         gameModeManager.saveModeConfig(mode);
 
-        sender.sendMessage(colorize("&a[" + mode.getDisplayName() + "] Void kill height set to &e"
-                + y + "&a."));
+        sender.sendMessage(colorize("&b[" + mode.getDisplayName() + "] &fVoid kill height set to &b"
+                + y + "&b."));
         return true;
     }
 
@@ -319,7 +319,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         cfg.set("zshowsword", Double.valueOf(z));
         gameModeManager.saveModeConfig(mode);
 
-        sender.sendMessage(colorize("&a[OneWide] Sword will appear once Z passes &e" + z + "&a."));
+        sender.sendMessage(colorize("&b[OneWide] &fSword will appear once Z passes &b" + z + "&b."));
         return true;
     }
 
@@ -345,12 +345,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         playerJoin.giveKit(target);
 
         if (sender.equals(target)) {
-            sender.sendMessage(colorize("&aYour " + mode.getDisplayName() + " kit has been restored."));
+            sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));
         } else {
-            sender.sendMessage(colorize("&aGave " + mode.getDisplayName() + " kit to &e"
-                    + target.getName() + "&a."));
-            target.sendMessage(colorize("&aYour " + mode.getDisplayName()
-                    + " kit has been restored."));
+            sender.sendMessage(colorize("&bGave &f" + mode.getDisplayName() + " &bkit to &f"
+                    + target.getName() + "&b."));
+            target.sendMessage(colorize("&bYour &f" + mode.getDisplayName()
+                    + " &bkit has been restored."));
         }
         return true;
     }
@@ -366,58 +366,58 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
             gameModeManager.reloadMode(mode);
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
-            player.sendMessage(colorize("&a[" + mode.getDisplayName()
-                    + "] Scoreboard configuration reloaded."));
+            player.sendMessage(colorize("&b[" + mode.getDisplayName()
+                    + "] &fScoreboard configuration reloaded."));
             return true;
         }
 
         boolean nowVisible = this.scoreboardManager.toggleScoreboard(player);
-        if (nowVisible) player.sendMessage(colorize("&aScoreboard &lENABLED&a."));
-        else            player.sendMessage(colorize("&cScoreboard &lDISABLED&c."));
+        if (nowVisible) player.sendMessage(colorize("&bScoreboard &fENABLED&b."));
+        else            player.sendMessage(colorize("&cScoreboard &fDISABLED&c."));
         return true;
     }
 
     private boolean handleCreator(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fCreated by &bMuvixo"));
-        sender.sendMessage(colorize("&7Version: &f1.0"));
-        sender.sendMessage(colorize("&7Modes: &fPlatform, LowMid, OneWide, BlockFight"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bCreated by &fMuvixo"));
+        sender.sendMessage(colorize("&bVersion: &f1.0"));
+        sender.sendMessage(colorize("&bModes: &fPlatform, LowMid, OneWide, BlockFight"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
         return true;
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics join <mode> &7- Join a game mode"));
-        sender.sendMessage(colorize("&e/realstics worlds &7- List loaded worlds"));
-        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
-        sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
-        sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &bCommands"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics join <mode> &f- Join a game mode"));
+        sender.sendMessage(colorize("&b/realstics worlds &f- List loaded worlds"));
+        sender.sendMessage(colorize("&b/realstics creator &f- Show plugin credits"));
+        sender.sendMessage(colorize("&b/realstics reload &f- Reload all configs"));
+        sender.sendMessage(colorize("&b/realstics setworld [world] <mode> &f- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics <mode> setspawn &7- Set spawn"));
-        sender.sendMessage(colorize("&e/realstics <mode> setvoid [y] &7- Set void Y"));
-        sender.sendMessage(colorize("&e/realstics <mode> kit [player] &7- Give kit"));
-        sender.sendMessage(colorize("&e/realstics <mode> sb &7- Toggle scoreboard"));
-        sender.sendMessage(colorize("&e/realstics onewide setzshowsword <z> &7- OneWide only"));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics <mode> setspawn &f- Set spawn"));
+        sender.sendMessage(colorize("&b/realstics <mode> setvoid [y] &f- Set void Y"));
+        sender.sendMessage(colorize("&b/realstics <mode> kit [player] &f- Give kit"));
+        sender.sendMessage(colorize("&b/realstics <mode> sb &f- Toggle scoreboard"));
+        sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z> &f- OneWide only"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     private void sendModeHelp(CommandSender sender, GameMode mode) {
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&6&lRealstics &7- &f" + mode.getDisplayName()));
-        sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics join " + mode.getId()));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setspawn"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setvoid [y]"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " kit [player]"));
-        sender.sendMessage(colorize("&e/realstics " + mode.getId() + " sb [reload]"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&bRealstics &f- &b" + mode.getDisplayName()));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/realstics join " + mode.getId()));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setspawn"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setvoid [y]"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " kit [player]"));
+        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " sb [reload]"));
         if (mode == GameMode.ONEWIDE) {
-            sender.sendMessage(colorize("&e/realstics onewide setzshowsword <z>"));
+            sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z>"));
         }
-        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     @Override

@@ -32,7 +32,7 @@ public class Welcome implements Listener {
 
         FileConfiguration config = this.plugin.getConfig();
         String joinMessage = config.getString("join-message",
-                "&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)");
+                "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
 
         String rendered = colorize(joinMessage)
                 .replace("%player%", player.getName())
@@ -49,7 +49,7 @@ public class Welcome implements Listener {
 
         FileConfiguration config = this.plugin.getConfig();
         String quitMessage = config.getString("quit-message",
-                "&b%player% &7left the game &8(&b%online%&7/&b%max_online%&8)");
+                "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
         int onlineAfter = Math.max(0, Bukkit.getOnlinePlayers().size() - 1);
 
