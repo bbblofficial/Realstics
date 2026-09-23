@@ -128,8 +128,18 @@ public final class Housing extends JavaPlugin {
 
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
+        // ---- pvp zone (X axis) ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
-        setIfMissing(cfg, "pvpzone.z", Double.valueOf(0.0D));
+        setIfMissing(cfg, "pvpzone.x", Double.valueOf(0.0D));
+
+        // Migrate old pvpzone.z → pvpzone.x
+        if (cfg.contains("pvpzone.z")) {
+            if (!cfg.contains("pvpzone.x")) {
+                double oldZ = cfg.getDouble("pvpzone.z", 0.0);
+                cfg.set("pvpzone.x", Double.valueOf(oldZ));
+            }
+            cfg.set("pvpzone.z", null);
+        }
 
         setIfMissing(cfg, "worlds.world", "platform");
 

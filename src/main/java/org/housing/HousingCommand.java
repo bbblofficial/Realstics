@@ -324,6 +324,11 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    // ============================================================
+    //  /housing <mode> setpvpzone [x]
+    //  PvP is allowed only when the player's X >= zone.
+    //  Supported: Platform, OneWide
+    // ============================================================
     private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("housing.setpvpzone")) { sendNoPerm(sender); return true; }
 
@@ -332,29 +337,29 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        double z;
+        double x;
         if (args.length >= 3) {
             try {
-                z = Double.parseDouble(args[2]);
+                x = Double.parseDouble(args[2]);
             } catch (NumberFormatException e) {
                 sender.sendMessage(colorize("&cInvalid number: &e" + args[2]));
                 return true;
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage: /housing " + mode.getId() + " setpvpzone <z>"));
+                sender.sendMessage(colorize("&cUsage: /housing " + mode.getId() + " setpvpzone <x>"));
                 return true;
             }
-            z = ((Player) sender).getLocation().getZ();
+            x = ((Player) sender).getLocation().getX();
         }
 
         FileConfiguration cfg = gameModeManager.getConfig(mode);
         cfg.set("pvpzone.enabled", Boolean.valueOf(true));
-        cfg.set("pvpzone.z", Double.valueOf(z));
+        cfg.set("pvpzone.x", Double.valueOf(x));
         gameModeManager.saveModeConfig(mode);
 
         sender.sendMessage(colorize("&b[" + mode.getDisplayName()
-                + "] &fPvP zone set — PvP enabled from Z &b" + z + "&f."));
+                + "] &fPvP zone set — PvP enabled from X &b" + x + "&f."));
         return true;
     }
 
@@ -434,7 +439,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&b/housing <mode> setspawn &f- Set spawn"));
         sender.sendMessage(colorize("&b/housing <mode> setvoid [y] &f- Set void Y"));
-        sender.sendMessage(colorize("&b/housing <mode> setpvpzone <z> &f- Set PvP zone"));
+        sender.sendMessage(colorize("&b/housing <mode> setpvpzone <x> &f- Set PvP zone"));
         sender.sendMessage(colorize("&b/housing <mode> kit [player] &f- Give kit"));
         sender.sendMessage(colorize("&b/housing <mode> sb &f- Toggle scoreboard"));
         sender.sendMessage(colorize("&b/housing onewide setzshowsword <z> &f- OneWide only"));
@@ -449,7 +454,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
         sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
         if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) {
-            sender.sendMessage(colorize("&b/housing " + mode.getId() + " setpvpzone <z>"));
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " setpvpzone <x>"));
         }
         sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
         sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));

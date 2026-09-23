@@ -12,6 +12,21 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Cosmetic PvP rules + PvP-zone enforcement.
+ *
+ * All modes:
+ *   - HP never drops (damage set to 0)
+ *   - Fall damage off
+ *   - Infinite food
+ *
+ * Platform / OneWide:
+ *   - PvP is only allowed when the attacker's X >= pvpzone.x
+ *   - Outside the zone, hits are cancelled entirely
+ *
+ * LowMid / BlockFight:
+ *   - PvP always allowed (no zone check)
+ */
 public class NoDamage implements Listener {
 
     @SuppressWarnings("unused")
@@ -23,22 +38,30 @@ public class NoDamage implements Listener {
         this.gameModeManager = gameModeManager;
     }
 
+    // ============================================================
+    //  Zone check — X axis
+    // ============================================================
     private boolean isInPvpZone(Player attacker) {
         World world = attacker.getWorld();
         GameMode mode = gameModeManager.getModeForWorld(world);
 
+        // LowMid & BlockFight — always allow PvP
         if (mode == GameMode.LOWMID || mode == GameMode.BLOCKFIGHT) {
             return true;
         }
 
+        // Platform / OneWide — read zone from config
         FileConfiguration cfg = gameModeManager.getConfig(mode);
         boolean enabled = cfg.getBoolean("pvpzone.enabled", true);
         if (!enabled) return true;
 
-        double zoneZ = cfg.getDouble("pvpzone.z", 0.0);
-        return attacker.getLocation().getZ() >= zoneZ;
+        double zoneX = cfg.getDouble("pvpzone.x", 0.0);
+        return attacker.getLocation().getX() >= zoneX;
     }
 
+    // ============================================================
+    //  Main damage event
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAnyDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -47,10 +70,14 @@ public class NoDamage implements Listener {
         event.setDamage(0);
     }
 
+    // ============================================================
+    //  PvP damage — zone-aware
+    // ============================================================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
 
+        // Non-player attacker → zero damage
         if (!(event.getDamager() instanceof Player)) {
             if (!event.isCancelled()) {
                 event.setDamage(0);
@@ -61,16 +88,21 @@ public class NoDamage implements Listener {
         Player attacker = (Player) event.getDamager();
 
         if (isInPvpZone(attacker)) {
+            // Normal PvP behavior — keep knockback, zero damage
             if (!event.isCancelled()) {
                 event.setDamage(0);
             }
         } else {
+            // Outside PvP zone — cancel entirely
             event.setCancelled(true);
             event.setDamage(0);
             attacker.sendMessage(colorize("&bYou must enter the PvP zone first!"));
         }
     }
 
+    // ============================================================
+    //  Fall damage
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -80,6 +112,9 @@ public class NoDamage implements Listener {
         }
     }
 
+    // ============================================================
+    //  Infinite food
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFoodChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player)) return;

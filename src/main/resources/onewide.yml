@@ -14,8 +14,12 @@ spawn:
 void:
   kill-height: -13.0
 
+# Z threshold from which the sword becomes visible
 zshowsword: 0.0
 
+# PvP Zone (OneWide only)
+# PvP is enabled only when the attacker's X >= pvpzone.x
+# Set with: /housing onewide setpvpzone [x]
 pvpzone:
   enabled: true
-  z: 0.0
+  x: 0.0
