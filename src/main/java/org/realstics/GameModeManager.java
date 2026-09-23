@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -71,6 +70,17 @@ public class GameModeManager {
         FileConfiguration cfg = plugin.getConfig();
         cfg.set("worlds." + worldName.toLowerCase(), mode.getId());
         plugin.saveConfig();
+    }
+
+    /**
+     * Finds the world name currently assigned to a mode, or null.
+     */
+    public String getWorldForMode(GameMode mode) {
+        if (mode == null) return null;
+        for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
+            if (entry.getValue() == mode) return entry.getKey();
+        }
+        return null;
     }
 
     public boolean isWorldConfigured(String worldName) {

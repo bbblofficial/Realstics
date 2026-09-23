@@ -2,6 +2,7 @@ package org.realstics;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -17,16 +18,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * /realstics <subcommand>
  *
- *   /realstics worlds                        - list loaded worlds + assigned modes
- *   /realstics setworld [world] <mode>       - assign (auto-loads world if needed)
+ *   /realstics help
+ *   /realstics creator
+ *   /realstics worlds
+ *   /realstics reload
+ *   /realstics join <mode>                     - teleport player to mode world
+ *   /realstics setworld [world] <mode>         - assign (auto-loads world)
+ *
  *   /realstics <mode> setspawn
  *   /realstics <mode> setvoid [y]
  *   /realstics onewide setzshowsword <z>
  *   /realstics <mode> kit [player]
  *   /realstics <mode> sb [reload]
- *   /realstics reload
- *   /realstics creator
- *   /realstics help
  */
 public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
@@ -61,6 +64,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (sub.equals("help"))    { sendHelp(sender); return true; }
         if (sub.equals("creator")) { return handleCreator(sender); }
         if (sub.equals("worlds"))  { return handleWorlds(sender); }
+        if (sub.equals("join"))    { return handleJoin(sender, args); }
 
         if (sub.equals("reload")) {
             if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
@@ -115,8 +119,91 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
+    //  /realstics join <mode>
+    //  Teleports the player to the world assigned to that mode.
+    //  If no world is assigned yet, auto-creates one named after the mode.
+    //  The kit + scoreboard are given automatically by PlayerJoin & ScoreboardManager.
+    // ============================================================
+    private boolean handleJoin(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use /realstics join."));
+            return true;
+        }
+
+        if (!sender.hasPermission("realstics.join")) { sendNoPerm(sender); return true; }
+
+        if (args.length < 2) {
+            sender.sendMessage(colorize("&cUsage: /realstics join <mode>"));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+            return true;
+        }
+
+        GameMode mode = GameMode.fromId(args[1]);
+        if (mode == null) {
+            sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+            return true;
+        }
+
+        final Player player = (Player) sender;
+
+        // ---- Find which world is assigned to this mode ----
+        String worldName = gameModeManager.getWorldForMode(mode);
+
+        // ---- If not assigned, auto-create/load a world named after the mode ----
+        if (worldName == null) {
+            player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
+                    + "&7 has no world yet. Auto-creating..."));
+            World world = worldLoader.ensureLoaded(mode.getId());
+            if (world == null) {
+                player.sendMessage(colorize("&cCould not create world for &e" + mode.getId()));
+                return true;
+            }
+            gameModeManager.setWorldMode(mode.getId(), mode);
+            worldName = world.getName();
+        }
+
+        // ---- Load world (or fail) ----
+        World targetWorld = worldLoader.ensureLoaded(worldName);
+        if (targetWorld == null) {
+            player.sendMessage(colorize("&cWorld not available: &e" + worldName));
+            return true;
+        }
+
+        // ---- Already in that world? ----
+        if (player.getWorld().equals(targetWorld)) {
+            player.sendMessage(colorize("&7You are already in &e"
+                    + mode.getDisplayName() + "&7."));
+            return true;
+        }
+
+        // ---- Teleport ----
+        Location spawn = playerJoin.getSpawnLocation(targetWorld);
+        if (spawn == null) {
+            spawn = targetWorld.getSpawnLocation();
+        }
+
+        final World finalWorld = targetWorld;
+        player.teleport(spawn);
+
+        // Give kit after teleport (PlayerJoin also handles this on join,
+        // but we do it here too in case the player was already online).
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (player.isOnline()) {
+                    playerJoin.giveKit(player);
+                }
+            }
+        }, 3L);
+
+        player.sendMessage(colorize("&aJoined &e" + mode.getDisplayName()
+                + " &7(world: &f" + finalWorld.getName() + "&7)"));
+        return true;
+    }
+
+    // ============================================================
     //  /realstics setworld [world] <mode>
-    //  Auto-loads world if folder exists but not loaded.
     // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
@@ -155,7 +242,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ★ Auto-load the world if it's not currently loaded
+        // Auto-load the world if not loaded
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
             sender.sendMessage(colorize("&7World '&e" + worldName
@@ -364,8 +451,9 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
         sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
+        sender.sendMessage(colorize("&e/realstics join <mode> &7- Join a game mode"));
         sender.sendMessage(colorize("&e/realstics worlds &7- List loaded worlds"));
+        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
         sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
         sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
@@ -382,6 +470,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &f" + mode.getDisplayName()));
         sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&e/realstics join " + mode.getId()));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setspawn"));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setvoid [y]"));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " kit [player]"));
@@ -402,7 +491,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subs = new ArrayList<String>();
             subs.add("creator"); subs.add("help"); subs.add("worlds");
-            subs.add("reload");  subs.add("setworld");
+            subs.add("reload");  subs.add("setworld"); subs.add("join");
             subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
@@ -416,6 +505,11 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (sub.equals("setworld")) {
                 out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
                 for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                return out;
+            }
+
+            if (sub.equals("join")) {
+                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
                 return out;
             }
 

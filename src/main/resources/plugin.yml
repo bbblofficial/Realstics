@@ -6,11 +6,14 @@ description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, Bloc
 commands:
   realstics:
     description: Main Realstics command
-    usage: /realstics <mode> <subcommand>
+    usage: /realstics <join|setworld|help|...>
     aliases:
       - rs
       - rl
 permissions:
+  realstics.join:
+    description: Join a game mode world
+    default: true
   realstics.setworld:
     description: Assign a world to a mode (auto-loads if missing)
     default: op

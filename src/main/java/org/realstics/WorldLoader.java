@@ -7,15 +7,10 @@ import org.bukkit.WorldCreator;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet.
+ * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet,
+ * or creates a new one if the folder doesn't exist.
  *
- * This solves the common problem:
- *   "World not found: lowmid"  when folder exists but server didn't load it.
- *
- * Logic:
- *   1. If world already loaded          → return it
- *   2. If folder exists in server root  → load with WorldCreator
- *   3. If folder is missing             → create new world (WorldCreator)
+ * Solves: "World not found: lowmid" when folder exists but server didn't load it.
  */
 public class WorldLoader {
 
@@ -27,6 +22,9 @@ public class WorldLoader {
 
     /**
      * Ensure a world with the given name is loaded. Returns it, or null on failure.
+     * - If already loaded → return it
+     * - If folder + level.dat exist → load it
+     * - Otherwise → create a new world
      */
     public World ensureLoaded(String worldName) {
         if (worldName == null || worldName.trim().isEmpty()) return null;
@@ -35,7 +33,7 @@ public class WorldLoader {
         World existing = findLoaded(worldName);
         if (existing != null) return existing;
 
-        // 2. Does the folder exist?
+        // 2. Does the folder exist with a valid level.dat?
         File serverRoot = plugin.getServer().getWorldContainer();
         File worldFolder = new File(serverRoot, worldName);
         boolean folderExists = worldFolder.exists()
@@ -44,6 +42,7 @@ public class WorldLoader {
         try {
             WorldCreator creator = new WorldCreator(worldName);
             creator.environment(World.Environment.NORMAL);
+            creator.generateStructures(true);
 
             World world = creator.createWorld();
 

@@ -1,14 +1,15 @@
 
 #!/usr/bin/env python3
 """
-create.py — Realstics Plugin Generator (FULLY COMPLETE + FIXED)
+create.py — Realstics Plugin Generator (FULLY COMPLETE + FIXED + JOIN)
 
-FIXES:
+FIXES & FEATURES:
   1. plugin.yml goes into src/main/resources/ → Maven packs into JAR
-  2. /realstics setworld <mode>  →  auto-creates/loads the world if missing
-  3. /realstics worlds           →  lists loaded Bukkit worlds
-  4. Bukkit auto-load via WorldCreator when world folder exists but is not loaded
-  5. Safe auto-merge for every config file (values never lost)
+  2. WorldLoader auto-creates/loads worlds missing from bukkit.yml
+  3. /realstics setworld [world] <mode>  →  auto-loads world if needed
+  4. /realstics join <mode>              →  teleport player to mode world
+  5. /realstics worlds                   →  list loaded worlds + modes
+  6. Safe auto-merge for every config file (values never lost)
 
 Run:   python3 create.py
 Build: mvn clean package    (or push to GitHub)
@@ -112,11 +113,14 @@ description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, Bloc
 commands:
   realstics:
     description: Main Realstics command
-    usage: /realstics <mode> <subcommand>
+    usage: /realstics <join|setworld|help|...>
     aliases:
       - rs
       - rl
 permissions:
+  realstics.join:
+    description: Join a game mode world
+    default: true
   realstics.setworld:
     description: Assign a world to a mode (auto-loads if missing)
     default: op
@@ -268,15 +272,10 @@ import org.bukkit.WorldCreator;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet.
+ * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet,
+ * or creates a new one if the folder doesn't exist.
  *
- * This solves the common problem:
- *   "World not found: lowmid"  when folder exists but server didn't load it.
- *
- * Logic:
- *   1. If world already loaded          → return it
- *   2. If folder exists in server root  → load with WorldCreator
- *   3. If folder is missing             → create new world (WorldCreator)
+ * Solves: "World not found: lowmid" when folder exists but server didn't load it.
  */
 public class WorldLoader {
 
@@ -288,6 +287,9 @@ public class WorldLoader {
 
     /**
      * Ensure a world with the given name is loaded. Returns it, or null on failure.
+     * - If already loaded → return it
+     * - If folder + level.dat exist → load it
+     * - Otherwise → create a new world
      */
     public World ensureLoaded(String worldName) {
         if (worldName == null || worldName.trim().isEmpty()) return null;
@@ -296,7 +298,7 @@ public class WorldLoader {
         World existing = findLoaded(worldName);
         if (existing != null) return existing;
 
-        // 2. Does the folder exist?
+        // 2. Does the folder exist with a valid level.dat?
         File serverRoot = plugin.getServer().getWorldContainer();
         File worldFolder = new File(serverRoot, worldName);
         boolean folderExists = worldFolder.exists()
@@ -305,6 +307,7 @@ public class WorldLoader {
         try {
             WorldCreator creator = new WorldCreator(worldName);
             creator.environment(World.Environment.NORMAL);
+            creator.generateStructures(true);
 
             World world = creator.createWorld();
 
@@ -359,7 +362,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -423,6 +425,17 @@ public class GameModeManager {
         FileConfiguration cfg = plugin.getConfig();
         cfg.set("worlds." + worldName.toLowerCase(), mode.getId());
         plugin.saveConfig();
+    }
+
+    /**
+     * Finds the world name currently assigned to a mode, or null.
+     */
+    public String getWorldForMode(GameMode mode) {
+        if (mode == null) return null;
+        for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
+            if (entry.getValue() == mode) return entry.getKey();
+        }
+        return null;
     }
 
     public boolean isWorldConfigured(String worldName) {
@@ -1771,6 +1784,7 @@ JAVA["RealsticsCommand.java"] = r'''package org.realstics;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -1786,16 +1800,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * /realstics <subcommand>
  *
- *   /realstics worlds                        - list loaded worlds + assigned modes
- *   /realstics setworld [world] <mode>       - assign (auto-loads world if needed)
+ *   /realstics help
+ *   /realstics creator
+ *   /realstics worlds
+ *   /realstics reload
+ *   /realstics join <mode>                     - teleport player to mode world
+ *   /realstics setworld [world] <mode>         - assign (auto-loads world)
+ *
  *   /realstics <mode> setspawn
  *   /realstics <mode> setvoid [y]
  *   /realstics onewide setzshowsword <z>
  *   /realstics <mode> kit [player]
  *   /realstics <mode> sb [reload]
- *   /realstics reload
- *   /realstics creator
- *   /realstics help
  */
 public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
@@ -1830,6 +1846,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (sub.equals("help"))    { sendHelp(sender); return true; }
         if (sub.equals("creator")) { return handleCreator(sender); }
         if (sub.equals("worlds"))  { return handleWorlds(sender); }
+        if (sub.equals("join"))    { return handleJoin(sender, args); }
 
         if (sub.equals("reload")) {
             if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
@@ -1884,8 +1901,91 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
+    //  /realstics join <mode>
+    //  Teleports the player to the world assigned to that mode.
+    //  If no world is assigned yet, auto-creates one named after the mode.
+    //  The kit + scoreboard are given automatically by PlayerJoin & ScoreboardManager.
+    // ============================================================
+    private boolean handleJoin(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use /realstics join."));
+            return true;
+        }
+
+        if (!sender.hasPermission("realstics.join")) { sendNoPerm(sender); return true; }
+
+        if (args.length < 2) {
+            sender.sendMessage(colorize("&cUsage: /realstics join <mode>"));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+            return true;
+        }
+
+        GameMode mode = GameMode.fromId(args[1]);
+        if (mode == null) {
+            sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
+            sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+            return true;
+        }
+
+        final Player player = (Player) sender;
+
+        // ---- Find which world is assigned to this mode ----
+        String worldName = gameModeManager.getWorldForMode(mode);
+
+        // ---- If not assigned, auto-create/load a world named after the mode ----
+        if (worldName == null) {
+            player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
+                    + "&7 has no world yet. Auto-creating..."));
+            World world = worldLoader.ensureLoaded(mode.getId());
+            if (world == null) {
+                player.sendMessage(colorize("&cCould not create world for &e" + mode.getId()));
+                return true;
+            }
+            gameModeManager.setWorldMode(mode.getId(), mode);
+            worldName = world.getName();
+        }
+
+        // ---- Load world (or fail) ----
+        World targetWorld = worldLoader.ensureLoaded(worldName);
+        if (targetWorld == null) {
+            player.sendMessage(colorize("&cWorld not available: &e" + worldName));
+            return true;
+        }
+
+        // ---- Already in that world? ----
+        if (player.getWorld().equals(targetWorld)) {
+            player.sendMessage(colorize("&7You are already in &e"
+                    + mode.getDisplayName() + "&7."));
+            return true;
+        }
+
+        // ---- Teleport ----
+        Location spawn = playerJoin.getSpawnLocation(targetWorld);
+        if (spawn == null) {
+            spawn = targetWorld.getSpawnLocation();
+        }
+
+        final World finalWorld = targetWorld;
+        player.teleport(spawn);
+
+        // Give kit after teleport (PlayerJoin also handles this on join,
+        // but we do it here too in case the player was already online).
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (player.isOnline()) {
+                    playerJoin.giveKit(player);
+                }
+            }
+        }, 3L);
+
+        player.sendMessage(colorize("&aJoined &e" + mode.getDisplayName()
+                + " &7(world: &f" + finalWorld.getName() + "&7)"));
+        return true;
+    }
+
+    // ============================================================
     //  /realstics setworld [world] <mode>
-    //  Auto-loads world if folder exists but not loaded.
     // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
@@ -1924,7 +2024,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ★ Auto-load the world if it's not currently loaded
+        // Auto-load the world if not loaded
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
             sender.sendMessage(colorize("&7World '&e" + worldName
@@ -2133,8 +2233,9 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
         sender.sendMessage(colorize("&8&m----------------------------------"));
-        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
+        sender.sendMessage(colorize("&e/realstics join <mode> &7- Join a game mode"));
         sender.sendMessage(colorize("&e/realstics worlds &7- List loaded worlds"));
+        sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
         sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
         sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
@@ -2151,6 +2252,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &f" + mode.getDisplayName()));
         sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&e/realstics join " + mode.getId()));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setspawn"));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " setvoid [y]"));
         sender.sendMessage(colorize("&e/realstics " + mode.getId() + " kit [player]"));
@@ -2171,7 +2273,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subs = new ArrayList<String>();
             subs.add("creator"); subs.add("help"); subs.add("worlds");
-            subs.add("reload");  subs.add("setworld");
+            subs.add("reload");  subs.add("setworld"); subs.add("join");
             subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
@@ -2185,6 +2287,11 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             if (sub.equals("setworld")) {
                 out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
                 for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                return out;
+            }
+
+            if (sub.equals("join")) {
+                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
                 return out;
             }
 
@@ -2485,6 +2592,7 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 
 - 4 game modes in one JAR: **Platform, LowMid, OneWide, BlockFight**
 - **Auto-loads worlds** — no need to edit bukkit.yml
+- **`/realstics join <mode>`** — players teleport with one command
 - PvP with no HP loss (knockback works)
 - No fall damage, infinite food
 - Per-mode kits, configs, scoreboards
@@ -2493,7 +2601,8 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 ## Commands
 
 ```
-/realstics worlds                       - List loaded worlds + assigned modes
+/realstics join <mode>                  - Join a game mode (teleport + kit)
+/realstics worlds                       - List loaded worlds + modes
 /realstics setworld [world] <mode>      - Assign world (auto-loads if needed)
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
@@ -2510,22 +2619,43 @@ Aliases: `/rs`, `/rl`
 ## Quick Setup
 
 ```
-# In-game, standing in a world:
+# Admin — in-game, first time only:
 /realstics setworld onewide
 /realstics onewide setspawn
 /realstics onewide setvoid -13
 
-# Or with explicit world:
-/realstics setworld world_nether lowmid
+# Player — join any mode:
+/realstics join onewide
+/realstics join lowmid
+/realstics join blockfight
+/realstics join platform
 ```
 
-The plugin will auto-load the world if it exists in the server folder.
+The plugin will auto-load the world if it exists in the server folder,
+or create a new one named after the mode.
+
+## Permissions
+
+| Permission | Default | Description |
+|---|---|---|
+| `realstics.join` | true | Join a mode with /realstics join |
+| `realstics.setworld` | op | Assign a world to a mode |
+| `realstics.setspawn` | op | Set spawn for a mode |
+| `realstics.setvoid` | op | Set void Y |
+| `realstics.reload` | op | Reload configs |
+| `realstics.scoreboard` | true | Toggle scoreboard |
+| `realstics.bypass` | op | Bypass all protection |
+| `realstics.break` | false | Break blocks |
+| `realstics.place` | false | Place blocks |
+| `realstics.drop` | false | Drop items |
 
 ## Building
 
 ```bash
 mvn clean package
 ```
+
+Output: `target/Realstics.jar`
 
 Or push to GitHub — Actions builds automatically.
 
@@ -2545,7 +2675,7 @@ def write_file(rel_path, content):
     print("  + " + rel_path)
 
 def main():
-    print("Realstics plugin generator (FULLY COMPLETE)")
+    print("Realstics plugin generator (FULLY COMPLETE + JOIN)")
     print("=" * 60)
 
     print("\n[1/5] Creating directories...")
@@ -2573,16 +2703,17 @@ def main():
     print("\n" + "=" * 60)
     print("Done! Realstics plugin generated.")
     print("")
-    print("Next steps:")
-    print("  1) mvn clean package   (or push to GitHub)")
-    print("  2) Copy target/Realstics.jar → plugins/")
-    print("  3) Restart server")
-    print("  4) In-game: /realstics worlds")
-    print("  5) In-game: /realstics setworld onewide")
-    print("     (auto-loads the world)")
+    print("Commands now available:")
+    print("  /realstics join <mode>      ← teleport + kit")
+    print("  /realstics worlds           ← list loaded worlds")
+    print("  /realstics setworld <mode>  ← auto-loads world")
+    print("  /realstics <mode> setspawn")
+    print("  /realstics <mode> setvoid [y]")
+    print("  /realstics help")
     print("")
-    print("Verify plugin.yml is inside the JAR:")
-    print("  jar tf target/Realstics.jar | findstr plugin.yml")
+    print("Build:")
+    print("  mvn clean package   (or push to GitHub)")
+    print("")
 
 if __name__ == "__main__":
     main()
