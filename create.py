@@ -14,6 +14,7 @@ FEATURES:
   8. BlockFight: broken wool drops NOTHING
   9. Auto-fill EMPTY combo message on load (1.8.8 compatible)
  10. Aqua + White theme by default in ALL configs
+ 11. Platform & OneWide: PvP zone via /realstics <mode> setpvpzone <z>
 
 Run:   python3 create.py
 Build: mvn clean package
@@ -133,6 +134,9 @@ permissions:
     default: op
   realstics.setzshowsword:
     description: Set OneWide Z threshold for showing sword
+    default: op
+  realstics.setpvpzone:
+    description: Set the PvP zone for a mode (Platform/OneWide)
     default: op
   realstics.reload:
     description: Reload the config
@@ -272,10 +276,6 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet,
- * or creates a new one if the folder doesn't exist.
- */
 public class WorldLoader {
 
     private final JavaPlugin plugin;
@@ -597,7 +597,8 @@ public final class Realstics extends JavaPlugin {
 
         this.playerJoin = new PlayerJoin(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.playerJoin, this);
-        getServer().getPluginManager().registerEvents(new NoDamage(this), this);
+        getServer().getPluginManager().registerEvents(
+                new NoDamage(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(
                 new Protection(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(new KitRestore(this, this.playerJoin), this);
@@ -632,9 +633,6 @@ public final class Realstics extends JavaPlugin {
         getLogger().info("Realstics disabled.");
     }
 
-    // ============================================================
-    //  DEFAULT config.yml AUTO-MERGE
-    // ============================================================
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
         boolean isNew = !configFile.exists();
@@ -657,7 +655,6 @@ public final class Realstics extends JavaPlugin {
             cfg.setDefaults(defaults);
         }
 
-        // ---- spawn ----
         setIfMissing(cfg, "spawn.world", "world");
         setIfMissing(cfg, "spawn.x", Double.valueOf(0.5D));
         setIfMissing(cfg, "spawn.y", Double.valueOf(100.0D));
@@ -665,16 +662,13 @@ public final class Realstics extends JavaPlugin {
         setIfMissing(cfg, "spawn.yaw", Float.valueOf(0.0F));
         setIfMissing(cfg, "spawn.pitch", Float.valueOf(0.0F));
 
-        // ---- void ----
         setIfMissing(cfg, "void.kill-height", Double.valueOf(-13.0D));
 
-        // ---- messages (Aqua + White) ----
         setIfMissingOrEmpty(cfg, "join-message",
                 "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
         setIfMissingOrEmpty(cfg, "quit-message",
                 "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
-        // ---- combo ----
         setIfMissing(cfg, "combo.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "combo.step", Integer.valueOf(10));
         setIfMissing(cfg, "combo.reset-time", Long.valueOf(3000L));
@@ -687,10 +681,12 @@ public final class Realstics extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
-        // ---- scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
-        // ---- worlds ----
+        // ---- pvp zone (Platform only, global default) ----
+        setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
+        setIfMissing(cfg, "pvpzone.z", Double.valueOf(0.0D));
+
         setIfMissing(cfg, "worlds.world", "platform");
 
         try {
@@ -706,10 +702,6 @@ public final class Realstics extends JavaPlugin {
         }
     }
 
-    /**
-     * Set value only if the key is missing OR the value is empty.
-     * Useful for auto-fixing empty messages after upgrades.
-     */
     private void setIfMissingOrEmpty(FileConfiguration cfg, String path, Object defaultValue) {
         if (!cfg.contains(path)) {
             cfg.set(path, defaultValue);
@@ -762,7 +754,7 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680; // 0xFF0000
+    private static final int LEATHER_COLOR = 16711680;
     private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
@@ -934,6 +926,9 @@ public class PlayerJoin implements Listener {
 
 JAVA["NoDamage.java"] = r'''package org.realstics;
 
+import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -943,15 +938,56 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Cosmetic PvP rules + PvP-zone enforcement.
+ *
+ * All modes:
+ *   - HP never drops (damage set to 0)
+ *   - Fall damage off
+ *   - Infinite food
+ *
+ * Platform / OneWide:
+ *   - PvP is only allowed when the attacker's Z >= pvpzone.z
+ *   - Outside the zone, hits are cancelled entirely
+ *
+ * LowMid / BlockFight:
+ *   - PvP always allowed (no zone check)
+ */
 public class NoDamage implements Listener {
 
     @SuppressWarnings("unused")
     private final JavaPlugin plugin;
+    private final GameModeManager gameModeManager;
 
-    public NoDamage(JavaPlugin plugin) {
+    public NoDamage(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
+        this.gameModeManager = gameModeManager;
     }
 
+    // ============================================================
+    //  Zone check
+    // ============================================================
+    private boolean isInPvpZone(Player attacker) {
+        World world = attacker.getWorld();
+        GameMode mode = gameModeManager.getModeForWorld(world);
+
+        // LowMid & BlockFight — always allow PvP
+        if (mode == GameMode.LOWMID || mode == GameMode.BLOCKFIGHT) {
+            return true;
+        }
+
+        // Platform / OneWide — read zone from config
+        FileConfiguration cfg = gameModeManager.getConfig(mode);
+        boolean enabled = cfg.getBoolean("pvpzone.enabled", true);
+        if (!enabled) return true;
+
+        double zoneZ = cfg.getDouble("pvpzone.z", 0.0);
+        return attacker.getLocation().getZ() >= zoneZ;
+    }
+
+    // ============================================================
+    //  Main damage event
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAnyDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -960,14 +996,39 @@ public class NoDamage implements Listener {
         event.setDamage(0);
     }
 
+    // ============================================================
+    //  PvP damage — zone-aware
+    // ============================================================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
-        if (!event.isCancelled()) {
+
+        // Non-player attacker → zero damage, no zone check
+        if (!(event.getDamager() instanceof Player)) {
+            if (!event.isCancelled()) {
+                event.setDamage(0);
+            }
+            return;
+        }
+
+        Player attacker = (Player) event.getDamager();
+
+        if (isInPvpZone(attacker)) {
+            // Normal PvP behavior — keep knockback, zero damage
+            if (!event.isCancelled()) {
+                event.setDamage(0);
+            }
+        } else {
+            // Outside PvP zone — cancel entirely
+            event.setCancelled(true);
             event.setDamage(0);
+            attacker.sendMessage(colorize("&bYou must enter the PvP zone first!"));
         }
     }
 
+    // ============================================================
+    //  Fall damage
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -977,6 +1038,9 @@ public class NoDamage implements Listener {
         }
     }
 
+    // ============================================================
+    //  Infinite food
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFoodChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -987,6 +1051,10 @@ public class NoDamage implements Listener {
             player.setSaturation(20.0F);
             player.setExhaustion(0.0F);
         }
+    }
+
+    private String colorize(String message) {
+        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }
 '''
@@ -1011,14 +1079,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Protection rules for Realstics (Spigot 1.8.8 compatible).
- *
- * BlockFight:
- *   - Only PLAYER-PLACED LIGHT BLUE wool (data=3) is breakable
- *   - Broken wool does NOT drop, does NOT go to inventory
- *   - Light blue wool is infinite (always stays at 64)
- */
 public class Protection implements Listener {
 
     @SuppressWarnings("unused")
@@ -1490,7 +1550,6 @@ public class ComboSystem implements Listener {
         this.comboStep      = config.getInt("combo.step", 10);
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
 
-        // Read message — fallback if missing / null / empty
         String msg = config.getString("combo.broadcast-message", null);
         if (msg == null || msg.trim().isEmpty()) {
             msg = DEFAULT_MESSAGE;
@@ -1502,7 +1561,6 @@ public class ComboSystem implements Listener {
         if (this.comboStep < 1) this.comboStep = 10;
         if (this.comboResetTime < 500L) this.comboResetTime = 3000L;
 
-        // Convert literal "\n" from YAML into real newlines
         if (this.broadcastMessage != null) {
             this.broadcastMessage = this.broadcastMessage.replace("\\n", "\n");
         }
@@ -1984,6 +2042,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (action.equals("setspawn"))      return handleSetSpawn(sender, mode);
         if (action.equals("setvoid"))       return handleSetVoid(sender, mode, args);
         if (action.equals("setzshowsword")) return handleSetZShowSword(sender, mode, args);
+        if (action.equals("setpvpzone"))    return handleSetPvpZone(sender, mode, args);
         if (action.equals("kit"))           return handleKit(sender, mode, args);
         if (action.equals("sb") || action.equals("scoreboard"))
                                             return handleScoreboard(sender, mode, args);
@@ -2231,6 +2290,45 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    // ============================================================
+    //  /realstics <mode> setpvpzone [z]
+    //  PvP is allowed only when the player's Z >= zone.
+    //  Supported: Platform, OneWide
+    // ============================================================
+    private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
+        if (!sender.hasPermission("realstics.setpvpzone")) { sendNoPerm(sender); return true; }
+
+        if (mode != GameMode.PLATFORM && mode != GameMode.ONEWIDE) {
+            sender.sendMessage(colorize("&csetpvpzone is only for Platform and OneWide modes."));
+            return true;
+        }
+
+        double z;
+        if (args.length >= 3) {
+            try {
+                z = Double.parseDouble(args[2]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(colorize("&cInvalid number: &e" + args[2]));
+                return true;
+            }
+        } else {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(colorize("&cUsage: /realstics " + mode.getId() + " setpvpzone <z>"));
+                return true;
+            }
+            z = ((Player) sender).getLocation().getZ();
+        }
+
+        FileConfiguration cfg = gameModeManager.getConfig(mode);
+        cfg.set("pvpzone.enabled", Boolean.valueOf(true));
+        cfg.set("pvpzone.z", Double.valueOf(z));
+        gameModeManager.saveModeConfig(mode);
+
+        sender.sendMessage(colorize("&b[" + mode.getDisplayName()
+                + "] &fPvP zone set — PvP enabled from Z &b" + z + "&f."));
+        return true;
+    }
+
     private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.kit")) { sendNoPerm(sender); return true; }
 
@@ -2307,6 +2405,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&b/realstics <mode> setspawn &f- Set spawn"));
         sender.sendMessage(colorize("&b/realstics <mode> setvoid [y] &f- Set void Y"));
+        sender.sendMessage(colorize("&b/realstics <mode> setpvpzone <z> &f- Set PvP zone"));
         sender.sendMessage(colorize("&b/realstics <mode> kit [player] &f- Give kit"));
         sender.sendMessage(colorize("&b/realstics <mode> sb &f- Toggle scoreboard"));
         sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z> &f- OneWide only"));
@@ -2320,6 +2419,9 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b/realstics join " + mode.getId()));
         sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setspawn"));
         sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setvoid [y]"));
+        if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) {
+            sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setpvpzone <z>"));
+        }
         sender.sendMessage(colorize("&b/realstics " + mode.getId() + " kit [player]"));
         sender.sendMessage(colorize("&b/realstics " + mode.getId() + " sb [reload]"));
         if (mode == GameMode.ONEWIDE) {
@@ -2363,6 +2465,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
                 actions.add("setspawn"); actions.add("setvoid");
                 actions.add("kit");      actions.add("sb");
                 if (mode == GameMode.ONEWIDE) actions.add("setzshowsword");
+                if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) actions.add("setpvpzone");
 
                 String partial = args[1].toLowerCase();
                 for (String s : actions) if (s.startsWith(partial)) out.add(s);
@@ -2456,6 +2559,15 @@ scoreboard:
 # ----------------------------------------------------------
 join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
 quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
+
+# ----------------------------------------------------------
+#  PvP Zone (Platform only)
+#  PvP is enabled only when the attacker's Z >= pvpzone.z
+#  Set with: /realstics platform setpvpzone [z]
+# ----------------------------------------------------------
+pvpzone:
+  enabled: true
+  z: 0.0
 
 # ----------------------------------------------------------
 #  World -> Game Mode mapping
@@ -2579,7 +2691,15 @@ spawn:
 void:
   kill-height: -13.0
 
+# Z threshold from which the sword becomes visible
 zshowsword: 0.0
+
+# PvP Zone (OneWide only)
+# PvP is enabled only when the attacker's Z >= pvpzone.z
+# Set with: /realstics onewide setpvpzone [z]
+pvpzone:
+  enabled: true
+  z: 0.0
 '''
 
 RESOURCES["sb-onewide.yml"] = r'''# ==========================================================
@@ -2695,12 +2815,12 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 
 ## Game Modes
 
-| Mode | Status | Description |
-|------|--------|-------------|
-| **Platform** | Default / enabled | Leather + Iron armor (Prot III), Wooden Sword (Sharp I) |
-| **LowMid** | Must be set up | Wooden Sword only (Sharp I) |
-| **OneWide** | Must be set up | Iron Sword, hidden in spawn zone |
-| **BlockFight** | Must be set up | Diamond Sword (Sharp IV), 64 Light Blue Wool (infinite), Shears |
+| Mode | Status | PvP Zone | Description |
+|------|--------|----------|-------------|
+| **Platform** | Default | ✅ Yes | Leather + Iron armor, Wooden Sword (Sharp I) |
+| **LowMid** | Must be set up | ❌ Always on | Wooden Sword only (Sharp I) |
+| **OneWide** | Must be set up | ✅ Yes | Iron Sword, hidden in spawn zone |
+| **BlockFight** | Must be set up | ❌ Always on | Diamond Sword (Sharp IV), Light Blue Wool (infinite), Shears |
 
 ## Features
 
@@ -2709,9 +2829,9 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 - PvP with no HP loss (knockback works)
 - No fall damage, infinite food
 - **BlockFight**: only light-blue wool breakable, no drop, infinite
+- **PvP Zone** in Platform & OneWide — PvP only beyond Z threshold
 - **Aqua + White theme** in all configs by default
 - Auto-fills empty messages on plugin update
-- Per-mode kits, configs, scoreboards
 
 ## Commands
 
@@ -2721,6 +2841,7 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 /realstics setworld [world] <mode>      - Assign world
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
+/realstics <mode> setpvpzone [z]        - Platform/OneWide only
 /realstics <mode> kit [player]
 /realstics <mode> sb [reload]
 /realstics onewide setzshowsword <z>
@@ -2729,20 +2850,21 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 /realstics help
 ```
 
-Aliases: `/rs`, `/rl`
+## PvP Zone
 
-## Quick Setup
+In **Platform** and **OneWide**, PvP is only enabled once the player's Z >= the configured threshold:
 
 ```
-# Admin — first time
-/realstics setworld onewide
-/realstics onewide setspawn
+/realstics platform setpvpzone -50
+/realstics onewide setpvpzone 100
+```
 
-# Player — join any mode
-/realstics join onewide
-/realstics join lowmid
-/realstics join blockfight
-/realstics join platform
+Before the threshold, hits are cancelled with the message: *"You must enter the PvP zone first!"*
+
+Disable with:
+```yaml
+pvpzone:
+  enabled: false
 ```
 
 ## Building
@@ -2750,8 +2872,6 @@ Aliases: `/rs`, `/rl`
 ```bash
 mvn clean package
 ```
-
-Output: `target/Realstics.jar`
 
 Or push to GitHub — Actions builds automatically.
 
@@ -2771,7 +2891,7 @@ def write_file(rel_path, content):
     print("  + " + rel_path)
 
 def main():
-    print("Realstics plugin generator (FULLY COMPLETE)")
+    print("Realstics plugin generator (FULLY COMPLETE + PvP Zone)")
     print("=" * 60)
 
     print("\n[1/5] Creating directories...")
@@ -2799,8 +2919,8 @@ def main():
     print("\n" + "=" * 60)
     print("Done! Realstics plugin generated.")
     print("")
-    print("Theme: Aqua + White (default)")
-    print("Empty combo message auto-fill: ENABLED")
+    print("Theme: Aqua + White")
+    print("PvP Zone: Platform & OneWide")
     print("BlockFight: light-blue wool only, infinite, no drop")
     print("")
     print("Build: mvn clean package")
