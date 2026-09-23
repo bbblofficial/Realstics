@@ -27,9 +27,9 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  * Special rules (BlockFight):
  *   - Only PLAYER-PLACED LIGHT BLUE wool (data=3) is breakable
- *   - All other wool colors are protected (even if placed by players)
+ *   - All other wool colors are protected
  *   - Light blue wool is infinite (always stays at 64)
- *   - Broken light blue wool does NOT drop
+ *   - Broken light blue wool drops NOTHING (cleared next tick)
  */
 public class Protection implements Listener {
 
@@ -68,14 +68,12 @@ public class Protection implements Listener {
                 + ":" + block.getZ();
     }
 
-    /** True if the block is light-blue wool (data = 3). */
     @SuppressWarnings("deprecation")
     private boolean isLightBlueWool(Block block) {
         if (block.getType() != Material.WOOL) return false;
         return block.getData() == LIGHT_BLUE_DATA;
     }
 
-    /** True if the item is light-blue wool. */
     @SuppressWarnings("deprecation")
     private boolean isLightBlueWoolItem(ItemStack item) {
         if (item == null) return false;
@@ -85,14 +83,11 @@ public class Protection implements Listener {
 
     // ============================================================
     //  BREAK
-    //  - Bypass / realstics.break                    → allow
-    //  - BlockFight + PLAYER-PLACED light blue wool  → allow + no drop
-    //  - Everything else                             → cancel
     // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(final BlockBreakEvent event) {
         Player player = event.getPlayer();
-        Block block = event.getBlock();
+        final Block block = event.getBlock();
 
         if (hasBypass(player)) return;
         if (player.hasPermission(PERM_BREAK)) return;
@@ -103,29 +98,33 @@ public class Protection implements Listener {
             String key = locKey(block);
 
             if (playerPlacedWool.contains(key)) {
-                // Allow break — no drop, no XP
-                event.setDropItems(false);
-                event.setExpToDrop(0);
+                // Allow break
                 playerPlacedWool.remove(key);
+
+                // Clear drops next tick (1.8.8 doesn't support setDropItems)
+                Bukkit.getScheduler().scheduleSyncDelayedTask(
+                        this.plugin, new Runnable() {
+                            @Override
+                            public void run() {
+                                block.setType(Material.AIR);
+                            }
+                        }, 0L);
                 return;
             }
 
-            // Light blue wool from the map → protect
+            // Map light blue wool → protect
             event.setCancelled(true);
             player.sendMessage(colorize("&cYou can only break light blue wool placed by players!"));
             return;
         }
 
-        // Any other block (other wool colors, stone, wood, etc.) → protect
+        // Any other block → protect
         event.setCancelled(true);
         player.sendMessage(colorize("&cYou can only break light blue wool!"));
     }
 
     // ============================================================
     //  PLACE
-    //  - Bypass / realstics.place    → allow
-    //  - Any wool (any mode)         → allow (only light blue is tracked)
-    //  - Everything else             → cancel
     // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
@@ -136,13 +135,10 @@ public class Protection implements Listener {
 
         Material type = event.getBlock().getType();
 
-        // Any wool is placeable
         if (type == Material.WOOL) {
             if (isBlockFight(world) && isLightBlueWool(event.getBlock())) {
-                // Track only LIGHT BLUE wool as breakable
                 playerPlacedWool.add(locKey(event.getBlock()));
 
-                // Refill light blue wool to 64 next tick
                 Bukkit.getScheduler().scheduleSyncDelayedTask(
                         this.plugin, new Runnable() {
                             @Override
@@ -174,7 +170,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  WOOL REFILL (BlockFight) — only light blue wool
+    //  WOOL REFILL
     // ============================================================
     private void refillWool(Player player) {
         if (player == null || !player.isOnline()) return;
@@ -193,8 +189,7 @@ public class Protection implements Listener {
             }
         }
 
-        // No light blue wool found — give a fresh stack to slot 1
-        inv.setItem(1, new ItemStack(Material.WOOL, 64, (short) 3));
+        inv.setItem(1, new ItemStack(Material.WOOL, 64, LIGHT_BLUE_DATA));
         player.updateInventory();
     }
 
