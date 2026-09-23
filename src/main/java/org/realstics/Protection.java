@@ -19,17 +19,12 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Protection rules:
- *   - Cannot break map blocks   (realstics.break)
- *   - Cannot place blocks       (realstics.place)
- *   - Cannot drop items         (realstics.drop)
- *   - realstics.bypass bypasses all
+ * Protection for Realstics (Spigot 1.8.8 compatible).
  *
- * Special rules (BlockFight):
+ * BlockFight:
  *   - Only PLAYER-PLACED LIGHT BLUE wool (data=3) is breakable
- *   - All other wool colors are protected
+ *   - Broken wool does NOT drop, does NOT go to inventory
  *   - Light blue wool is infinite (always stays at 64)
- *   - Broken light blue wool drops NOTHING (cleared next tick)
  */
 public class Protection implements Listener {
 
@@ -37,10 +32,8 @@ public class Protection implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    /** Locations of light-blue wool blocks placed by players. */
     private final Set<String> playerPlacedWool = new HashSet<String>();
 
-    /** Minecraft 1.8 wool color data value for LIGHT BLUE. */
     private static final byte LIGHT_BLUE_DATA = 3;
 
     private static final String PERM_BYPASS = "realstics.bypass";
@@ -83,10 +76,13 @@ public class Protection implements Listener {
 
     // ============================================================
     //  BREAK
+    //  - Cancel the event (prevents drops entirely)
+    //  - Remove the block manually with setType(AIR)
+    //  - This way: no drop on ground, no item to inventory
     // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(final BlockBreakEvent event) {
-        Player player = event.getPlayer();
+    public void onBlockBreak(BlockBreakEvent event) {
+        final Player player = event.getPlayer();
         final Block block = event.getBlock();
 
         if (hasBypass(player)) return;
@@ -98,17 +94,22 @@ public class Protection implements Listener {
             String key = locKey(block);
 
             if (playerPlacedWool.contains(key)) {
-                // Allow break
+                // 1) Cancel the default break (no drop, no XP)
+                event.setCancelled(true);
+
+                // 2) Manually remove the block — no item spawns anywhere
+                block.setType(Material.AIR);
+
                 playerPlacedWool.remove(key);
 
-                // Clear drops next tick (1.8.8 doesn't support setDropItems)
+                // 3) Safety: make sure player still has 64 light blue wool
                 Bukkit.getScheduler().scheduleSyncDelayedTask(
                         this.plugin, new Runnable() {
                             @Override
                             public void run() {
-                                block.setType(Material.AIR);
+                                refillWool(player);
                             }
-                        }, 0L);
+                        }, 1L);
                 return;
             }
 
@@ -171,6 +172,7 @@ public class Protection implements Listener {
 
     // ============================================================
     //  WOOL REFILL
+    //  Keeps light blue wool at exactly 64 always.
     // ============================================================
     private void refillWool(Player player) {
         if (player == null || !player.isOnline()) return;
