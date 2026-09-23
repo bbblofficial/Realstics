@@ -36,9 +36,6 @@ public class GameModeManager {
         loadWorldMappings();
     }
 
-    // ============================================================
-    //  WORLD MAPPINGS
-    // ============================================================
     public void loadWorldMappings() {
         worldModes.clear();
         FileConfiguration cfg = plugin.getConfig();
@@ -72,9 +69,6 @@ public class GameModeManager {
         plugin.saveConfig();
     }
 
-    /**
-     * Finds the world name currently assigned to a mode, or null.
-     */
     public String getWorldForMode(GameMode mode) {
         if (mode == null) return null;
         for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
@@ -91,9 +85,6 @@ public class GameModeManager {
         return worldModes;
     }
 
-    // ============================================================
-    //  MODE CONFIG FILES (auto-merge)
-    // ============================================================
     private void ensureModeConfig(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getConfigFile());
         boolean isNew = !file.exists();

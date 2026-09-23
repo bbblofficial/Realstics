@@ -44,7 +44,8 @@ public final class Realstics extends JavaPlugin {
         this.playerJoin = new PlayerJoin(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.playerJoin, this);
         getServer().getPluginManager().registerEvents(new NoDamage(this), this);
-        getServer().getPluginManager().registerEvents(new Protection(this), this);
+        getServer().getPluginManager().registerEvents(
+                new Protection(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(new KitRestore(this, this.playerJoin), this);
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
@@ -77,9 +78,6 @@ public final class Realstics extends JavaPlugin {
         getLogger().info("Realstics disabled.");
     }
 
-    // ============================================================
-    //  DEFAULT config.yml AUTO-MERGE
-    // ============================================================
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
         boolean isNew = !configFile.exists();

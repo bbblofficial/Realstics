@@ -1,15 +1,16 @@
 
 #!/usr/bin/env python3
 """
-create.py — Realstics Plugin Generator (FULLY COMPLETE + FIXED + JOIN)
+create.py — Realstics Plugin Generator (FULLY COMPLETE + ALL FIXES)
 
-FIXES & FEATURES:
+FEATURES:
   1. plugin.yml goes into src/main/resources/ → Maven packs into JAR
-  2. WorldLoader auto-creates/loads worlds missing from bukkit.yml
-  3. /realstics setworld [world] <mode>  →  auto-loads world if needed
-  4. /realstics join <mode>              →  teleport player to mode world
-  5. /realstics worlds                   →  list loaded worlds + modes
-  6. Safe auto-merge for every config file (values never lost)
+  2. WorldLoader auto-creates/loads missing worlds
+  3. /realstics setworld [world] <mode>  → auto-loads world
+  4. /realstics join <mode>              → teleport player + kit + scoreboard
+  5. /realstics worlds                   → list loaded worlds
+  6. Protection: BlockFight wool can be placed AND broken
+  7. Safe auto-merge for every config
 
 Run:   python3 create.py
 Build: mvn clean package    (or push to GitHub)
@@ -274,8 +275,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet,
  * or creates a new one if the folder doesn't exist.
- *
- * Solves: "World not found: lowmid" when folder exists but server didn't load it.
  */
 public class WorldLoader {
 
@@ -285,20 +284,12 @@ public class WorldLoader {
         this.plugin = plugin;
     }
 
-    /**
-     * Ensure a world with the given name is loaded. Returns it, or null on failure.
-     * - If already loaded → return it
-     * - If folder + level.dat exist → load it
-     * - Otherwise → create a new world
-     */
     public World ensureLoaded(String worldName) {
         if (worldName == null || worldName.trim().isEmpty()) return null;
 
-        // 1. Already loaded?
         World existing = findLoaded(worldName);
         if (existing != null) return existing;
 
-        // 2. Does the folder exist with a valid level.dat?
         File serverRoot = plugin.getServer().getWorldContainer();
         File worldFolder = new File(serverRoot, worldName);
         boolean folderExists = worldFolder.exists()
@@ -327,9 +318,6 @@ public class WorldLoader {
         return null;
     }
 
-    /**
-     * Case-insensitive lookup of a loaded world.
-     */
     public World findLoaded(String worldName) {
         if (worldName == null) return null;
         String target = worldName.trim().toLowerCase();
@@ -339,9 +327,6 @@ public class WorldLoader {
         return null;
     }
 
-    /**
-     * Comma-separated list of loaded world names.
-     */
     public String listLoadedWorldNames() {
         StringBuilder sb = new StringBuilder();
         for (World w : Bukkit.getWorlds()) {
@@ -391,9 +376,6 @@ public class GameModeManager {
         loadWorldMappings();
     }
 
-    // ============================================================
-    //  WORLD MAPPINGS
-    // ============================================================
     public void loadWorldMappings() {
         worldModes.clear();
         FileConfiguration cfg = plugin.getConfig();
@@ -427,9 +409,6 @@ public class GameModeManager {
         plugin.saveConfig();
     }
 
-    /**
-     * Finds the world name currently assigned to a mode, or null.
-     */
     public String getWorldForMode(GameMode mode) {
         if (mode == null) return null;
         for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
@@ -446,9 +425,6 @@ public class GameModeManager {
         return worldModes;
     }
 
-    // ============================================================
-    //  MODE CONFIG FILES (auto-merge)
-    // ============================================================
     private void ensureModeConfig(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getConfigFile());
         boolean isNew = !file.exists();
@@ -623,7 +599,8 @@ public final class Realstics extends JavaPlugin {
         this.playerJoin = new PlayerJoin(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.playerJoin, this);
         getServer().getPluginManager().registerEvents(new NoDamage(this), this);
-        getServer().getPluginManager().registerEvents(new Protection(this), this);
+        getServer().getPluginManager().registerEvents(
+                new Protection(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(new KitRestore(this, this.playerJoin), this);
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
@@ -656,9 +633,6 @@ public final class Realstics extends JavaPlugin {
         getLogger().info("Realstics disabled.");
     }
 
-    // ============================================================
-    //  DEFAULT config.yml AUTO-MERGE
-    // ============================================================
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
         boolean isNew = !configFile.exists();
@@ -753,7 +727,7 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680; // 0xFF0000
+    private static final int LEATHER_COLOR = 16711680;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -982,6 +956,8 @@ JAVA["Protection.java"] = r'''package org.realstics;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -991,39 +967,78 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Protection rules:
+ *   - Cannot break map blocks   (realstics.break)
+ *   - Cannot place blocks       (realstics.place)
+ *   - Cannot drop items         (realstics.drop)
+ *   - realstics.bypass bypasses all
+ *
+ * Special rules:
+ *   - BlockFight mode: wool can be placed AND broken by anyone
+ *   - All other modes: wool can be placed but NOT broken
+ */
 public class Protection implements Listener {
 
     @SuppressWarnings("unused")
     private final JavaPlugin plugin;
+    private final GameModeManager gameModeManager;
 
     private static final String PERM_BYPASS = "realstics.bypass";
     private static final String PERM_BREAK  = "realstics.break";
     private static final String PERM_PLACE  = "realstics.place";
     private static final String PERM_DROP   = "realstics.drop";
 
-    public Protection(JavaPlugin plugin) {
+    public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
+        this.gameModeManager = gameModeManager;
     }
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
     }
 
+    private boolean isBlockFight(World world) {
+        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
+    }
+
+    // ============================================================
+    //  BREAK
+    //  - Bypass / realstics.break     → allow
+    //  - BlockFight + block is WOOL   → allow
+    //  - Everything else              → cancel
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
+        Block block = event.getBlock();
+
         if (hasBypass(player)) return;
         if (player.hasPermission(PERM_BREAK)) return;
+
+        // BlockFight exception: wool is breakable
+        if (isBlockFight(block.getWorld())
+                && block.getType() == Material.WOOL) {
+            return;
+        }
 
         event.setCancelled(true);
         player.sendMessage(colorize("&cYou cannot break blocks here!"));
     }
 
+    // ============================================================
+    //  PLACE
+    //  - Bypass / realstics.place → allow
+    //  - WOOL (any mode)          → allow
+    //  - Everything else          → cancel
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
+
         if (hasBypass(player)) return;
 
+        // Wool is always placeable (all modes)
         Material type = event.getBlock().getType();
         if (type == Material.WOOL) return;
 
@@ -1033,6 +1048,9 @@ public class Protection implements Listener {
         player.sendMessage(colorize("&cYou cannot place blocks here!"));
     }
 
+    // ============================================================
+    //  DROP
+    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
@@ -1784,7 +1802,6 @@ JAVA["RealsticsCommand.java"] = r'''package org.realstics;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -1797,22 +1814,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * /realstics <subcommand>
- *
- *   /realstics help
- *   /realstics creator
- *   /realstics worlds
- *   /realstics reload
- *   /realstics join <mode>                     - teleport player to mode world
- *   /realstics setworld [world] <mode>         - assign (auto-loads world)
- *
- *   /realstics <mode> setspawn
- *   /realstics <mode> setvoid [y]
- *   /realstics onewide setzshowsword <z>
- *   /realstics <mode> kit [player]
- *   /realstics <mode> sb [reload]
- */
 public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
@@ -1883,9 +1884,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics worlds
-    // ============================================================
     private boolean handleWorlds(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fLoaded Worlds"));
@@ -1900,12 +1898,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics join <mode>
-    //  Teleports the player to the world assigned to that mode.
-    //  If no world is assigned yet, auto-creates one named after the mode.
-    //  The kit + scoreboard are given automatically by PlayerJoin & ScoreboardManager.
-    // ============================================================
     private boolean handleJoin(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use /realstics join."));
@@ -1929,10 +1921,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         final Player player = (Player) sender;
 
-        // ---- Find which world is assigned to this mode ----
         String worldName = gameModeManager.getWorldForMode(mode);
 
-        // ---- If not assigned, auto-create/load a world named after the mode ----
         if (worldName == null) {
             player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
                     + "&7 has no world yet. Auto-creating..."));
@@ -1945,21 +1935,18 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             worldName = world.getName();
         }
 
-        // ---- Load world (or fail) ----
         World targetWorld = worldLoader.ensureLoaded(worldName);
         if (targetWorld == null) {
             player.sendMessage(colorize("&cWorld not available: &e" + worldName));
             return true;
         }
 
-        // ---- Already in that world? ----
         if (player.getWorld().equals(targetWorld)) {
             player.sendMessage(colorize("&7You are already in &e"
                     + mode.getDisplayName() + "&7."));
             return true;
         }
 
-        // ---- Teleport ----
         Location spawn = playerJoin.getSpawnLocation(targetWorld);
         if (spawn == null) {
             spawn = targetWorld.getSpawnLocation();
@@ -1968,8 +1955,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         final World finalWorld = targetWorld;
         player.teleport(spawn);
 
-        // Give kit after teleport (PlayerJoin also handles this on join,
-        // but we do it here too in case the player was already online).
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -1984,16 +1969,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics setworld [world] <mode>
-    // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
 
         String worldName;
         GameMode mode;
 
-        // Case 1: /realstics setworld <mode>   → player's current world
         if (args.length == 2) {
             mode = GameMode.fromId(args[1]);
             if (mode == null) {
@@ -2007,7 +1988,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
             worldName = ((Player) sender).getWorld().getName();
         }
-        // Case 2: /realstics setworld <world> <mode>  → explicit
         else if (args.length >= 3) {
             worldName = args[1];
             mode = GameMode.fromId(args[2]);
@@ -2017,14 +1997,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         }
-        // Case 3: wrong args
         else {
             sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
             return true;
         }
 
-        // Auto-load the world if not loaded
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
             sender.sendMessage(colorize("&7World '&e" + worldName
@@ -2057,9 +2035,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> setspawn
-    // ============================================================
     private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
         if (!sender.hasPermission("realstics.setspawn")) { sendNoPerm(sender); return true; }
 
@@ -2086,9 +2061,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> setvoid [y]
-    // ============================================================
     private boolean handleSetVoid(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.setvoid")) { sendNoPerm(sender); return true; }
 
@@ -2119,9 +2091,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics onewide setzshowsword <z>
-    // ============================================================
     private boolean handleSetZShowSword(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.setzshowsword")) { sendNoPerm(sender); return true; }
 
@@ -2154,9 +2123,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> kit [player]
-    // ============================================================
     private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.kit")) { sendNoPerm(sender); return true; }
 
@@ -2189,9 +2155,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> sb [reload]
-    // ============================================================
     private boolean handleScoreboard(CommandSender sender, GameMode mode, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use the scoreboard command."));
@@ -2214,9 +2177,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics creator
-    // ============================================================
     private boolean handleCreator(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCreated by &bMuvixo"));
@@ -2226,9 +2186,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  HELP
-    // ============================================================
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
@@ -2263,9 +2220,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
     }
 
-    // ============================================================
-    //  TAB COMPLETE
-    // ============================================================
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<String>();
@@ -2595,15 +2549,16 @@ Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot comp
 - **`/realstics join <mode>`** — players teleport with one command
 - PvP with no HP loss (knockback works)
 - No fall damage, infinite food
+- **BlockFight**: wool can be placed AND broken; other blocks protected
+- All other modes: only wool placeable, nothing breakable
 - Per-mode kits, configs, scoreboards
-- Global combo system + join/quit messages
 
 ## Commands
 
 ```
-/realstics join <mode>                  - Join a game mode (teleport + kit)
-/realstics worlds                       - List loaded worlds + modes
-/realstics setworld [world] <mode>      - Assign world (auto-loads if needed)
+/realstics join <mode>                  - Join a game mode
+/realstics worlds                       - List loaded worlds
+/realstics setworld [world] <mode>      - Assign world
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
 /realstics <mode> kit [player]
@@ -2619,35 +2574,16 @@ Aliases: `/rs`, `/rl`
 ## Quick Setup
 
 ```
-# Admin — in-game, first time only:
+# Admin — first time
 /realstics setworld onewide
 /realstics onewide setspawn
-/realstics onewide setvoid -13
 
-# Player — join any mode:
+# Player — join any mode
 /realstics join onewide
 /realstics join lowmid
 /realstics join blockfight
 /realstics join platform
 ```
-
-The plugin will auto-load the world if it exists in the server folder,
-or create a new one named after the mode.
-
-## Permissions
-
-| Permission | Default | Description |
-|---|---|---|
-| `realstics.join` | true | Join a mode with /realstics join |
-| `realstics.setworld` | op | Assign a world to a mode |
-| `realstics.setspawn` | op | Set spawn for a mode |
-| `realstics.setvoid` | op | Set void Y |
-| `realstics.reload` | op | Reload configs |
-| `realstics.scoreboard` | true | Toggle scoreboard |
-| `realstics.bypass` | op | Bypass all protection |
-| `realstics.break` | false | Break blocks |
-| `realstics.place` | false | Place blocks |
-| `realstics.drop` | false | Drop items |
 
 ## Building
 
@@ -2656,8 +2592,6 @@ mvn clean package
 ```
 
 Output: `target/Realstics.jar`
-
-Or push to GitHub — Actions builds automatically.
 
 ## Credits
 
@@ -2675,7 +2609,7 @@ def write_file(rel_path, content):
     print("  + " + rel_path)
 
 def main():
-    print("Realstics plugin generator (FULLY COMPLETE + JOIN)")
+    print("Realstics plugin generator (FULLY COMPLETE)")
     print("=" * 60)
 
     print("\n[1/5] Creating directories...")
@@ -2703,17 +2637,12 @@ def main():
     print("\n" + "=" * 60)
     print("Done! Realstics plugin generated.")
     print("")
-    print("Commands now available:")
-    print("  /realstics join <mode>      ← teleport + kit")
-    print("  /realstics worlds           ← list loaded worlds")
-    print("  /realstics setworld <mode>  ← auto-loads world")
-    print("  /realstics <mode> setspawn")
-    print("  /realstics <mode> setvoid [y]")
-    print("  /realstics help")
+    print("Behavior summary:")
+    print("  BlockFight  → wool placeable + breakable")
+    print("  Other modes → wool placeable, nothing breakable")
+    print("  Bypass perm → everything allowed")
     print("")
-    print("Build:")
-    print("  mvn clean package   (or push to GitHub)")
-    print("")
+    print("Build: mvn clean package  (or push to GitHub)")
 
 if __name__ == "__main__":
     main()

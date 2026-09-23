@@ -2,7 +2,6 @@ package org.realstics;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -15,22 +14,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * /realstics <subcommand>
- *
- *   /realstics help
- *   /realstics creator
- *   /realstics worlds
- *   /realstics reload
- *   /realstics join <mode>                     - teleport player to mode world
- *   /realstics setworld [world] <mode>         - assign (auto-loads world)
- *
- *   /realstics <mode> setspawn
- *   /realstics <mode> setvoid [y]
- *   /realstics onewide setzshowsword <z>
- *   /realstics <mode> kit [player]
- *   /realstics <mode> sb [reload]
- */
 public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
@@ -101,9 +84,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics worlds
-    // ============================================================
     private boolean handleWorlds(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fLoaded Worlds"));
@@ -118,12 +98,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics join <mode>
-    //  Teleports the player to the world assigned to that mode.
-    //  If no world is assigned yet, auto-creates one named after the mode.
-    //  The kit + scoreboard are given automatically by PlayerJoin & ScoreboardManager.
-    // ============================================================
     private boolean handleJoin(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use /realstics join."));
@@ -147,10 +121,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         final Player player = (Player) sender;
 
-        // ---- Find which world is assigned to this mode ----
         String worldName = gameModeManager.getWorldForMode(mode);
 
-        // ---- If not assigned, auto-create/load a world named after the mode ----
         if (worldName == null) {
             player.sendMessage(colorize("&7Mode &e" + mode.getDisplayName()
                     + "&7 has no world yet. Auto-creating..."));
@@ -163,21 +135,18 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             worldName = world.getName();
         }
 
-        // ---- Load world (or fail) ----
         World targetWorld = worldLoader.ensureLoaded(worldName);
         if (targetWorld == null) {
             player.sendMessage(colorize("&cWorld not available: &e" + worldName));
             return true;
         }
 
-        // ---- Already in that world? ----
         if (player.getWorld().equals(targetWorld)) {
             player.sendMessage(colorize("&7You are already in &e"
                     + mode.getDisplayName() + "&7."));
             return true;
         }
 
-        // ---- Teleport ----
         Location spawn = playerJoin.getSpawnLocation(targetWorld);
         if (spawn == null) {
             spawn = targetWorld.getSpawnLocation();
@@ -186,8 +155,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         final World finalWorld = targetWorld;
         player.teleport(spawn);
 
-        // Give kit after teleport (PlayerJoin also handles this on join,
-        // but we do it here too in case the player was already online).
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -202,16 +169,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics setworld [world] <mode>
-    // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
 
         String worldName;
         GameMode mode;
 
-        // Case 1: /realstics setworld <mode>   → player's current world
         if (args.length == 2) {
             mode = GameMode.fromId(args[1]);
             if (mode == null) {
@@ -225,7 +188,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
             worldName = ((Player) sender).getWorld().getName();
         }
-        // Case 2: /realstics setworld <world> <mode>  → explicit
         else if (args.length >= 3) {
             worldName = args[1];
             mode = GameMode.fromId(args[2]);
@@ -235,14 +197,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         }
-        // Case 3: wrong args
         else {
             sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
             return true;
         }
 
-        // Auto-load the world if not loaded
         World world = worldLoader.findLoaded(worldName);
         if (world == null) {
             sender.sendMessage(colorize("&7World '&e" + worldName
@@ -275,9 +235,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> setspawn
-    // ============================================================
     private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
         if (!sender.hasPermission("realstics.setspawn")) { sendNoPerm(sender); return true; }
 
@@ -304,9 +261,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> setvoid [y]
-    // ============================================================
     private boolean handleSetVoid(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.setvoid")) { sendNoPerm(sender); return true; }
 
@@ -337,9 +291,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics onewide setzshowsword <z>
-    // ============================================================
     private boolean handleSetZShowSword(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.setzshowsword")) { sendNoPerm(sender); return true; }
 
@@ -372,9 +323,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> kit [player]
-    // ============================================================
     private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("realstics.kit")) { sendNoPerm(sender); return true; }
 
@@ -407,9 +355,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> sb [reload]
-    // ============================================================
     private boolean handleScoreboard(CommandSender sender, GameMode mode, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use the scoreboard command."));
@@ -432,9 +377,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics creator
-    // ============================================================
     private boolean handleCreator(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCreated by &bMuvixo"));
@@ -444,9 +386,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  HELP
-    // ============================================================
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
@@ -481,9 +420,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&8&m----------------------------------"));
     }
 
-    // ============================================================
-    //  TAB COMPLETE
-    // ============================================================
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<String>();
