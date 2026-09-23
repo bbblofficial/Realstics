@@ -40,7 +40,14 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (args.length == 0) { sendHelp(sender); return true; }
+        // /housing  (no args)  →  join the DEFAULT mode (platform)
+        if (args.length == 0) {
+            if (sender instanceof Player) {
+                return handleJoin(sender, new String[]{"join", "platform"});
+            }
+            sendHelp(sender);
+            return true;
+        }
 
         String sub = args[0].toLowerCase();
 
@@ -136,15 +143,22 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             worldName = world.getName();
         }
 
-        World targetWorld = worldLoader.ensureLoaded(worldName);
+        final World targetWorld = worldLoader.ensureLoaded(worldName);
         if (targetWorld == null) {
             player.sendMessage(colorize("&cWorld not available: &e" + worldName));
             return true;
         }
 
+        final GameMode finalMode = mode;
+
+        // Same world → just refresh kit for that mode
         if (player.getWorld().equals(targetWorld)) {
-            player.sendMessage(colorize("&7You are already in &b"
-                    + mode.getDisplayName() + "&7."));
+            player.getInventory().clear();
+            player.getInventory().setArmorContents(null);
+            playerJoin.giveKitForMode(player, finalMode);
+            player.updateInventory();
+            player.sendMessage(colorize("&bKit refreshed for &f"
+                    + finalMode.getDisplayName() + "&b."));
             return true;
         }
 
@@ -153,20 +167,28 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             spawn = targetWorld.getSpawnLocation();
         }
 
-        final World finalWorld = targetWorld;
+        // 1) Clear inventory IMMEDIATELY (before teleport)
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(null);
+        player.updateInventory();
+
+        // 2) Teleport to target world
         player.teleport(spawn);
 
+        // 3) Give the TARGET mode's kit after teleport is complete
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
-                if (player.isOnline()) {
-                    playerJoin.giveKit(player);
-                }
+                if (!player.isOnline()) return;
+                player.getInventory().clear();
+                player.getInventory().setArmorContents(null);
+                playerJoin.giveKitForMode(player, finalMode);
+                player.updateInventory();
             }
-        }, 3L);
+        }, 5L);
 
-        player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
-                + " &b(world: &f" + finalWorld.getName() + "&b)"));
+        player.sendMessage(colorize("&bJoined &f" + finalMode.getDisplayName()
+                + " &b(world: &f" + targetWorld.getName() + "&b)"));
         return true;
     }
 
@@ -382,7 +404,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             target = (Player) sender;
         }
 
-        playerJoin.giveKit(target);
+        playerJoin.giveKitForMode(target, mode);
 
         if (sender.equals(target)) {
             sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));
@@ -430,6 +452,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&bHousing &f- &bCommands"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
+        sender.sendMessage(colorize("&b/housing &f- Join the default mode (Platform)"));
         sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
         sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
         sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));

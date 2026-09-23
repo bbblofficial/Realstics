@@ -57,8 +57,22 @@ public class PlayerJoin implements Listener {
         }, 5L);
     }
 
+    /**
+     * Gives the kit based on the player's CURRENT world mode.
+     */
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
+        giveKitForMode(player, mode);
+    }
+
+    /**
+     * Gives a specific mode's kit explicitly.
+     * Use this when you know the target mode (e.g. /housing join <mode>).
+     */
+    public void giveKitForMode(Player player, GameMode mode) {
+        if (player == null || !player.isOnline()) return;
+        if (mode == null) mode = GameMode.PLATFORM;
+
         switch (mode) {
             case LOWMID:     giveLowMidKit(player);     break;
             case ONEWIDE:    giveOneWideKit(player);    break;
