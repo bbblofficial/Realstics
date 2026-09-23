@@ -18,12 +18,28 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Gives the correct cosmetic kit per game mode.
+ *
+ *  PLATFORM  : Leather Helmet + Chestplate (Prot III, red, Unbreakable)
+ *              Iron Leggings + Boots (Prot III, Unbreakable)
+ *              Wooden Sword (Sharpness I, Unbreakable)
+ *
+ *  LOWMID    : Wooden Sword (Sharpness I, Unbreakable)
+ *
+ *  ONEWIDE   : Iron Sword (Unbreakable)
+ *
+ *  BLOCKFIGHT: Diamond Sword (Sharpness IV, Unbreakable)   slot 1
+ *              Light Blue Wool (data 3) x64 (infinite)      slot 2
+ *              Shears (Unbreakable)                         slot 3
+ */
 public class PlayerJoin implements Listener {
 
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680;
+    private static final int LEATHER_COLOR = 16711680; // 0xFF0000
+    private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -56,6 +72,9 @@ public class PlayerJoin implements Listener {
         }, 5L);
     }
 
+    // ============================================================
+    //  KIT DISPATCH
+    // ============================================================
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         switch (mode) {
@@ -67,6 +86,9 @@ public class PlayerJoin implements Listener {
         }
     }
 
+    // ============================================================
+    //  PLATFORM
+    // ============================================================
     private void givePlatformKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -84,6 +106,9 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
+    // ============================================================
+    //  LOWMID
+    // ============================================================
     private void giveLowMidKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -96,6 +121,9 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
+    // ============================================================
+    //  ONEWIDE
+    // ============================================================
     private void giveOneWideKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -107,21 +135,36 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
+    // ============================================================
+    //  BLOCKFIGHT
+    //  Slot 1 — Diamond Sword (Sharpness IV)
+    //  Slot 2 — Light Blue Wool x64 (infinite)
+    //  Slot 3 — Shears
+    // ============================================================
     private void giveBlockFightKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
+        // Slot 1 — Diamond Sword (Sharpness IV, Unbreakable)
         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 4);
         player.getInventory().setItem(0, unbreakable(sword));
 
-        player.getInventory().setItem(1, new ItemStack(Material.WOOL, 64));
+        // Slot 2 — Light Blue Wool (data value 3) x64
+        ItemStack wool = new ItemStack(Material.WOOL, 64);
+        wool.setDurability(LIGHT_BLUE_WOOL_DATA);
+        player.getInventory().setItem(1, wool);
+
+        // Slot 3 — Shears (Unbreakable)
         player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
 
         refillFood(player);
         player.updateInventory();
     }
 
+    // ============================================================
+    //  HELPERS
+    // ============================================================
     private void refillFood(Player player) {
         player.setFoodLevel(20);
         player.setSaturation(20.0F);
@@ -156,6 +199,9 @@ public class PlayerJoin implements Listener {
         return item;
     }
 
+    // ============================================================
+    //  SPAWN
+    // ============================================================
     public void teleportToSpawn(Player player) {
         Location spawn = getSpawnLocation(player.getWorld());
         if (spawn == null) return;
