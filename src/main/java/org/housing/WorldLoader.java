@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import java.io.File;
 import org.bukkit.Bukkit;
@@ -6,10 +6,6 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Auto-loads a world if the folder exists but Bukkit hasn't loaded it yet,
- * or creates a new one if the folder doesn't exist.
- */
 public class WorldLoader {
 
     private final JavaPlugin plugin;

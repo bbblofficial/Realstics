@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,7 +50,6 @@ public class ComboSystem implements Listener {
         this.comboStep      = config.getInt("combo.step", 10);
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
 
-        // Read message — fallback if missing / null / empty
         String msg = config.getString("combo.broadcast-message", null);
         if (msg == null || msg.trim().isEmpty()) {
             msg = DEFAULT_MESSAGE;
@@ -62,7 +61,6 @@ public class ComboSystem implements Listener {
         if (this.comboStep < 1) this.comboStep = 10;
         if (this.comboResetTime < 500L) this.comboResetTime = 3000L;
 
-        // Convert literal "\n" from YAML into real newlines
         if (this.broadcastMessage != null) {
             this.broadcastMessage = this.broadcastMessage.replace("\\n", "\n");
         }

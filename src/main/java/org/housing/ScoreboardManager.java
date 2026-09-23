@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,7 +96,7 @@ public class ScoreboardManager implements Listener {
         if (!sb.getBoolean("enabled", true)) return;
 
         Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-        Objective objective = board.registerNewObjective("realstics", "dummy");
+        Objective objective = board.registerNewObjective("housing", "dummy");
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         objective.setDisplayName(colorize(getTitle(sb)));
 
@@ -131,9 +131,9 @@ public class ScoreboardManager implements Listener {
             return;
         }
 
-        Objective objective = board.getObjective("realstics");
+        Objective objective = board.getObjective("housing");
         if (objective == null) {
-            objective = board.registerNewObjective("realstics", "dummy");
+            objective = board.registerNewObjective("housing", "dummy");
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         }
 
@@ -177,10 +177,10 @@ public class ScoreboardManager implements Listener {
     private String getTitle(FileConfiguration sb) {
         if (sb.getBoolean("title.animated", true)) {
             List<String> frames = sb.getStringList("title.frames");
-            if (frames == null || frames.isEmpty()) return "&bRealstics";
+            if (frames == null || frames.isEmpty()) return "&bHousing";
             return frames.get(this.animationFrame % frames.size());
         }
-        return sb.getString("title.static", "&bRealstics");
+        return sb.getString("title.static", "&bHousing");
     }
 
     private String[] splitLine(String line) {

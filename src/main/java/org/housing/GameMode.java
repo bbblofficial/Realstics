@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 public enum GameMode {
 

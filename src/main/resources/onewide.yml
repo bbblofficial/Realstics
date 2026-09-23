@@ -1,5 +1,5 @@
 # ==========================================================
-#  Realstics — OneWide mode
+#  Housing — OneWide mode
 #  Theme: Aqua + White
 # ==========================================================
 
@@ -15,3 +15,7 @@ void:
   kill-height: -13.0
 
 zshowsword: 0.0
+
+pvpzone:
+  enabled: true
+  z: 0.0

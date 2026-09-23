@@ -1,15 +1,11 @@
 # ==========================================================
-#  Realstics Configuration — Platform (default mode)
+#  Housing Configuration — Platform (default mode)
 #  Version: 1.0
 #  Theme: Aqua + White
 # ==========================================================
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
 
-# ----------------------------------------------------------
-#  Spawn (Platform mode)
-#  Set with: /realstics platform setspawn
-# ----------------------------------------------------------
 spawn:
   world: world
   x: 0.5
@@ -18,18 +14,9 @@ spawn:
   yaw: 0.0
   pitch: 0.0
 
-# ----------------------------------------------------------
-#  Void (Platform)
-#  Set with: /realstics platform setvoid [y]
-# ----------------------------------------------------------
 void:
   kill-height: -13.0
 
-# ----------------------------------------------------------
-#  Combo System (global — all modes)
-#  Placeholders: %combo%, %attacker%, %victim%
-#  Use "\n" inside double quotes for a new line.
-# ----------------------------------------------------------
 combo:
   enabled: true
   step: 10
@@ -37,23 +24,15 @@ combo:
   sound-enabled: true
   broadcast-message: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
 
-# ----------------------------------------------------------
-#  Scoreboard (global)
-# ----------------------------------------------------------
 scoreboard:
   update-interval: 10
 
-# ----------------------------------------------------------
-#  Join / Quit messages (global — all modes)
-#  Placeholders: %player%, %online%, %max_online%
-# ----------------------------------------------------------
 join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
 quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
 
-# ----------------------------------------------------------
-#  World -> Game Mode mapping
-#  Valid modes: platform, lowmid, onewide, blockfight
-#  Assign with: /realstics setworld [world] <mode>
-# ----------------------------------------------------------
+pvpzone:
+  enabled: true
+  z: 0.0
+
 worlds:
   world: platform

@@ -1,50 +1,53 @@
-name: Realstics
+name: Housing
 version: 1.0
-main: org.realstics.Realstics
+main: org.housing.Housing
 author: Muvixo
 description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
 commands:
-  realstics:
-    description: Main Realstics command
-    usage: /realstics <join|setworld|help|...>
+  housing:
+    description: Main Housing command
+    usage: /housing <join|setworld|help|...>
     aliases:
-      - rs
-      - rl
+      - hs
+      - hg
 permissions:
-  realstics.join:
+  housing.join:
     description: Join a game mode world
     default: true
-  realstics.setworld:
+  housing.setworld:
     description: Assign a world to a mode (auto-loads if missing)
     default: op
-  realstics.setspawn:
+  housing.setspawn:
     description: Set spawn for a mode
     default: op
-  realstics.setvoid:
+  housing.setvoid:
     description: Set void Y level
     default: op
-  realstics.setzshowsword:
+  housing.setzshowsword:
     description: Set OneWide Z threshold for showing sword
     default: op
-  realstics.reload:
+  housing.setpvpzone:
+    description: Set the PvP zone for a mode (Platform/OneWide)
+    default: op
+  housing.reload:
     description: Reload the config
     default: op
-  realstics.kit:
+  housing.kit:
     description: Give the cosmetic kit
     default: op
-  realstics.scoreboard:
+  housing.scoreboard:
     description: Toggle the scoreboard
     default: true
 
-  realstics.bypass:
+  housing.bypass:
     description: Bypass ALL protection
     default: op
-  realstics.break:
+  housing.break:
     description: Allow breaking blocks
     default: false
-  realstics.place:
+  housing.place:
     description: Allow placing blocks
     default: false
-  realstics.drop:
+  housing.drop:
     description: Allow dropping items
     default: false

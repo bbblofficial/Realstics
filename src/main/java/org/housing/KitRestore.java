@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

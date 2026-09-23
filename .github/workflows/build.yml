@@ -1,4 +1,4 @@
-name: Build Realstics
+name: Build Housing
 
 on:
   push:
@@ -30,8 +30,8 @@ jobs:
       - name: Upload JAR as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Realstics-JAR
-          path: target/Realstics.jar
+          name: Housing-JAR
+          path: target/Housing.jar
           if-no-files-found: error
 
   release:
@@ -47,14 +47,14 @@ jobs:
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
-          name: Realstics-JAR
+          name: Housing-JAR
           path: ./release
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./release/Realstics.jar
-          name: Realstics ${{ github.ref_name }}
+          files: ./release/Housing.jar
+          name: Housing ${{ github.ref_name }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

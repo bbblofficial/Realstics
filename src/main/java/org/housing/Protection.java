@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,14 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Protection rules for Realstics (Spigot 1.8.8 compatible).
- *
- * BlockFight:
- *   - Only PLAYER-PLACED LIGHT BLUE wool (data=3) is breakable
- *   - Broken wool does NOT drop, does NOT go to inventory
- *   - Light blue wool is infinite (always stays at 64)
- */
 public class Protection implements Listener {
 
     @SuppressWarnings("unused")
@@ -36,10 +28,10 @@ public class Protection implements Listener {
 
     private static final byte LIGHT_BLUE_DATA = 3;
 
-    private static final String PERM_BYPASS = "realstics.bypass";
-    private static final String PERM_BREAK  = "realstics.break";
-    private static final String PERM_PLACE  = "realstics.place";
-    private static final String PERM_DROP   = "realstics.drop";
+    private static final String PERM_BYPASS = "housing.bypass";
+    private static final String PERM_BREAK  = "housing.break";
+    private static final String PERM_PLACE  = "housing.place";
+    private static final String PERM_DROP   = "housing.drop";
 
     public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;

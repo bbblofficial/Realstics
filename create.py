@@ -1,20 +1,10 @@
 
 #!/usr/bin/env python3
 """
-create.py — Realstics Plugin Generator (FULLY COMPLETE)
+create.py — Housing Plugin Generator
 
-FEATURES:
-  1. plugin.yml inside src/main/resources/ → Maven packs into JAR
-  2. WorldLoader auto-loads/creates missing worlds
-  3. /realstics join <mode>       → teleport + kit + scoreboard
-  4. /realstics worlds            → list loaded worlds
-  5. /realstics setworld [world] <mode> → auto-loads world
-  6. BlockFight: ONLY light-blue wool (data=3) breakable
-  7. BlockFight: wool is infinite (always 64)
-  8. BlockFight: broken wool drops NOTHING
-  9. Auto-fill EMPTY combo message on load (1.8.8 compatible)
- 10. Aqua + White theme by default in ALL configs
- 11. Platform & OneWide: PvP zone via /realstics <mode> setpvpzone <z>
+Multi-gamemode cosmetic PvP plugin
+(Platform, LowMid, OneWide, BlockFight)
 
 Run:   python3 create.py
 Build: mvn clean package
@@ -25,7 +15,7 @@ import os
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 DIRS = [
-    "src/main/java/org/realstics",
+    "src/main/java/org/housing",
     "src/main/resources",
     ".github/workflows",
 ]
@@ -40,12 +30,12 @@ POM_XML = '''<?xml version="1.0" encoding="UTF-8"?>
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.realstics</groupId>
-    <artifactId>Realstics</artifactId>
+    <groupId>org.housing</groupId>
+    <artifactId>Housing</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>Realstics</name>
+    <name>Housing</name>
     <description>Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)</description>
 
     <properties>
@@ -88,7 +78,7 @@ POM_XML = '''<?xml version="1.0" encoding="UTF-8"?>
     </dependencies>
 
     <build>
-        <finalName>Realstics</finalName>
+        <finalName>Housing</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -107,57 +97,57 @@ POM_XML = '''<?xml version="1.0" encoding="UTF-8"?>
 # ==============================================================
 #  PLUGIN.YML
 # ==============================================================
-PLUGIN_YML = '''name: Realstics
+PLUGIN_YML = '''name: Housing
 version: 1.0
-main: org.realstics.Realstics
+main: org.housing.Housing
 author: Muvixo
 description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
 commands:
-  realstics:
-    description: Main Realstics command
-    usage: /realstics <join|setworld|help|...>
+  housing:
+    description: Main Housing command
+    usage: /housing <join|setworld|help|...>
     aliases:
-      - rs
-      - rl
+      - hs
+      - hg
 permissions:
-  realstics.join:
+  housing.join:
     description: Join a game mode world
     default: true
-  realstics.setworld:
+  housing.setworld:
     description: Assign a world to a mode (auto-loads if missing)
     default: op
-  realstics.setspawn:
+  housing.setspawn:
     description: Set spawn for a mode
     default: op
-  realstics.setvoid:
+  housing.setvoid:
     description: Set void Y level
     default: op
-  realstics.setzshowsword:
+  housing.setzshowsword:
     description: Set OneWide Z threshold for showing sword
     default: op
-  realstics.setpvpzone:
+  housing.setpvpzone:
     description: Set the PvP zone for a mode (Platform/OneWide)
     default: op
-  realstics.reload:
+  housing.reload:
     description: Reload the config
     default: op
-  realstics.kit:
+  housing.kit:
     description: Give the cosmetic kit
     default: op
-  realstics.scoreboard:
+  housing.scoreboard:
     description: Toggle the scoreboard
     default: true
 
-  realstics.bypass:
+  housing.bypass:
     description: Bypass ALL protection
     default: op
-  realstics.break:
+  housing.break:
     description: Allow breaking blocks
     default: false
-  realstics.place:
+  housing.place:
     description: Allow placing blocks
     default: false
-  realstics.drop:
+  housing.drop:
     description: Allow dropping items
     default: false
 '''
@@ -165,7 +155,7 @@ permissions:
 # ==============================================================
 #  GITHUB ACTIONS
 # ==============================================================
-GITHUB_WORKFLOW = '''name: Build Realstics
+GITHUB_WORKFLOW = '''name: Build Housing
 
 on:
   push:
@@ -197,8 +187,8 @@ jobs:
       - name: Upload JAR as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Realstics-JAR
-          path: target/Realstics.jar
+          name: Housing-JAR
+          path: target/Housing.jar
           if-no-files-found: error
 
   release:
@@ -214,14 +204,14 @@ jobs:
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
-          name: Realstics-JAR
+          name: Housing-JAR
           path: ./release
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./release/Realstics.jar
-          name: Realstics ${{ github.ref_name }}
+          files: ./release/Housing.jar
+          name: Housing ${{ github.ref_name }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -232,7 +222,7 @@ jobs:
 # ==============================================================
 JAVA = {}
 
-JAVA["GameMode.java"] = r'''package org.realstics;
+JAVA["GameMode.java"] = r'''package org.housing;
 
 public enum GameMode {
 
@@ -268,7 +258,7 @@ public enum GameMode {
 }
 '''
 
-JAVA["WorldLoader.java"] = r'''package org.realstics;
+JAVA["WorldLoader.java"] = r'''package org.housing;
 
 import java.io.File;
 import org.bukkit.Bukkit;
@@ -338,7 +328,7 @@ public class WorldLoader {
 }
 '''
 
-JAVA["GameModeManager.java"] = r'''package org.realstics;
+JAVA["GameModeManager.java"] = r'''package org.housing;
 
 import java.io.File;
 import java.io.IOException;
@@ -553,7 +543,7 @@ public class GameModeManager {
 }
 '''
 
-JAVA["Realstics.java"] = r'''package org.realstics;
+JAVA["Housing.java"] = r'''package org.housing;
 
 import java.io.File;
 import java.io.IOException;
@@ -564,7 +554,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class Realstics extends JavaPlugin {
+public final class Housing extends JavaPlugin {
 
     private PlayerJoin playerJoin;
     private ScoreboardManager scoreboardManager;
@@ -612,14 +602,14 @@ public final class Realstics extends JavaPlugin {
 
         this.scoreboardManager = new ScoreboardManager(this, this.gameModeManager);
 
-        RealsticsCommand cmd = new RealsticsCommand(this,
+        HousingCommand cmd = new HousingCommand(this,
                 this.playerJoin, this.scoreboardManager, this.voidSystem,
                 this.gameModeManager, this.worldLoader);
-        getCommand("realstics").setExecutor(cmd);
-        getCommand("realstics").setTabCompleter(cmd);
+        getCommand("housing").setExecutor(cmd);
+        getCommand("housing").setTabCompleter(cmd);
 
         getLogger().info("=================================================");
-        getLogger().info("  Realstics v1.0 - Enabled");
+        getLogger().info("  Housing v1.0 - Enabled");
         getLogger().info("  Modes: Platform, LowMid, OneWide, BlockFight");
         getLogger().info("  Loaded worlds: " + worldLoader.listLoadedWorldNames());
         getLogger().info("=================================================");
@@ -630,7 +620,7 @@ public final class Realstics extends JavaPlugin {
         if (this.scoreboardManager != null) {
             this.scoreboardManager.shutdown();
         }
-        getLogger().info("Realstics disabled.");
+        getLogger().info("Housing disabled.");
     }
 
     private void createConfigIfMissing() {
@@ -683,7 +673,6 @@ public final class Realstics extends JavaPlugin {
 
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
-        // ---- pvp zone (Platform only, global default) ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "pvpzone.z", Double.valueOf(0.0D));
 
@@ -729,7 +718,7 @@ public final class Realstics extends JavaPlugin {
 }
 '''
 
-JAVA["PlayerJoin.java"] = r'''package org.realstics;
+JAVA["PlayerJoin.java"] = r'''package org.housing;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -924,7 +913,7 @@ public class PlayerJoin implements Listener {
 }
 '''
 
-JAVA["NoDamage.java"] = r'''package org.realstics;
+JAVA["NoDamage.java"] = r'''package org.housing;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -938,21 +927,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Cosmetic PvP rules + PvP-zone enforcement.
- *
- * All modes:
- *   - HP never drops (damage set to 0)
- *   - Fall damage off
- *   - Infinite food
- *
- * Platform / OneWide:
- *   - PvP is only allowed when the attacker's Z >= pvpzone.z
- *   - Outside the zone, hits are cancelled entirely
- *
- * LowMid / BlockFight:
- *   - PvP always allowed (no zone check)
- */
 public class NoDamage implements Listener {
 
     @SuppressWarnings("unused")
@@ -964,19 +938,14 @@ public class NoDamage implements Listener {
         this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  Zone check
-    // ============================================================
     private boolean isInPvpZone(Player attacker) {
         World world = attacker.getWorld();
         GameMode mode = gameModeManager.getModeForWorld(world);
 
-        // LowMid & BlockFight — always allow PvP
         if (mode == GameMode.LOWMID || mode == GameMode.BLOCKFIGHT) {
             return true;
         }
 
-        // Platform / OneWide — read zone from config
         FileConfiguration cfg = gameModeManager.getConfig(mode);
         boolean enabled = cfg.getBoolean("pvpzone.enabled", true);
         if (!enabled) return true;
@@ -985,9 +954,6 @@ public class NoDamage implements Listener {
         return attacker.getLocation().getZ() >= zoneZ;
     }
 
-    // ============================================================
-    //  Main damage event
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAnyDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -996,14 +962,10 @@ public class NoDamage implements Listener {
         event.setDamage(0);
     }
 
-    // ============================================================
-    //  PvP damage — zone-aware
-    // ============================================================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
 
-        // Non-player attacker → zero damage, no zone check
         if (!(event.getDamager() instanceof Player)) {
             if (!event.isCancelled()) {
                 event.setDamage(0);
@@ -1014,21 +976,16 @@ public class NoDamage implements Listener {
         Player attacker = (Player) event.getDamager();
 
         if (isInPvpZone(attacker)) {
-            // Normal PvP behavior — keep knockback, zero damage
             if (!event.isCancelled()) {
                 event.setDamage(0);
             }
         } else {
-            // Outside PvP zone — cancel entirely
             event.setCancelled(true);
             event.setDamage(0);
             attacker.sendMessage(colorize("&bYou must enter the PvP zone first!"));
         }
     }
 
-    // ============================================================
-    //  Fall damage
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -1038,9 +995,6 @@ public class NoDamage implements Listener {
         }
     }
 
-    // ============================================================
-    //  Infinite food
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFoodChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -1059,7 +1013,7 @@ public class NoDamage implements Listener {
 }
 '''
 
-JAVA["Protection.java"] = r'''package org.realstics;
+JAVA["Protection.java"] = r'''package org.housing;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -1089,10 +1043,10 @@ public class Protection implements Listener {
 
     private static final byte LIGHT_BLUE_DATA = 3;
 
-    private static final String PERM_BYPASS = "realstics.bypass";
-    private static final String PERM_BREAK  = "realstics.break";
-    private static final String PERM_PLACE  = "realstics.place";
-    private static final String PERM_DROP   = "realstics.drop";
+    private static final String PERM_BYPASS = "housing.bypass";
+    private static final String PERM_BREAK  = "housing.break";
+    private static final String PERM_PLACE  = "housing.place";
+    private static final String PERM_DROP   = "housing.drop";
 
     public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -1225,7 +1179,7 @@ public class Protection implements Listener {
 }
 '''
 
-JAVA["KitRestore.java"] = r'''package org.realstics;
+JAVA["KitRestore.java"] = r'''package org.housing;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -1323,7 +1277,7 @@ public class KitRestore implements Listener {
 }
 '''
 
-JAVA["Welcome.java"] = r'''package org.realstics;
+JAVA["Welcome.java"] = r'''package org.housing;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -1393,7 +1347,7 @@ public class Welcome implements Listener {
 }
 '''
 
-JAVA["Void.java"] = r'''package org.realstics;
+JAVA["Void.java"] = r'''package org.housing;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -1498,7 +1452,7 @@ public class Void implements Listener {
 }
 '''
 
-JAVA["ComboSystem.java"] = r'''package org.realstics;
+JAVA["ComboSystem.java"] = r'''package org.housing;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1682,7 +1636,7 @@ public class ComboSystem implements Listener {
 }
 '''
 
-JAVA["ScoreboardManager.java"] = r'''package org.realstics;
+JAVA["ScoreboardManager.java"] = r'''package org.housing;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1780,7 +1734,7 @@ public class ScoreboardManager implements Listener {
         if (!sb.getBoolean("enabled", true)) return;
 
         Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-        Objective objective = board.registerNewObjective("realstics", "dummy");
+        Objective objective = board.registerNewObjective("housing", "dummy");
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         objective.setDisplayName(colorize(getTitle(sb)));
 
@@ -1815,9 +1769,9 @@ public class ScoreboardManager implements Listener {
             return;
         }
 
-        Objective objective = board.getObjective("realstics");
+        Objective objective = board.getObjective("housing");
         if (objective == null) {
-            objective = board.registerNewObjective("realstics", "dummy");
+            objective = board.registerNewObjective("housing", "dummy");
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         }
 
@@ -1861,10 +1815,10 @@ public class ScoreboardManager implements Listener {
     private String getTitle(FileConfiguration sb) {
         if (sb.getBoolean("title.animated", true)) {
             List<String> frames = sb.getStringList("title.frames");
-            if (frames == null || frames.isEmpty()) return "&bRealstics";
+            if (frames == null || frames.isEmpty()) return "&bHousing";
             return frames.get(this.animationFrame % frames.size());
         }
-        return sb.getString("title.static", "&bRealstics");
+        return sb.getString("title.static", "&bHousing");
     }
 
     private String[] splitLine(String line) {
@@ -1964,7 +1918,7 @@ public class ScoreboardManager implements Listener {
 }
 '''
 
-JAVA["RealsticsCommand.java"] = r'''package org.realstics;
+JAVA["HousingCommand.java"] = r'''package org.housing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1980,7 +1934,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class RealsticsCommand implements CommandExecutor, TabCompleter {
+public class HousingCommand implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
     private final PlayerJoin playerJoin;
@@ -1989,12 +1943,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     private final GameModeManager gameModeManager;
     private final WorldLoader worldLoader;
 
-    public RealsticsCommand(JavaPlugin plugin,
-                            PlayerJoin playerJoin,
-                            ScoreboardManager scoreboardManager,
-                            Void voidSystem,
-                            GameModeManager gameModeManager,
-                            WorldLoader worldLoader) {
+    public HousingCommand(JavaPlugin plugin,
+                          PlayerJoin playerJoin,
+                          ScoreboardManager scoreboardManager,
+                          Void voidSystem,
+                          GameModeManager gameModeManager,
+                          WorldLoader worldLoader) {
         this.plugin = plugin;
         this.playerJoin = playerJoin;
         this.scoreboardManager = scoreboardManager;
@@ -2016,12 +1970,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (sub.equals("join"))    { return handleJoin(sender, args); }
 
         if (sub.equals("reload")) {
-            if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
+            if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
             this.plugin.reloadConfig();
             this.gameModeManager.reloadAll();
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             if (this.voidSystem != null) this.voidSystem.reloadConfig();
-            sender.sendMessage(colorize("&bRealstics configuration reloaded."));
+            sender.sendMessage(colorize("&bHousing configuration reloaded."));
             return true;
         }
 
@@ -2031,7 +1985,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         GameMode mode = GameMode.fromId(sub);
         if (mode == null) {
-            sender.sendMessage(colorize("&cUnknown subcommand. Use /realstics help"));
+            sender.sendMessage(colorize("&cUnknown subcommand. Use /housing help"));
             return true;
         }
 
@@ -2047,13 +2001,13 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         if (action.equals("sb") || action.equals("scoreboard"))
                                             return handleScoreboard(sender, mode, args);
 
-        sender.sendMessage(colorize("&cUnknown action. Use /realstics help"));
+        sender.sendMessage(colorize("&cUnknown action. Use /housing help"));
         return true;
     }
 
     private boolean handleWorlds(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&bRealstics &f- &bLoaded Worlds"));
+        sender.sendMessage(colorize("&bHousing &f- &bLoaded Worlds"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
 
         for (World w : Bukkit.getWorlds()) {
@@ -2067,14 +2021,14 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleJoin(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(colorize("&cOnly players can use /realstics join."));
+            sender.sendMessage(colorize("&cOnly players can use /housing join."));
             return true;
         }
 
-        if (!sender.hasPermission("realstics.join")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
 
         if (args.length < 2) {
-            sender.sendMessage(colorize("&cUsage: /realstics join <mode>"));
+            sender.sendMessage(colorize("&cUsage: /housing join <mode>"));
             sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
             return true;
         }
@@ -2137,7 +2091,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetWorld(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.setworld")) { sendNoPerm(sender); return true; }
 
         String worldName;
         GameMode mode;
@@ -2150,7 +2104,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cFrom console use: /realstics setworld <world> <mode>"));
+                sender.sendMessage(colorize("&cFrom console use: /housing setworld <world> <mode>"));
                 return true;
             }
             worldName = ((Player) sender).getWorld().getName();
@@ -2165,7 +2119,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         }
         else {
-            sender.sendMessage(colorize("&cUsage: /realstics setworld [world] <mode>"));
+            sender.sendMessage(colorize("&cUsage: /housing setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
             return true;
         }
@@ -2193,7 +2147,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
             player.sendMessage(colorize("&bWorld &f" + world.getName()
                     + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
-            player.sendMessage(colorize("&7Next: &f/realstics " + mode.getId() + " setspawn"));
+            player.sendMessage(colorize("&7Next: &f/housing " + mode.getId() + " setspawn"));
         } else {
             sender.sendMessage(colorize("&bWorld &f" + world.getName()
                     + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
@@ -2203,7 +2157,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
-        if (!sender.hasPermission("realstics.setspawn")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.setspawn")) { sendNoPerm(sender); return true; }
 
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use setspawn."));
@@ -2229,7 +2183,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetVoid(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("realstics.setvoid")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.setvoid")) { sendNoPerm(sender); return true; }
 
         double y;
 
@@ -2242,7 +2196,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage from console: /realstics "
+                sender.sendMessage(colorize("&cUsage from console: /housing "
                         + mode.getId() + " setvoid <y>"));
                 return true;
             }
@@ -2259,7 +2213,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetZShowSword(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("realstics.setzshowsword")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.setzshowsword")) { sendNoPerm(sender); return true; }
 
         if (mode != GameMode.ONEWIDE) {
             sender.sendMessage(colorize("&csetzshowsword is only for OneWide mode."));
@@ -2276,7 +2230,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage: /realstics onewide setzshowsword <z>"));
+                sender.sendMessage(colorize("&cUsage: /housing onewide setzshowsword <z>"));
                 return true;
             }
             z = ((Player) sender).getLocation().getZ();
@@ -2290,13 +2244,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /realstics <mode> setpvpzone [z]
-    //  PvP is allowed only when the player's Z >= zone.
-    //  Supported: Platform, OneWide
-    // ============================================================
     private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("realstics.setpvpzone")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.setpvpzone")) { sendNoPerm(sender); return true; }
 
         if (mode != GameMode.PLATFORM && mode != GameMode.ONEWIDE) {
             sender.sendMessage(colorize("&csetpvpzone is only for Platform and OneWide modes."));
@@ -2313,7 +2262,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage: /realstics " + mode.getId() + " setpvpzone <z>"));
+                sender.sendMessage(colorize("&cUsage: /housing " + mode.getId() + " setpvpzone <z>"));
                 return true;
             }
             z = ((Player) sender).getLocation().getZ();
@@ -2330,7 +2279,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("realstics.kit")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission("housing.kit")) { sendNoPerm(sender); return true; }
 
         Player target;
         if (args.length >= 3) {
@@ -2341,7 +2290,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage from console: /realstics "
+                sender.sendMessage(colorize("&cUsage from console: /housing "
                         + mode.getId() + " kit <player>"));
                 return true;
             }
@@ -2369,7 +2318,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         Player player = (Player) sender;
 
         if (args.length >= 3 && args[2].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
+            if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
             gameModeManager.reloadMode(mode);
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             player.sendMessage(colorize("&b[" + mode.getDisplayName()
@@ -2385,7 +2334,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleCreator(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&bRealstics &f- &bCreated by &fMuvixo"));
+        sender.sendMessage(colorize("&bHousing &f- &bCreated by &fMuvixo"));
         sender.sendMessage(colorize("&bVersion: &f1.0"));
         sender.sendMessage(colorize("&bModes: &fPlatform, LowMid, OneWide, BlockFight"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
@@ -2394,38 +2343,38 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&bRealstics &f- &bCommands"));
+        sender.sendMessage(colorize("&bHousing &f- &bCommands"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/realstics join <mode> &f- Join a game mode"));
-        sender.sendMessage(colorize("&b/realstics worlds &f- List loaded worlds"));
-        sender.sendMessage(colorize("&b/realstics creator &f- Show plugin credits"));
-        sender.sendMessage(colorize("&b/realstics reload &f- Reload all configs"));
-        sender.sendMessage(colorize("&b/realstics setworld [world] <mode> &f- Assign a world"));
+        sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
+        sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
+        sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
+        sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
+        sender.sendMessage(colorize("&b/housing setworld [world] <mode> &f- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/realstics <mode> setspawn &f- Set spawn"));
-        sender.sendMessage(colorize("&b/realstics <mode> setvoid [y] &f- Set void Y"));
-        sender.sendMessage(colorize("&b/realstics <mode> setpvpzone <z> &f- Set PvP zone"));
-        sender.sendMessage(colorize("&b/realstics <mode> kit [player] &f- Give kit"));
-        sender.sendMessage(colorize("&b/realstics <mode> sb &f- Toggle scoreboard"));
-        sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z> &f- OneWide only"));
+        sender.sendMessage(colorize("&b/housing <mode> setspawn &f- Set spawn"));
+        sender.sendMessage(colorize("&b/housing <mode> setvoid [y] &f- Set void Y"));
+        sender.sendMessage(colorize("&b/housing <mode> setpvpzone <z> &f- Set PvP zone"));
+        sender.sendMessage(colorize("&b/housing <mode> kit [player] &f- Give kit"));
+        sender.sendMessage(colorize("&b/housing <mode> sb &f- Toggle scoreboard"));
+        sender.sendMessage(colorize("&b/housing onewide setzshowsword <z> &f- OneWide only"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     private void sendModeHelp(CommandSender sender, GameMode mode) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&bRealstics &f- &b" + mode.getDisplayName()));
+        sender.sendMessage(colorize("&bHousing &f- &b" + mode.getDisplayName()));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/realstics join " + mode.getId()));
-        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setspawn"));
-        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setvoid [y]"));
+        sender.sendMessage(colorize("&b/housing join " + mode.getId()));
+        sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
+        sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
         if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) {
-            sender.sendMessage(colorize("&b/realstics " + mode.getId() + " setpvpzone <z>"));
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " setpvpzone <z>"));
         }
-        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " kit [player]"));
-        sender.sendMessage(colorize("&b/realstics " + mode.getId() + " sb [reload]"));
+        sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
+        sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));
         if (mode == GameMode.ONEWIDE) {
-            sender.sendMessage(colorize("&b/realstics onewide setzshowsword <z>"));
+            sender.sendMessage(colorize("&b/housing onewide setzshowsword <z>"));
         }
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
@@ -2509,17 +2458,13 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 RESOURCES = {}
 
 RESOURCES["config.yml"] = r'''# ==========================================================
-#  Realstics Configuration — Platform (default mode)
+#  Housing Configuration — Platform (default mode)
 #  Version: 1.0
 #  Theme: Aqua + White
 # ==========================================================
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
 
-# ----------------------------------------------------------
-#  Spawn (Platform mode)
-#  Set with: /realstics platform setspawn
-# ----------------------------------------------------------
 spawn:
   world: world
   x: 0.5
@@ -2528,18 +2473,9 @@ spawn:
   yaw: 0.0
   pitch: 0.0
 
-# ----------------------------------------------------------
-#  Void (Platform)
-#  Set with: /realstics platform setvoid [y]
-# ----------------------------------------------------------
 void:
   kill-height: -13.0
 
-# ----------------------------------------------------------
-#  Combo System (global — all modes)
-#  Placeholders: %combo%, %attacker%, %victim%
-#  Use "\n" inside double quotes for a new line.
-# ----------------------------------------------------------
 combo:
   enabled: true
   step: 10
@@ -2547,39 +2483,22 @@ combo:
   sound-enabled: true
   broadcast-message: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
 
-# ----------------------------------------------------------
-#  Scoreboard (global)
-# ----------------------------------------------------------
 scoreboard:
   update-interval: 10
 
-# ----------------------------------------------------------
-#  Join / Quit messages (global — all modes)
-#  Placeholders: %player%, %online%, %max_online%
-# ----------------------------------------------------------
 join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
 quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
 
-# ----------------------------------------------------------
-#  PvP Zone (Platform only)
-#  PvP is enabled only when the attacker's Z >= pvpzone.z
-#  Set with: /realstics platform setpvpzone [z]
-# ----------------------------------------------------------
 pvpzone:
   enabled: true
   z: 0.0
 
-# ----------------------------------------------------------
-#  World -> Game Mode mapping
-#  Valid modes: platform, lowmid, onewide, blockfight
-#  Assign with: /realstics setworld [world] <mode>
-# ----------------------------------------------------------
 worlds:
   world: platform
 '''
 
 RESOURCES["scoreboard.yml"] = r'''# ==========================================================
-#  Realstics Scoreboard — Platform mode
+#  Housing Scoreboard — Platform mode
 #  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
@@ -2616,11 +2535,11 @@ lines:
   - '&b&m---------------------'
 
 allow-toggle: true
-toggle-permission: 'realstics.scoreboard'
+toggle-permission: 'housing.scoreboard'
 '''
 
 RESOURCES["lowmid.yml"] = r'''# ==========================================================
-#  Realstics — LowMid mode
+#  Housing — LowMid mode
 #  Theme: Aqua + White
 # ==========================================================
 
@@ -2637,7 +2556,7 @@ void:
 '''
 
 RESOURCES["sb-lowmid.yml"] = r'''# ==========================================================
-#  Realstics Scoreboard — LowMid mode
+#  Housing Scoreboard — LowMid mode
 #  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
@@ -2672,11 +2591,11 @@ lines:
   - '&b&m---------------------'
 
 allow-toggle: true
-toggle-permission: 'realstics.scoreboard'
+toggle-permission: 'housing.scoreboard'
 '''
 
 RESOURCES["onewide.yml"] = r'''# ==========================================================
-#  Realstics — OneWide mode
+#  Housing — OneWide mode
 #  Theme: Aqua + White
 # ==========================================================
 
@@ -2691,19 +2610,15 @@ spawn:
 void:
   kill-height: -13.0
 
-# Z threshold from which the sword becomes visible
 zshowsword: 0.0
 
-# PvP Zone (OneWide only)
-# PvP is enabled only when the attacker's Z >= pvpzone.z
-# Set with: /realstics onewide setpvpzone [z]
 pvpzone:
   enabled: true
   z: 0.0
 '''
 
 RESOURCES["sb-onewide.yml"] = r'''# ==========================================================
-#  Realstics Scoreboard — OneWide mode
+#  Housing Scoreboard — OneWide mode
 #  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
@@ -2739,11 +2654,11 @@ lines:
   - '&b&m---------------------'
 
 allow-toggle: true
-toggle-permission: 'realstics.scoreboard'
+toggle-permission: 'housing.scoreboard'
 '''
 
 RESOURCES["blockfight.yml"] = r'''# ==========================================================
-#  Realstics — BlockFight mode
+#  Housing — BlockFight mode
 #  Theme: Aqua + White
 # ==========================================================
 
@@ -2762,7 +2677,7 @@ sety: -13.0
 '''
 
 RESOURCES["sb-blockfight.yml"] = r'''# ==========================================================
-#  Realstics Scoreboard — BlockFight mode
+#  Housing Scoreboard — BlockFight mode
 #  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
@@ -2801,70 +2716,51 @@ lines:
   - '&b&m---------------------'
 
 allow-toggle: true
-toggle-permission: 'realstics.scoreboard'
+toggle-permission: 'housing.scoreboard'
 '''
 
 # ==============================================================
 #  README
 # ==============================================================
-README = '''# Realstics Plugin v1.0
+README = '''# Housing Plugin v1.0
 
 Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot compatible.
 
-**Created by Muvixo**
-
 ## Game Modes
 
-| Mode | Status | PvP Zone | Description |
-|------|--------|----------|-------------|
-| **Platform** | Default | ✅ Yes | Leather + Iron armor, Wooden Sword (Sharp I) |
-| **LowMid** | Must be set up | ❌ Always on | Wooden Sword only (Sharp I) |
-| **OneWide** | Must be set up | ✅ Yes | Iron Sword, hidden in spawn zone |
-| **BlockFight** | Must be set up | ❌ Always on | Diamond Sword (Sharp IV), Light Blue Wool (infinite), Shears |
-
-## Features
-
-- **Auto-loads worlds** — no need to edit bukkit.yml
-- **`/realstics join <mode>`** — players teleport with one command
-- PvP with no HP loss (knockback works)
-- No fall damage, infinite food
-- **BlockFight**: only light-blue wool breakable, no drop, infinite
-- **PvP Zone** in Platform & OneWide — PvP only beyond Z threshold
-- **Aqua + White theme** in all configs by default
-- Auto-fills empty messages on plugin update
+| Mode | PvP Zone | Description |
+|------|----------|-------------|
+| **Platform** | ✅ Yes | Leather + Iron armor, Wooden Sword |
+| **LowMid** | ❌ Always | Wooden Sword |
+| **OneWide** | ✅ Yes | Iron Sword |
+| **BlockFight** | ❌ Always | Diamond Sword, Light Blue Wool (infinite) |
 
 ## Commands
 
 ```
-/realstics join <mode>                  - Join a game mode
-/realstics worlds                       - List loaded worlds
-/realstics setworld [world] <mode>      - Assign world
-/realstics <mode> setspawn
-/realstics <mode> setvoid [y]
-/realstics <mode> setpvpzone [z]        - Platform/OneWide only
-/realstics <mode> kit [player]
-/realstics <mode> sb [reload]
-/realstics onewide setzshowsword <z>
-/realstics reload
-/realstics creator
-/realstics help
+/housing join <mode>
+/housing worlds
+/housing setworld [world] <mode>
+/housing <mode> setspawn
+/housing <mode> setvoid [y]
+/housing <mode> setpvpzone [z]
+/housing <mode> kit [player]
+/housing <mode> sb [reload]
+/housing onewide setzshowsword <z>
+/housing reload
+/housing creator
+/housing help
 ```
+
+Aliases: `/hs`, `/hg`
 
 ## PvP Zone
 
-In **Platform** and **OneWide**, PvP is only enabled once the player's Z >= the configured threshold:
+Platform & OneWide support a Z-based PvP zone:
 
 ```
-/realstics platform setpvpzone -50
-/realstics onewide setpvpzone 100
-```
-
-Before the threshold, hits are cancelled with the message: *"You must enter the PvP zone first!"*
-
-Disable with:
-```yaml
-pvpzone:
-  enabled: false
+/housing platform setpvpzone -50
+/housing onewide setpvpzone 100
 ```
 
 ## Building
@@ -2873,7 +2769,7 @@ pvpzone:
 mvn clean package
 ```
 
-Or push to GitHub — Actions builds automatically.
+Output: `target/Housing.jar`
 
 ## Credits
 
@@ -2891,7 +2787,7 @@ def write_file(rel_path, content):
     print("  + " + rel_path)
 
 def main():
-    print("Realstics plugin generator (FULLY COMPLETE + PvP Zone)")
+    print("Housing plugin generator")
     print("=" * 60)
 
     print("\n[1/5] Creating directories...")
@@ -2909,7 +2805,7 @@ def main():
 
     print("\n[4/5] Writing Java sources...")
     for name, content in JAVA.items():
-        write_file(os.path.join("src/main/java/org/realstics", name), content)
+        write_file(os.path.join("src/main/java/org/housing", name), content)
 
     print("\n[5/5] Writing resources...")
     write_file(os.path.join("src/main/resources", "plugin.yml"), PLUGIN_YML)
@@ -2917,11 +2813,11 @@ def main():
         write_file(os.path.join("src/main/resources", name), content)
 
     print("\n" + "=" * 60)
-    print("Done! Realstics plugin generated.")
+    print("Done! Housing plugin generated.")
     print("")
-    print("Theme: Aqua + White")
-    print("PvP Zone: Platform & OneWide")
-    print("BlockFight: light-blue wool only, infinite, no drop")
+    print("Command: /housing  (aliases: /hs, /hg)")
+    print("Folder:  plugins/Housing/")
+    print("Package: org.housing")
     print("")
     print("Build: mvn clean package")
 

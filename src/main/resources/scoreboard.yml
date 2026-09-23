@@ -1,5 +1,5 @@
 # ==========================================================
-#  Realstics Scoreboard — Platform mode
+#  Housing Scoreboard — Platform mode
 #  Theme: Aqua + White (no bold)
 # ==========================================================
 enabled: true
@@ -36,4 +36,4 @@ lines:
   - '&b&m---------------------'
 
 allow-toggle: true
-toggle-permission: 'realstics.scoreboard'
+toggle-permission: 'housing.scoreboard'

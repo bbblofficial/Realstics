@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class Realstics extends JavaPlugin {
+public final class Housing extends JavaPlugin {
 
     private PlayerJoin playerJoin;
     private ScoreboardManager scoreboardManager;
@@ -42,7 +42,8 @@ public final class Realstics extends JavaPlugin {
 
         this.playerJoin = new PlayerJoin(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.playerJoin, this);
-        getServer().getPluginManager().registerEvents(new NoDamage(this), this);
+        getServer().getPluginManager().registerEvents(
+                new NoDamage(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(
                 new Protection(this, this.gameModeManager), this);
         getServer().getPluginManager().registerEvents(new KitRestore(this, this.playerJoin), this);
@@ -56,14 +57,14 @@ public final class Realstics extends JavaPlugin {
 
         this.scoreboardManager = new ScoreboardManager(this, this.gameModeManager);
 
-        RealsticsCommand cmd = new RealsticsCommand(this,
+        HousingCommand cmd = new HousingCommand(this,
                 this.playerJoin, this.scoreboardManager, this.voidSystem,
                 this.gameModeManager, this.worldLoader);
-        getCommand("realstics").setExecutor(cmd);
-        getCommand("realstics").setTabCompleter(cmd);
+        getCommand("housing").setExecutor(cmd);
+        getCommand("housing").setTabCompleter(cmd);
 
         getLogger().info("=================================================");
-        getLogger().info("  Realstics v1.0 - Enabled");
+        getLogger().info("  Housing v1.0 - Enabled");
         getLogger().info("  Modes: Platform, LowMid, OneWide, BlockFight");
         getLogger().info("  Loaded worlds: " + worldLoader.listLoadedWorldNames());
         getLogger().info("=================================================");
@@ -74,12 +75,9 @@ public final class Realstics extends JavaPlugin {
         if (this.scoreboardManager != null) {
             this.scoreboardManager.shutdown();
         }
-        getLogger().info("Realstics disabled.");
+        getLogger().info("Housing disabled.");
     }
 
-    // ============================================================
-    //  DEFAULT config.yml AUTO-MERGE
-    // ============================================================
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
         boolean isNew = !configFile.exists();
@@ -102,7 +100,6 @@ public final class Realstics extends JavaPlugin {
             cfg.setDefaults(defaults);
         }
 
-        // ---- spawn ----
         setIfMissing(cfg, "spawn.world", "world");
         setIfMissing(cfg, "spawn.x", Double.valueOf(0.5D));
         setIfMissing(cfg, "spawn.y", Double.valueOf(100.0D));
@@ -110,16 +107,13 @@ public final class Realstics extends JavaPlugin {
         setIfMissing(cfg, "spawn.yaw", Float.valueOf(0.0F));
         setIfMissing(cfg, "spawn.pitch", Float.valueOf(0.0F));
 
-        // ---- void ----
         setIfMissing(cfg, "void.kill-height", Double.valueOf(-13.0D));
 
-        // ---- messages (Aqua + White) ----
         setIfMissingOrEmpty(cfg, "join-message",
                 "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
         setIfMissingOrEmpty(cfg, "quit-message",
                 "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
-        // ---- combo ----
         setIfMissing(cfg, "combo.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "combo.step", Integer.valueOf(10));
         setIfMissing(cfg, "combo.reset-time", Long.valueOf(3000L));
@@ -132,10 +126,11 @@ public final class Realstics extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
-        // ---- scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
-        // ---- worlds ----
+        setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
+        setIfMissing(cfg, "pvpzone.z", Double.valueOf(0.0D));
+
         setIfMissing(cfg, "worlds.world", "platform");
 
         try {
@@ -151,10 +146,6 @@ public final class Realstics extends JavaPlugin {
         }
     }
 
-    /**
-     * Set value only if the key is missing OR the value is empty.
-     * Useful for auto-fixing empty messages after upgrades.
-     */
     private void setIfMissingOrEmpty(FileConfiguration cfg, String path, Object defaultValue) {
         if (!cfg.contains(path)) {
             cfg.set(path, defaultValue);

@@ -5,12 +5,12 @@
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.realstics</groupId>
-    <artifactId>Realstics</artifactId>
+    <groupId>org.housing</groupId>
+    <artifactId>Housing</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>Realstics</name>
+    <name>Housing</name>
     <description>Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)</description>
 
     <properties>
@@ -53,7 +53,7 @@
     </dependencies>
 
     <build>
-        <finalName>Realstics</finalName>
+        <finalName>Housing</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

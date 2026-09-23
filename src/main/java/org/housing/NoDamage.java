@@ -1,5 +1,8 @@
-package org.realstics;
+package org.housing;
 
+import org.bukkit.ChatColor;
+import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,9 +16,27 @@ public class NoDamage implements Listener {
 
     @SuppressWarnings("unused")
     private final JavaPlugin plugin;
+    private final GameModeManager gameModeManager;
 
-    public NoDamage(JavaPlugin plugin) {
+    public NoDamage(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
+        this.gameModeManager = gameModeManager;
+    }
+
+    private boolean isInPvpZone(Player attacker) {
+        World world = attacker.getWorld();
+        GameMode mode = gameModeManager.getModeForWorld(world);
+
+        if (mode == GameMode.LOWMID || mode == GameMode.BLOCKFIGHT) {
+            return true;
+        }
+
+        FileConfiguration cfg = gameModeManager.getConfig(mode);
+        boolean enabled = cfg.getBoolean("pvpzone.enabled", true);
+        if (!enabled) return true;
+
+        double zoneZ = cfg.getDouble("pvpzone.z", 0.0);
+        return attacker.getLocation().getZ() >= zoneZ;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -29,8 +50,24 @@ public class NoDamage implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
-        if (!event.isCancelled()) {
+
+        if (!(event.getDamager() instanceof Player)) {
+            if (!event.isCancelled()) {
+                event.setDamage(0);
+            }
+            return;
+        }
+
+        Player attacker = (Player) event.getDamager();
+
+        if (isInPvpZone(attacker)) {
+            if (!event.isCancelled()) {
+                event.setDamage(0);
+            }
+        } else {
+            event.setCancelled(true);
             event.setDamage(0);
+            attacker.sendMessage(colorize("&bYou must enter the PvP zone first!"));
         }
     }
 
@@ -53,5 +90,9 @@ public class NoDamage implements Listener {
             player.setSaturation(20.0F);
             player.setExhaustion(0.0F);
         }
+    }
+
+    private String colorize(String message) {
+        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

@@ -1,4 +1,4 @@
-package org.realstics;
+package org.housing;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -23,7 +23,7 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680; // 0xFF0000
+    private static final int LEATHER_COLOR = 16711680;
     private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
