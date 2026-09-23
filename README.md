@@ -2,81 +2,45 @@
 
 Multi-gamemode cosmetic PvP plugin for **Minecraft 1.8.8** — CarbonSpigot compatible.
 
-**Created by Muvixo**
+## Features
 
-## Game Modes
-
-| Mode | Status | Description |
-|------|--------|-------------|
-| **Platform** | Default / enabled | Leather + Iron armor (Prot III), Wooden Sword (Sharp I) |
-| **LowMid** | Must be set up | Wooden Sword only (Sharp I, 5.25 dmg) |
-| **OneWide** | Must be set up | Iron Sword (6 dmg), hidden in spawn zone |
-| **BlockFight** | Must be set up | Diamond Sword (Sharp IV, 12+ dmg), 64 Wool, Shears |
-
-All modes share:
-- PvP enabled, **no HP loss** (knockback + hits still work)
-- No fall damage
-- Infinite food
-- Block / place / drop protection (permission-based)
-- Auto kit restore
-- Per-mode scoreboard
-- Per-mode void system
-- Global combo system
-- Global join / quit messages
+- 4 game modes in one JAR: **Platform, LowMid, OneWide, BlockFight**
+- **Auto-loads worlds** — no need to edit bukkit.yml
+- PvP with no HP loss (knockback works)
+- No fall damage, infinite food
+- Per-mode kits, configs, scoreboards
+- Global combo system + join/quit messages
 
 ## Commands
 
 ```
-/realstics help
-/realstics creator
-/realstics reload
-/realstics setworld [world] <mode>          # assign a world to a mode
-
+/realstics worlds                       - List loaded worlds + assigned modes
+/realstics setworld [world] <mode>      - Assign world (auto-loads if needed)
 /realstics <mode> setspawn
 /realstics <mode> setvoid [y]
 /realstics <mode> kit [player]
 /realstics <mode> sb [reload]
 /realstics onewide setzshowsword <z>
+/realstics reload
+/realstics creator
+/realstics help
 ```
 
 Aliases: `/rs`, `/rl`
 
-**Modes:** `platform`, `lowmid`, `onewide`, `blockfight`
+## Quick Setup
 
-## Permissions
+```
+# In-game, standing in a world:
+/realstics setworld onewide
+/realstics onewide setspawn
+/realstics onewide setvoid -13
 
-| Permission | Default | Description |
-|---|---|---|
-| `realstics.setworld` | op | Assign a world to a mode |
-| `realstics.setspawn` | op | Set spawn for a mode |
-| `realstics.setvoid` | op | Set void Y |
-| `realstics.setzshowsword` | op | OneWide Z threshold |
-| `realstics.kit` | op | Give a kit |
-| `realstics.reload` | op | Reload configs |
-| `realstics.scoreboard` | true | Toggle scoreboard |
-| `realstics.bypass` | op | Bypass all protection |
-| `realstics.break` | false | Break blocks |
-| `realstics.place` | false | Place blocks |
-| `realstics.drop` | false | Drop items |
+# Or with explicit world:
+/realstics setworld world_nether lowmid
+```
 
-## Setup
-
-1. Drop the JAR into `plugins/`
-2. Restart the server
-3. All config files are auto-created with safe merging
-4. Default world (`world`) uses **Platform** automatically
-5. For other modes:
-   ```
-   # Standing in the target world:
-   /realstics setworld lowmid
-   /realstics lowmid setspawn
-   /realstics lowmid setvoid -13
-
-   # Or with explicit world name:
-   /realstics setworld world_nether onewide
-   /realstics onewide setspawn
-   /realstics onewide setzshowsword 100
-   ```
+The plugin will auto-load the world if it exists in the server folder.
 
 ## Building
 
@@ -84,9 +48,7 @@ Aliases: `/rs`, `/rl`
 mvn clean package
 ```
 
-Output: `target/Realstics.jar`
-
-Or push to GitHub — the included workflow builds automatically.
+Or push to GitHub — Actions builds automatically.
 
 ## Credits
 

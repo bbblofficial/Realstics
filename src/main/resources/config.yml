@@ -5,10 +5,6 @@
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
 
-# ----------------------------------------------------------
-#  Spawn (Platform mode)
-#  Set with /realstics platform setspawn
-# ----------------------------------------------------------
 spawn:
   world: world
   x: 0.5
@@ -17,22 +13,12 @@ spawn:
   yaw: 0.0
   pitch: 0.0
 
-# ----------------------------------------------------------
-#  Void (Platform)
-#  Set with /realstics platform setvoid [y]
-# ----------------------------------------------------------
 void:
   kill-height: -13.0
 
-# ----------------------------------------------------------
-#  Join / Quit messages (global — all modes)
-# ----------------------------------------------------------
 join-message: '&b%player% &7joined the game &8(&b%online%&7/&b%max_online%&8)'
 quit-message: '&b%player% &7left the game &8(&b%online%&7/&b%max_online%&8)'
 
-# ----------------------------------------------------------
-#  Combo System (global — all modes)
-# ----------------------------------------------------------
 combo:
   enabled: true
   step: 10
@@ -40,17 +26,14 @@ combo:
   sound-enabled: true
   broadcast-message: "&8&m-------------------------------\n&6&lCOMBO &e&l%combo%x\n&e%attacker% &7got a combo on &c%victim% &7(&6%combo% &7combo)\n&8&m-------------------------------"
 
-# ----------------------------------------------------------
-#  Scoreboard update interval (global)
-# ----------------------------------------------------------
 scoreboard:
   update-interval: 10
 
 # ----------------------------------------------------------
 #  World -> Game Mode mapping
 #  Default: world = platform
-#  Set others with: /realstics setworld [world] <mode>
-#  Valid modes: platform, lowmid, onewide, blockfight
+#  Assign others with: /realstics setworld [world] <mode>
+#  Auto-loads the world if it exists in server folder.
 # ----------------------------------------------------------
 worlds:
   world: platform

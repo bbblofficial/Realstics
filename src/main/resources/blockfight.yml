@@ -1,14 +1,6 @@
 # ==========================================================
 #  Realstics — BlockFight mode
 # ==========================================================
-#  Kit:
-#    Slot 1 — Diamond Sword (Sharpness IV, 12+ dmg, Unbreakable)
-#    Slot 2 — 64 Wool (never decreases)
-#    Slot 3 — Shears (Unbreakable)
-#
-#  Wool may be placed on the map.
-# ==========================================================
-
 spawn:
   world: world
   x: 0.5
@@ -20,5 +12,4 @@ spawn:
 void:
   kill-height: -13.0
 
-# Y level used by sety (same as void for symmetry)
 sety: -13.0

@@ -14,9 +14,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Per-mode void system.
- */
 public class Void implements Listener {
 
     private final JavaPlugin plugin;
@@ -32,7 +29,6 @@ public class Void implements Listener {
     }
 
     public void reloadConfig() {
-        // Nothing cached
     }
 
     public double getKillHeight(World world) {

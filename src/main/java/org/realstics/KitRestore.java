@@ -13,9 +13,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-/**
- * Restores the cosmetic kit when the inventory is empty.
- */
 public class KitRestore implements Listener {
 
     private final JavaPlugin plugin;

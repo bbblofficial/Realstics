@@ -13,38 +13,22 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Manages per-world game modes and per-mode config files.
- *
- * World -> GameMode mapping stored in config.yml under:
- *   worlds:
- *     <worldname>: <modeid>
- *
- * Unmapped world  =>  PLATFORM (enabled by default).
- * LowMid / OneWide / BlockFight must be set up explicitly.
- */
 public class GameModeManager {
 
     private final JavaPlugin plugin;
+    private final WorldLoader worldLoader;
 
-    /** worldName (lowercase) -> GameMode */
     private final Map<String, GameMode> worldModes = new HashMap<String, GameMode>();
-
-    /** GameMode -> its own FileConfiguration */
     private final Map<GameMode, FileConfiguration> modeConfigs =
             new HashMap<GameMode, FileConfiguration>();
-
-    /** GameMode -> its scoreboard FileConfiguration */
     private final Map<GameMode, FileConfiguration> modeScoreboards =
             new HashMap<GameMode, FileConfiguration>();
 
-    public GameModeManager(JavaPlugin plugin) {
+    public GameModeManager(JavaPlugin plugin, WorldLoader worldLoader) {
         this.plugin = plugin;
+        this.worldLoader = worldLoader;
     }
 
-    // ============================================================
-    //  INIT
-    // ============================================================
     public void init() {
         for (GameMode mode : GameMode.values()) {
             ensureModeConfig(mode);
@@ -78,7 +62,7 @@ public class GameModeManager {
 
     public GameMode getModeForWorld(String worldName) {
         if (worldName == null) return GameMode.PLATFORM;
-        World w = Bukkit.getWorld(worldName);
+        World w = worldLoader.findLoaded(worldName);
         return getModeForWorld(w);
     }
 

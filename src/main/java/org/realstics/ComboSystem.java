@@ -19,9 +19,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-/**
- * Combo System — globally shared.
- */
 public class ComboSystem implements Listener {
 
     private final JavaPlugin plugin;

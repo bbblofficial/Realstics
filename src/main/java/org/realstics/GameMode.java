@@ -1,12 +1,5 @@
 package org.realstics;
 
-/**
- * All supported game modes.
- *
- * PLATFORM is the default and enabled automatically.
- * LOWMID, ONEWIDE, BLOCKFIGHT must be assigned to a world first
- * with  /realstics setworld [world] <mode>
- */
 public enum GameMode {
 
     PLATFORM  ("platform",   "Platform",   "config.yml",      "scoreboard.yml"),

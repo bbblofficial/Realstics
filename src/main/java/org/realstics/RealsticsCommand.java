@@ -15,16 +15,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * /realstics [world] <mode> <subcommand>
+ * /realstics <subcommand>
  *
- *   /realstics setworld [world] <mode>     - assign a world to a mode
- *   /realstics <mode> setspawn             - set spawn for that mode
- *   /realstics <mode> setvoid [y]          - set void Y for that mode
- *   /realstics onewide setzshowsword <z>   - OneWide only
- *   /realstics <mode> kit [player]         - give kit
- *   /realstics <mode> sb [reload]          - toggle scoreboard
- *   /realstics reload                      - reload everything
- *   /realstics creator                     - credits
+ *   /realstics worlds                        - list loaded worlds + assigned modes
+ *   /realstics setworld [world] <mode>       - assign (auto-loads world if needed)
+ *   /realstics <mode> setspawn
+ *   /realstics <mode> setvoid [y]
+ *   /realstics onewide setzshowsword <z>
+ *   /realstics <mode> kit [player]
+ *   /realstics <mode> sb [reload]
+ *   /realstics reload
+ *   /realstics creator
  *   /realstics help
  */
 public class RealsticsCommand implements CommandExecutor, TabCompleter {
@@ -34,38 +35,32 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     private final ScoreboardManager scoreboardManager;
     private final Void voidSystem;
     private final GameModeManager gameModeManager;
+    private final WorldLoader worldLoader;
 
     public RealsticsCommand(JavaPlugin plugin,
                             PlayerJoin playerJoin,
                             ScoreboardManager scoreboardManager,
                             Void voidSystem,
-                            GameModeManager gameModeManager) {
+                            GameModeManager gameModeManager,
+                            WorldLoader worldLoader) {
         this.plugin = plugin;
         this.playerJoin = playerJoin;
         this.scoreboardManager = scoreboardManager;
         this.voidSystem = voidSystem;
         this.gameModeManager = gameModeManager;
+        this.worldLoader = worldLoader;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (args.length == 0) {
-            sendHelp(sender);
-            return true;
-        }
+        if (args.length == 0) { sendHelp(sender); return true; }
 
         String sub = args[0].toLowerCase();
 
-        // ---------- top-level ----------
-        if (sub.equals("help")) {
-            sendHelp(sender);
-            return true;
-        }
-
-        if (sub.equals("creator")) {
-            return handleCreator(sender);
-        }
+        if (sub.equals("help"))    { sendHelp(sender); return true; }
+        if (sub.equals("creator")) { return handleCreator(sender); }
+        if (sub.equals("worlds"))  { return handleWorlds(sender); }
 
         if (sub.equals("reload")) {
             if (!sender.hasPermission("realstics.reload")) { sendNoPerm(sender); return true; }
@@ -81,17 +76,13 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return handleSetWorld(sender, args);
         }
 
-        // ---------- mode-scoped ----------
         GameMode mode = GameMode.fromId(sub);
         if (mode == null) {
             sender.sendMessage(colorize("&cUnknown subcommand. Use /realstics help"));
             return true;
         }
 
-        if (args.length < 2) {
-            sendModeHelp(sender, mode);
-            return true;
-        }
+        if (args.length < 2) { sendModeHelp(sender, mode); return true; }
 
         String action = args[1].toLowerCase();
 
@@ -107,7 +98,25 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
+    //  /realstics worlds
+    // ============================================================
+    private boolean handleWorlds(CommandSender sender) {
+        sender.sendMessage(colorize("&8&m----------------------------------"));
+        sender.sendMessage(colorize("&6&lRealstics &7- &fLoaded Worlds"));
+        sender.sendMessage(colorize("&8&m----------------------------------"));
+
+        for (World w : Bukkit.getWorlds()) {
+            GameMode mode = gameModeManager.getModeForWorld(w);
+            sender.sendMessage(colorize("&e" + w.getName() + " &7→ &f" + mode.getDisplayName()));
+        }
+
+        sender.sendMessage(colorize("&8&m----------------------------------"));
+        return true;
+    }
+
+    // ============================================================
     //  /realstics setworld [world] <mode>
+    //  Auto-loads world if folder exists but not loaded.
     // ============================================================
     private boolean handleSetWorld(CommandSender sender, String[] args) {
         if (!sender.hasPermission("realstics.setworld")) { sendNoPerm(sender); return true; }
@@ -115,27 +124,24 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         String worldName;
         GameMode mode;
 
-        // Case 1: /realstics setworld <mode>  (player uses current world)
+        // Case 1: /realstics setworld <mode>   → player's current world
         if (args.length == 2) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(colorize("&cUsage from console: /realstics setworld <world> <mode>"));
-                return true;
-            }
-            Player player = (Player) sender;
-            worldName = player.getWorld().getName().toLowerCase();
             mode = GameMode.fromId(args[1]);
-
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[1]));
                 sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
                 return true;
             }
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(colorize("&cFrom console use: /realstics setworld <world> <mode>"));
+                return true;
+            }
+            worldName = ((Player) sender).getWorld().getName();
         }
-        // Case 2: /realstics setworld <world> <mode>
+        // Case 2: /realstics setworld <world> <mode>  → explicit
         else if (args.length >= 3) {
-            worldName = args[1].toLowerCase();
+            worldName = args[1];
             mode = GameMode.fromId(args[2]);
-
             if (mode == null) {
                 sender.sendMessage(colorize("&cUnknown mode: &e" + args[2]));
                 sender.sendMessage(colorize("&7Modes: platform, lowmid, onewide, blockfight"));
@@ -149,25 +155,36 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        World world = Bukkit.getWorld(worldName);
+        // ★ Auto-load the world if it's not currently loaded
+        World world = worldLoader.findLoaded(worldName);
         if (world == null) {
-            sender.sendMessage(colorize("&cWorld not found: &e" + worldName));
+            sender.sendMessage(colorize("&7World '&e" + worldName
+                    + "&7' is not loaded. Auto-loading..."));
+            world = worldLoader.ensureLoaded(worldName);
+        }
+
+        if (world == null) {
+            sender.sendMessage(colorize("&cCould not load or create world: &e" + worldName));
+            sender.sendMessage(colorize("&7Loaded worlds: &e" + worldLoader.listLoadedWorldNames()));
             return true;
         }
 
-        // If sender is a player, teleport them to that world (if not already there)
+        String finalWorldName = world.getName().toLowerCase();
+        gameModeManager.setWorldMode(finalWorldName, mode);
+
         if (sender instanceof Player) {
             Player player = (Player) sender;
             if (!player.getWorld().equals(world)) {
                 player.teleport(world.getSpawnLocation());
             }
-            player.sendMessage(colorize("&aTeleported to &e" + world.getName()
-                    + "&a. Now run &e/realstics " + mode.getId() + " setspawn"));
+            player.sendMessage(colorize("&aWorld &e" + world.getName()
+                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
+            player.sendMessage(colorize("&7Next: &e/realstics " + mode.getId() + " setspawn"));
+        } else {
+            sender.sendMessage(colorize("&aWorld &e" + world.getName()
+                    + " &ais now game mode &e" + mode.getDisplayName() + "&a."));
         }
 
-        gameModeManager.setWorldMode(worldName, mode);
-        sender.sendMessage(colorize("&aWorld &e" + worldName + " &ais now game mode &e"
-                + mode.getDisplayName() + "&a."));
         return true;
     }
 
@@ -245,7 +262,6 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         }
 
         double z;
-
         if (args.length >= 3) {
             try {
                 z = Double.parseDouble(args[2]);
@@ -324,11 +340,8 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         }
 
         boolean nowVisible = this.scoreboardManager.toggleScoreboard(player);
-        if (nowVisible) {
-            player.sendMessage(colorize("&aScoreboard &lENABLED&a."));
-        } else {
-            player.sendMessage(colorize("&cScoreboard &lDISABLED&c."));
-        }
+        if (nowVisible) player.sendMessage(colorize("&aScoreboard &lENABLED&a."));
+        else            player.sendMessage(colorize("&cScoreboard &lDISABLED&c."));
         return true;
     }
 
@@ -352,6 +365,7 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&6&lRealstics &7- &fCommands"));
         sender.sendMessage(colorize("&8&m----------------------------------"));
         sender.sendMessage(colorize("&e/realstics creator &7- Show plugin credits"));
+        sender.sendMessage(colorize("&e/realstics worlds &7- List loaded worlds"));
         sender.sendMessage(colorize("&e/realstics reload &7- Reload all configs"));
         sender.sendMessage(colorize("&e/realstics setworld [world] <mode> &7- Assign a world"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
@@ -387,19 +401,12 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             List<String> subs = new ArrayList<String>();
-            subs.add("creator");
-            subs.add("help");
-            subs.add("reload");
-            subs.add("setworld");
-            subs.add("platform");
-            subs.add("lowmid");
-            subs.add("onewide");
-            subs.add("blockfight");
+            subs.add("creator"); subs.add("help"); subs.add("worlds");
+            subs.add("reload");  subs.add("setworld");
+            subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
-            for (String s : subs) {
-                if (s.startsWith(partial)) out.add(s);
-            }
+            for (String s : subs) if (s.startsWith(partial)) out.add(s);
             return out;
         }
 
@@ -407,31 +414,20 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
 
             if (sub.equals("setworld")) {
-                // Suggest modes (players can use current world directly)
-                out.add("platform");
-                out.add("lowmid");
-                out.add("onewide");
-                out.add("blockfight");
-                // Also suggest world names
-                for (World w : Bukkit.getWorlds()) {
-                    out.add(w.getName().toLowerCase());
-                }
+                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
+                for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
                 return out;
             }
 
             GameMode mode = GameMode.fromId(sub);
             if (mode != null) {
                 List<String> actions = new ArrayList<String>();
-                actions.add("setspawn");
-                actions.add("setvoid");
-                actions.add("kit");
-                actions.add("sb");
+                actions.add("setspawn"); actions.add("setvoid");
+                actions.add("kit");      actions.add("sb");
                 if (mode == GameMode.ONEWIDE) actions.add("setzshowsword");
 
                 String partial = args[1].toLowerCase();
-                for (String s : actions) {
-                    if (s.startsWith(partial)) out.add(s);
-                }
+                for (String s : actions) if (s.startsWith(partial)) out.add(s);
             }
             return out;
         }
@@ -441,33 +437,21 @@ public class RealsticsCommand implements CommandExecutor, TabCompleter {
             String action = args[1].toLowerCase();
 
             if (sub.equals("setworld")) {
-                out.add("platform");
-                out.add("lowmid");
-                out.add("onewide");
-                out.add("blockfight");
+                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
                 return out;
             }
-
             if (action.equals("kit")) {
                 String partial = args[2].toLowerCase();
-                for (Player p : Bukkit.getOnlinePlayers()) {
+                for (Player p : Bukkit.getOnlinePlayers())
                     if (p.getName().toLowerCase().startsWith(partial)) out.add(p.getName());
-                }
                 return out;
             }
-
-            if (action.equals("sb")) {
-                out.add("reload");
-                return out;
-            }
+            if (action.equals("sb")) { out.add("reload"); return out; }
         }
 
         return out;
     }
 
-    // ============================================================
-    //  HELPERS
-    // ============================================================
     private void sendNoPerm(CommandSender sender) {
         sender.sendMessage(colorize("&cYou do not have permission to do this."));
     }

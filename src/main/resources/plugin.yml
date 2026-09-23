@@ -11,20 +11,8 @@ commands:
       - rs
       - rl
 permissions:
-  realstics.platform:
-    description: Access to Platform mode
-    default: op
-  realstics.lowmid:
-    description: Access to LowMid mode
-    default: op
-  realstics.onewide:
-    description: Access to OneWide mode
-    default: op
-  realstics.blockfight:
-    description: Access to BlockFight mode
-    default: op
   realstics.setworld:
-    description: Set a world's game mode
+    description: Assign a world to a mode (auto-loads if missing)
     default: op
   realstics.setspawn:
     description: Set spawn for a mode
@@ -35,9 +23,6 @@ permissions:
   realstics.setzshowsword:
     description: Set OneWide Z threshold for showing sword
     default: op
-  realstics.setcreator:
-    description: Show plugin credits
-    default: true
   realstics.reload:
     description: Reload the config
     default: op
@@ -48,7 +33,6 @@ permissions:
     description: Toggle the scoreboard
     default: true
 
-  # Protection
   realstics.bypass:
     description: Bypass ALL protection
     default: op

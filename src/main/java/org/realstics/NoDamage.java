@@ -9,13 +9,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Cosmetic PvP rules (ALL modes):
- *   - PvP fully functional (hits + knockback)
- *   - HP never drops
- *   - Fall damage off
- *   - Infinite food
- */
 public class NoDamage implements Listener {
 
     @SuppressWarnings("unused")

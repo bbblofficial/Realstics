@@ -1,13 +1,6 @@
 # ==========================================================
 #  Realstics — OneWide mode
 # ==========================================================
-#  Kit: Iron Sword (6 dmg, Unbreakable)
-#  Sword is HIDDEN while player is inside the spawn zone.
-#  Sword appears once the player passes the Z threshold.
-#
-#  Set Z threshold with:  /realstics onewide setzshowsword <z>
-# ==========================================================
-
 spawn:
   world: world
   x: 0.5
@@ -19,5 +12,4 @@ spawn:
 void:
   kill-height: -13.0
 
-# Z coordinate from which the sword becomes visible
 zshowsword: 0.0

@@ -16,6 +16,7 @@ public final class Realstics extends JavaPlugin {
     private Void voidSystem;
     private ComboSystem comboSystem;
     private GameModeManager gameModeManager;
+    private WorldLoader worldLoader;
 
     @Override
     public void onEnable() {
@@ -24,16 +25,22 @@ public final class Realstics extends JavaPlugin {
             getDataFolder().mkdirs();
         }
 
-        // ---- default config.yml (Platform, auto-merge) ----
         createConfigIfMissing();
         saveDefaultConfig();
         reloadConfig();
 
-        // ---- game mode manager (creates lowmid.yml etc.) ----
-        this.gameModeManager = new GameModeManager(this);
+        this.worldLoader = new WorldLoader(this);
+
+        this.gameModeManager = new GameModeManager(this, this.worldLoader);
         this.gameModeManager.init();
 
-        // ---- listeners ----
+        // Auto-load any world listed in config that isn't loaded yet
+        for (String worldName : this.gameModeManager.getWorldModes().keySet()) {
+            if (this.worldLoader.findLoaded(worldName) == null) {
+                this.worldLoader.ensureLoaded(worldName);
+            }
+        }
+
         this.playerJoin = new PlayerJoin(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.playerJoin, this);
         getServer().getPluginManager().registerEvents(new NoDamage(this), this);
@@ -49,16 +56,16 @@ public final class Realstics extends JavaPlugin {
 
         this.scoreboardManager = new ScoreboardManager(this, this.gameModeManager);
 
-        // ---- command ----
         RealsticsCommand cmd = new RealsticsCommand(this,
                 this.playerJoin, this.scoreboardManager, this.voidSystem,
-                this.gameModeManager);
+                this.gameModeManager, this.worldLoader);
         getCommand("realstics").setExecutor(cmd);
         getCommand("realstics").setTabCompleter(cmd);
 
         getLogger().info("=================================================");
         getLogger().info("  Realstics v1.0 - Enabled");
         getLogger().info("  Modes: Platform, LowMid, OneWide, BlockFight");
+        getLogger().info("  Loaded worlds: " + worldLoader.listLoadedWorldNames());
         getLogger().info("=================================================");
     }
 
@@ -122,11 +129,6 @@ public final class Realstics extends JavaPlugin {
 
         try {
             cfg.save(configFile);
-            if (isNew) {
-                getLogger().info("Created default config.yml");
-            } else {
-                getLogger().info("Config.yml merged (existing values preserved).");
-            }
         } catch (IOException e) {
             getLogger().warning("Could not save config.yml: " + e.getMessage());
         }
@@ -143,4 +145,5 @@ public final class Realstics extends JavaPlugin {
     public Void getVoidSystem()                     { return voidSystem; }
     public ComboSystem getComboSystem()             { return comboSystem; }
     public GameModeManager getGameModeManager()     { return gameModeManager; }
+    public WorldLoader getWorldLoader()             { return worldLoader; }
 }

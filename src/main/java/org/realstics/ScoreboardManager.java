@@ -21,9 +21,6 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-/**
- * Per-world scoreboard driven by each mode's scoreboard file.
- */
 public class ScoreboardManager implements Listener {
 
     private final JavaPlugin plugin;

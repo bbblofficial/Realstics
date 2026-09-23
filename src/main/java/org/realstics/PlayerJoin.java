@@ -18,9 +18,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Gives the correct cosmetic kit per game mode.
- */
 public class PlayerJoin implements Listener {
 
     private final JavaPlugin plugin;
@@ -59,9 +56,6 @@ public class PlayerJoin implements Listener {
         }, 5L);
     }
 
-    // ============================================================
-    //  KIT DISPATCH
-    // ============================================================
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         switch (mode) {
@@ -117,24 +111,17 @@ public class PlayerJoin implements Listener {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
-        // Slot 1 — Diamond Sword (Sharpness IV, 12+ dmg)
         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 4);
         player.getInventory().setItem(0, unbreakable(sword));
 
-        // Slot 2 — 64 Wool (never decreases)
         player.getInventory().setItem(1, new ItemStack(Material.WOOL, 64));
-
-        // Slot 3 — Shears (Unbreakable)
         player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
 
         refillFood(player);
         player.updateInventory();
     }
 
-    // ============================================================
-    //  HELPERS
-    // ============================================================
     private void refillFood(Player player) {
         player.setFoodLevel(20);
         player.setSaturation(20.0F);
@@ -169,9 +156,6 @@ public class PlayerJoin implements Listener {
         return item;
     }
 
-    // ============================================================
-    //  SPAWN
-    // ============================================================
     public void teleportToSpawn(Player player) {
         Location spawn = getSpawnLocation(player.getWorld());
         if (spawn == null) return;

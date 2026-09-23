@@ -11,15 +11,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Protection:
- *   - Cannot break map blocks   (realstics.break)
- *   - Cannot place blocks       (realstics.place)
- *   - Cannot drop items         (realstics.drop)
- *   - realstics.bypass bypasses all
- *
- * BlockFight exception: wool placement is allowed on the map.
- */
 public class Protection implements Listener {
 
     @SuppressWarnings("unused")
@@ -53,7 +44,6 @@ public class Protection implements Listener {
         Player player = event.getPlayer();
         if (hasBypass(player)) return;
 
-        // BlockFight — wool placement allowed
         Material type = event.getBlock().getType();
         if (type == Material.WOOL) return;
 

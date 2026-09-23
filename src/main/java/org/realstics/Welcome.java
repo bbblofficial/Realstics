@@ -12,9 +12,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Custom join/quit messages (global).
- */
 public class Welcome implements Listener {
 
     private final JavaPlugin plugin;
