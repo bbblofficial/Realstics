@@ -1,0 +1,34 @@
+# ==========================================================
+#  Realstics Scoreboard — OneWide mode
+# ==========================================================
+enabled: true
+update-interval: 10
+join-delay: 5
+
+title:
+  animated: true
+  static: '&6OneWide'
+  frames:
+    - '&6O&fneWide'
+    - '&6On&feWide'
+    - '&6One&fWide'
+    - '&6OneW&fide'
+    - '&6OneWi&fde'
+    - '&6OneWid&fe'
+    - '&6OneWide'
+
+lines:
+  - '&8&m----------------'
+  - '&6Mode   &8» &f%mode%'
+  - '&6Player &8» &f%player%'
+  - '&6World  &8» &f%world%'
+  - '&6Ping   &8» &f%ping%ms'
+  - '&6Y      &8» &f%y%'
+  - '&8&m----------------'
+  - '&6Online &8» &f%online%&7/&f%max_online%'
+  - '&8&m----------------'
+  - '&6Play.MineStorm.iR'
+  - '&8&m----------------'
+
+allow-toggle: true
+toggle-permission: 'realstics.scoreboard'

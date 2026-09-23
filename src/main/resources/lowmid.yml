@@ -1,0 +1,17 @@
+# ==========================================================
+#  Realstics — LowMid mode
+# ==========================================================
+#  Kit: Wooden Sword (Sharpness I, 5.25 dmg, Unbreakable)
+#  No damage, no fall damage, infinite food.
+# ==========================================================
+
+spawn:
+  world: world
+  x: 0.5
+  y: 100.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
+void:
+  kill-height: -13.0

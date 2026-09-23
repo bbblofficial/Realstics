@@ -1,0 +1,63 @@
+name: Realstics
+version: 1.0
+main: org.realstics.Realstics
+author: Muvixo
+description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
+commands:
+  realstics:
+    description: Main Realstics command
+    usage: /realstics <mode> <subcommand>
+    aliases:
+      - rs
+      - rl
+permissions:
+  realstics.platform:
+    description: Access to Platform mode
+    default: op
+  realstics.lowmid:
+    description: Access to LowMid mode
+    default: op
+  realstics.onewide:
+    description: Access to OneWide mode
+    default: op
+  realstics.blockfight:
+    description: Access to BlockFight mode
+    default: op
+  realstics.setworld:
+    description: Set a world's game mode
+    default: op
+  realstics.setspawn:
+    description: Set spawn for the current world's mode
+    default: op
+  realstics.setvoid:
+    description: Set void Y level
+    default: op
+  realstics.setzshowsword:
+    description: Set OneWide Z threshold for showing sword
+    default: op
+  realstics.setcreator:
+    description: Show plugin credits
+    default: true
+  realstics.reload:
+    description: Reload the config
+    default: op
+  realstics.kit:
+    description: Give the cosmetic kit
+    default: op
+  realstics.scoreboard:
+    description: Toggle the scoreboard
+    default: true
+
+  # Protection
+  realstics.bypass:
+    description: Bypass ALL protection
+    default: op
+  realstics.break:
+    description: Allow breaking blocks
+    default: false
+  realstics.place:
+    description: Allow placing blocks
+    default: false
+  realstics.drop:
+    description: Allow dropping items
+    default: false

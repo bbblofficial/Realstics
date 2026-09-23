@@ -1,0 +1,37 @@
+# ==========================================================
+#  Realstics Scoreboard — BlockFight mode
+# ==========================================================
+enabled: true
+update-interval: 10
+join-delay: 5
+
+title:
+  animated: true
+  static: '&6BlockFight'
+  frames:
+    - '&6B&flockFight'
+    - '&6Bl&fockFight'
+    - '&6Blo&fckFight'
+    - '&6Bloc&fkFight'
+    - '&6Block&fFight'
+    - '&6BlockF&fight'
+    - '&6BlockFi&fght'
+    - '&6BlockFig&fht'
+    - '&6BlockFigh&ft'
+    - '&6BlockFight'
+
+lines:
+  - '&8&m----------------'
+  - '&6Mode   &8» &f%mode%'
+  - '&6Player &8» &f%player%'
+  - '&6World  &8» &f%world%'
+  - '&6Ping   &8» &f%ping%ms'
+  - '&6Y      &8» &f%y%'
+  - '&8&m----------------'
+  - '&6Online &8» &f%online%&7/&f%max_online%'
+  - '&8&m----------------'
+  - '&6Play.MineStorm.iR'
+  - '&8&m----------------'
+
+allow-toggle: true
+toggle-permission: 'realstics.scoreboard'
