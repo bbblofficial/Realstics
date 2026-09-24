@@ -1,9 +1,7 @@
 package org.housing;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -17,9 +15,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Protection implements Listener {
@@ -28,11 +26,11 @@ public class Protection implements Listener {
     private final GameModeManager gameModeManager;
 
     /**
-     * Player-placed blocks: Location -> place time.
-     * Every block placed by a player is tracked here and
-     * auto-removed after PLACED_DECAY_TICKS.
+     * Player-placed blocks: Location key -> place time.
+     * هر بلاکی که پلیر میذاره اینجا track میشه و
+     * بعد از PLACED_DECAY_TICKS حذف میشه.
      */
-    private final Map<Location, Long> placedBlocks = new HashMap<Location, Long>();
+    private final Map<String, Long> placedBlocks = new HashMap<String, Long>();
 
     /** Auto-remove player-placed blocks after 5 seconds (100 ticks). */
     private static final long PLACED_DECAY_TICKS = 100L;
@@ -44,7 +42,6 @@ public class Protection implements Listener {
     /**
      * The main world name that must NEVER be modified.
      * Loaded from config.yml: protection.locked-world
-     * Default: "world"
      */
     private final String lockedWorld;
 
@@ -52,7 +49,8 @@ public class Protection implements Listener {
         this.plugin = plugin;
         this.gameModeManager = gameModeManager;
         this.lockedWorld = plugin.getConfig().getString("protection.locked-world", "world");
-        plugin.getServer().getPluginManager().registerEvents(this, (Plugin) plugin);
+        // NOTE: registration is done in Housing.java, so we don't register here
+        // to avoid double registration.
     }
 
     // ============================================================
@@ -63,10 +61,6 @@ public class Protection implements Listener {
         return player.hasPermission(PERM_BYPASS);
     }
 
-    /**
-     * True if the world is the main locked world
-     * (where no block modification is allowed).
-     */
     private boolean isLockedWorld(World world) {
         if (world == null) return false;
         return world.getName().equalsIgnoreCase(this.lockedWorld);
@@ -97,54 +91,32 @@ public class Protection implements Listener {
         }
 
         if (hasBypass(player)) return;
-        if (player.hasPermission(PERM_PLACE)) {
-            // Still track for auto-removal
-            trackAndSchedule(event.getBlock());
-            return;
-        }
 
-        // ---- Any block placed by anyone (op or not) is auto-removed ----
+        // ---- Track ALL placed blocks for auto-removal after 5s ----
         final Block placedBlock = event.getBlockPlaced();
         final Location loc = placedBlock.getLocation().clone();
         final Material type = placedBlock.getType();
         final byte data = placedBlock.getData();
+        final String key = locKey(loc);
 
-        // Track it
-        placedBlocks.put(loc, Long.valueOf(System.currentTimeMillis()));
+        placedBlocks.put(key, Long.valueOf(System.currentTimeMillis()));
 
         // Schedule removal after 5 seconds
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 Block b = loc.getBlock();
-                if (b.getType() != Material.AIR && b.getType() == type) {
+                if (b.getType() == type) {
+                    // Remove WITHOUT drops
                     b.setType(Material.AIR);
                 }
-                placedBlocks.remove(loc);
-            }
-        }, PLACED_DECAY_TICKS);
-    }
-
-    private void trackAndSchedule(final Block block) {
-        final Location loc = block.getLocation().clone();
-        final Material type = block.getType();
-
-        placedBlocks.put(loc, Long.valueOf(System.currentTimeMillis()));
-
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                Block b = loc.getBlock();
-                if (b.getType() != Material.AIR && b.getType() == type) {
-                    b.setType(Material.AIR);
-                }
-                placedBlocks.remove(loc);
+                placedBlocks.remove(key);
             }
         }, PLACED_DECAY_TICKS);
     }
 
     // ============================================================
-    //  Block break — only player-placed blocks in non-locked worlds
+    //  Block break — only player-placed blocks, NO DROPS
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -162,36 +134,44 @@ public class Protection implements Listener {
         }
 
         if (hasBypass(player)) return;
-        if (player.hasPermission(PERM_BREAK)) return;
 
-        // Only allow breaking player-placed blocks
+        // ---- Check if it's a player-placed block ----
         Location loc = block.getLocation().clone();
-        if (this.placedBlocks.containsKey(loc)) {
+        String key = locKey(loc);
+
+        if (this.placedBlocks.containsKey(key)) {
+            // Cancel default break (prevents drops)
             event.setCancelled(true);
+            // Remove block manually WITHOUT drops
             block.setType(Material.AIR);
-            this.placedBlocks.remove(loc);
+            this.placedBlocks.remove(key);
             return;
         }
 
-        // Everything else: cancel
+        // ---- If player has break permission, allow (but no drops for natural blocks) ----
+        if (player.hasPermission(PERM_BREAK)) {
+            event.setCancelled(true);
+            block.setType(Material.AIR);
+            return;
+        }
+
+        // ---- Everything else: cancel ----
         event.setCancelled(true);
         player.sendMessage(colorize("&cYou can only break blocks placed by players!"));
     }
 
     // ============================================================
-    //  Drop item — cancel for everyone
+    //  Drop item — cancel for everyone + restore kit
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onDrop(PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
 
-        // Cancel the drop
         event.setCancelled(true);
 
         player.sendMessage(colorize("&cYou cannot drop items! Your kit has been reset."));
 
-        // Reset the kit after 1 tick
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -218,7 +198,7 @@ public class Protection implements Listener {
     // ============================================================
 
     public boolean isPlayerPlaced(Block block) {
-        return this.placedBlocks.containsKey(block.getLocation().clone());
+        return this.placedBlocks.containsKey(locKey(block.getLocation()));
     }
 
     private String colorize(String message) {
