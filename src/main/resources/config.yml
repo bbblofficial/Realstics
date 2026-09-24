@@ -82,21 +82,27 @@ protection:
   # When a player places a block, the stack in their hand
   # is restored to its ORIGINAL size (e.g. 64) instead of
   # decreasing.
-  #
-  # Example: player has 64 wool → places 1 → still 64 wool.
   # ------------------------------------------------------
   block-freeze:
     # Master switch for the block-freeze feature.
     enabled: true
 
     # Force the hand stack back to this size after placing.
-    # Set to -1 to restore to the ORIGINAL stack size instead
-    # of a fixed value.
+    # Set to -1 to restore to the ORIGINAL stack size.
     force-stack-size: -1
 
-    # Players with this permission bypass the freeze and lose
-    # items normally when placing blocks.
-    bypass-permission: "housing.bypass.freeze"
+    # ★ Apply the freeze to EVERYONE (including OP and
+    #   permission holders).
+    #   true  → OP and permission holders KEEP their blocks
+    #   false → OP and permission holders LOSE their blocks
+    apply-to-everyone: true
+
+    # ★ Permissions that can bypass the freeze.
+    #   Only used when `apply-to-everyone` is FALSE.
+    #   Example: a player with this permission will lose
+    #   blocks normally when placing.
+    bypass-permissions:
+      - "housing.bypass.freeze"
 
 # ----------------------------------------------------------
 #  Mode Selection Menu
@@ -112,9 +118,12 @@ menu:
 #  Assign with: /housing setworld [world] <mode>
 #
 #  IMPORTANT:
-#    - "world" (the locked-world above) MUST be mapped to platform
-#    - Each mode SHOULD have exactly ONE world mapped to it
-#    - Do NOT map two worlds to the same mode
+#    - "world" MUST be mapped to platform (default world)
+#    - Each mode should have exactly ONE world
+#    - Do NOT map a world named "platform" to Platform mode
 # ----------------------------------------------------------
 worlds:
   world: platform
+  blockfight: blockfight
+  lowmid: lowmid
+  onewide: onewide

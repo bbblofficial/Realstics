@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +24,10 @@ public final class Housing extends JavaPlugin {
     private WorldLoader worldLoader;
     private ModeMenu modeMenu;
 
+    /**
+     * Pending mode requests from external sources.
+     * Key = player UUID, Value = mode ID (e.g. "onewide").
+     */
     private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
 
     @Override
@@ -36,12 +41,12 @@ public final class Housing extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
 
-        // Save default menu.yml
+        // Save default menu.yml if missing
         if (!new File(getDataFolder(), "menu.yml").exists()) {
             saveResource("menu.yml", false);
         }
 
-        // Save default kit files
+        // Save default kit files if missing
         String[] kitFiles = {
                 "kit-platform.yml",
                 "kit-lowmid.yml",
@@ -90,7 +95,7 @@ public final class Housing extends JavaPlugin {
 
         this.scoreboardManager = new ScoreboardManager(this, this.gameModeManager);
 
-        // Mode Menu
+        // ---- Mode Menu (item + GUI) ----
         this.modeMenu = new ModeMenu(this, this.gameModeManager, this.playerJoin);
         getServer().getPluginManager().registerEvents(this.modeMenu, this);
 
@@ -148,8 +153,9 @@ public final class Housing extends JavaPlugin {
         boolean isNew = !configFile.exists();
 
         if (isNew) {
-            try { configFile.createNewFile(); }
-            catch (IOException e) {
+            try {
+                configFile.createNewFile();
+            } catch (IOException e) {
                 getLogger().warning("Could not create config.yml: " + e.getMessage());
                 return;
             }
@@ -164,6 +170,7 @@ public final class Housing extends JavaPlugin {
             cfg.setDefaults(defaults);
         }
 
+        // ---- Spawn ----
         setIfMissing(cfg, "spawn.world", "world");
         setIfMissing(cfg, "spawn.x", Double.valueOf(0.5D));
         setIfMissing(cfg, "spawn.y", Double.valueOf(100.0D));
@@ -171,13 +178,16 @@ public final class Housing extends JavaPlugin {
         setIfMissing(cfg, "spawn.yaw", Float.valueOf(0.0F));
         setIfMissing(cfg, "spawn.pitch", Float.valueOf(0.0F));
 
+        // ---- Void ----
         setIfMissing(cfg, "void.kill-height", Double.valueOf(-13.0D));
 
+        // ---- Messages ----
         setIfMissingOrEmpty(cfg, "join-message",
                 "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
         setIfMissingOrEmpty(cfg, "quit-message",
                 "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
+        // ---- Combo ----
         setIfMissing(cfg, "combo.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "combo.step", Integer.valueOf(10));
         setIfMissing(cfg, "combo.reset-time", Long.valueOf(3000L));
@@ -190,36 +200,67 @@ public final class Housing extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
+        // ---- Scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
+        // ---- PvP zone ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "pvpzone.x", Double.valueOf(0.0D));
 
+        if (cfg.contains("pvpzone.z")) {
+            if (!cfg.contains("pvpzone.x")) {
+                double oldZ = cfg.getDouble("pvpzone.z", 0.0);
+                cfg.set("pvpzone.x", Double.valueOf(oldZ));
+            }
+            cfg.set("pvpzone.z", null);
+        }
+
+        // ---- World mapping ----
         setIfMissing(cfg, "worlds.world", "platform");
 
+        // ---- Protection ----
         setIfMissing(cfg, "protection.locked-world", "world");
         setIfMissing(cfg, "protection.placed-decay-seconds", Integer.valueOf(5));
         setIfMissing(cfg, "protection.natural-restore-seconds", Integer.valueOf(9));
 
+        // ---- Block Freeze ----
+        setIfMissing(cfg, "protection.block-freeze.enabled", Boolean.valueOf(true));
+        setIfMissing(cfg, "protection.block-freeze.force-stack-size", Integer.valueOf(-1));
+        setIfMissing(cfg, "protection.block-freeze.apply-to-everyone", Boolean.valueOf(true));
+        setIfMissing(cfg, "protection.block-freeze.bypass-permissions",
+                Arrays.asList("housing.bypass.freeze"));
+
+        // ---- Menu (mirror from menu.yml, but stored here as fallback) ----
         setIfMissing(cfg, "menu.enabled", Boolean.valueOf(true));
 
-        try { cfg.save(configFile); }
-        catch (IOException e) {
+        try {
+            cfg.save(configFile);
+        } catch (IOException e) {
             getLogger().warning("Could not save config.yml: " + e.getMessage());
         }
     }
 
     private void setIfMissing(FileConfiguration cfg, String path, Object value) {
-        if (!cfg.contains(path)) cfg.set(path, value);
+        if (!cfg.contains(path)) {
+            cfg.set(path, value);
+        }
     }
 
     private void setIfMissingOrEmpty(FileConfiguration cfg, String path, Object defaultValue) {
-        if (!cfg.contains(path)) { cfg.set(path, defaultValue); return; }
+        if (!cfg.contains(path)) {
+            cfg.set(path, defaultValue);
+            return;
+        }
         Object existing = cfg.get(path);
-        if (existing == null) { cfg.set(path, defaultValue); return; }
+        if (existing == null) {
+            cfg.set(path, defaultValue);
+            return;
+        }
         if (existing instanceof String) {
             String s = (String) existing;
-            if (s.trim().isEmpty()) cfg.set(path, defaultValue);
+            if (s.trim().isEmpty()) {
+                cfg.set(path, defaultValue);
+            }
         }
     }
 

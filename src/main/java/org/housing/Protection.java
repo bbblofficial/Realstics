@@ -1,6 +1,8 @@
 package org.housing;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,8 +33,9 @@ public class Protection implements Listener {
 
     // ---- Block Freeze config ----
     private final boolean freezeEnabled;
-    private final int freezeForceSize;           // -1 = restore original
-    private final String freezeBypassPermission;
+    private final int freezeForceSize;
+    private final boolean freezeApplyToEveryone;
+    private final List<String> freezeBypassPermissions;
 
     private static final String PERM_BYPASS = "housing.bypass";
     private static final String PERM_BREAK  = "housing.break";
@@ -40,18 +43,26 @@ public class Protection implements Listener {
     public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
         this.gameModeManager = gameModeManager;
-        this.lockedWorld = plugin.getConfig().getString("protection.locked-world", "world");
-        this.placedDecaySeconds = plugin.getConfig().getLong("protection.placed-decay-seconds", 5L);
+
+        this.lockedWorld = plugin.getConfig()
+                .getString("protection.locked-world", "world");
+        this.placedDecaySeconds = plugin.getConfig()
+                .getLong("protection.placed-decay-seconds", 5L);
 
         // ---- Block Freeze ----
         this.freezeEnabled = plugin.getConfig()
                 .getBoolean("protection.block-freeze.enabled", true);
         this.freezeForceSize = plugin.getConfig()
                 .getInt("protection.block-freeze.force-stack-size", -1);
-        this.freezeBypassPermission = plugin.getConfig()
-                .getString("protection.block-freeze.bypass-permission",
-                           "housing.bypass.freeze");
-        // ⚠️ registerEvents is done in Housing.java — do NOT register here.
+        this.freezeApplyToEveryone = plugin.getConfig()
+                .getBoolean("protection.block-freeze.apply-to-everyone", true);
+
+        // Read bypass-permissions list
+        List<String> perms = plugin.getConfig()
+                .getStringList("protection.block-freeze.bypass-permissions");
+        this.freezeBypassPermissions = (perms != null)
+                ? perms
+                : new ArrayList<String>();
     }
 
     // ============================================================
@@ -60,11 +71,6 @@ public class Protection implements Listener {
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
-    }
-
-    private boolean hasFreezeBypass(Player player) {
-        if (freezeBypassPermission == null || freezeBypassPermission.isEmpty()) return false;
-        return player.hasPermission(freezeBypassPermission);
     }
 
     private boolean isLockedWorld(World world) {
@@ -77,6 +83,29 @@ public class Protection implements Listener {
                 + ":" + loc.getBlockX()
                 + ":" + loc.getBlockY()
                 + ":" + loc.getBlockZ();
+    }
+
+    /**
+     * ★ Decide whether the freeze should apply to this player.
+     *
+     * Rules:
+     *   - If freezeEnabled is false → no freeze for anyone
+     *   - If freezeApplyToEveryone is TRUE → freeze EVERYONE (including OP)
+     *   - If freezeApplyToEveryone is FALSE → check bypass-permissions list
+     */
+    private boolean shouldFreeze(Player player) {
+        if (!this.freezeEnabled) return false;
+
+        // Apply to everyone → no bypass at all
+        if (this.freezeApplyToEveryone) return true;
+
+        // Check bypass-permissions list
+        for (String perm : this.freezeBypassPermissions) {
+            if (perm != null && !perm.isEmpty() && player.hasPermission(perm)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ============================================================
@@ -96,15 +125,13 @@ public class Protection implements Listener {
         }
 
         // ============================================================
-        //  1) BLOCK FREEZE — restore the hand stack to 64 (or original)
+        //  BLOCK FREEZE
         // ============================================================
-        if (this.freezeEnabled && !hasFreezeBypass(player) && !hasBypass(player)) {
+        if (shouldFreeze(player)) {
             final int slot = player.getInventory().getHeldItemSlot();
             final ItemStack hand = player.getItemInHand();
 
             if (hand != null && hand.getType() != Material.AIR) {
-                // Take a snapshot BEFORE the place event consumes the item.
-                // We add +1 because Bukkit already decremented it by now.
                 final ItemStack restore;
                 if (this.freezeForceSize > 0) {
                     // Fixed size (e.g. force 64)
@@ -128,7 +155,6 @@ public class Protection implements Listener {
                         ItemStack current = player.getInventory().getItem(slot);
 
                         // Only restore if the slot still holds the SAME material
-                        // (so we don't overwrite something the player swapped in)
                         if (current == null
                                 || current.getType() == Material.AIR
                                 || current.getType() == restore.getType()) {
@@ -141,7 +167,7 @@ public class Protection implements Listener {
         }
 
         // ============================================================
-        //  2) Track the placed block for auto-removal
+        //  Track the placed block for auto-removal
         // ============================================================
         final Block placedBlock = event.getBlockPlaced();
         final Location loc = placedBlock.getLocation().clone();
@@ -151,7 +177,7 @@ public class Protection implements Listener {
         this.placedBlocks.put(key, Long.valueOf(System.currentTimeMillis()));
 
         // ============================================================
-        //  3) Auto-remove after N seconds
+        //  Auto-remove after N seconds
         // ============================================================
         long delayTicks = this.placedDecaySeconds * 20L;
         if (delayTicks < 1L) delayTicks = 100L;

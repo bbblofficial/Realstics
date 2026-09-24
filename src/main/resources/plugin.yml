@@ -53,10 +53,10 @@ permissions:
 
   # ---- Protection ----
   housing.bypass:
-    description: Bypass ALL protection (build/drop/break + freeze)
+    description: Bypass ALL protection (build/drop/break)
     default: op
   housing.bypass.freeze:
-    description: Bypass the block-freeze (items decrease normally)
+    description: Bypass block-freeze (only if apply-to-everyone is false)
     default: false
   housing.break:
     description: Allow breaking blocks
