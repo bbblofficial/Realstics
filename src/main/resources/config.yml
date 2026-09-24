@@ -37,6 +37,15 @@ combo:
   broadcast-message: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
 
 # ----------------------------------------------------------
+#  Combat Tag (LowMid — real-damage modes)
+#  When two players hit each other, both are "in combat".
+#  When combat ends (kill, logout, or timeout) → full HP.
+# ----------------------------------------------------------
+combat:
+  # How long a combat tag lasts (in seconds)
+  duration-seconds: 15
+
+# ----------------------------------------------------------
 #  Scoreboard (global)
 # ----------------------------------------------------------
 scoreboard:

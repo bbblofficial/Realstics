@@ -25,6 +25,7 @@ public final class Housing extends JavaPlugin {
     private GameModeManager gameModeManager;
     private WorldLoader worldLoader;
     private ModeMenu modeMenu;
+    private CombatManager combatManager;
 
     /**
      * Pending mode requests from external sources.
@@ -99,6 +100,10 @@ public final class Housing extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new DeathListener(this, this.gameModeManager), this);
 
+        // ★ Combat Tag + HP restore (LowMid real-damage modes)
+        this.combatManager = new CombatManager(this, this.gameModeManager);
+        getServer().getPluginManager().registerEvents(this.combatManager, this);
+
         this.voidSystem = new Void(this, this.playerJoin, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.voidSystem, this);
 
@@ -122,6 +127,7 @@ public final class Housing extends JavaPlugin {
         getLogger().info("  Modes: Platform, LowMid, OneWide, BlockFight");
         getLogger().info("  Loaded worlds: " + worldLoader.listLoadedWorldNames());
         getLogger().info("  Menu: " + (modeMenu.getConfig().getBoolean("item.enabled", true) ? "ENABLED" : "DISABLED"));
+        getLogger().info("  Combat: " + (combatManager != null ? "ENABLED" : "DISABLED"));
         getLogger().info("=================================================");
     }
 
@@ -245,6 +251,9 @@ public final class Housing extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
+        // ---- ★ Combat Tag ----
+        setIfMissing(cfg, "combat.duration-seconds", Long.valueOf(15L));
+
         // ---- Scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
@@ -330,4 +339,5 @@ public final class Housing extends JavaPlugin {
     public GameModeManager getGameModeManager()     { return gameModeManager; }
     public WorldLoader getWorldLoader()             { return worldLoader; }
     public ModeMenu getModeMenu()                   { return modeMenu; }
+    public CombatManager getCombatManager()         { return combatManager; }
 }
