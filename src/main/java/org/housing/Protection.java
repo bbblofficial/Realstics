@@ -1,9 +1,13 @@
 package org.housing;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -14,109 +18,69 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Protection implements Listener {
 
-    @SuppressWarnings("unused")
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    /** Keys of player-placed light-blue wool blocks (world:x:y:z) */
-    private final Set<String> playerPlacedWool = new HashSet<String>();
+    /**
+     * Player-placed blocks: Location -> place time.
+     * Every block placed by a player is tracked here and
+     * auto-removed after PLACED_DECAY_TICKS.
+     */
+    private final Map<Location, Long> placedBlocks = new HashMap<Location, Long>();
 
-    private static final byte LIGHT_BLUE_DATA = 3;
-
-    /** Auto-remove player-placed light-blue wool after 5 seconds (100 ticks). */
-    private static final long WOOL_AUTO_REMOVE_TICKS = 100L;
+    /** Auto-remove player-placed blocks after 5 seconds (100 ticks). */
+    private static final long PLACED_DECAY_TICKS = 100L;
 
     private static final String PERM_BYPASS = "housing.bypass";
     private static final String PERM_BREAK  = "housing.break";
     private static final String PERM_PLACE  = "housing.place";
 
+    /**
+     * The main world name that must NEVER be modified.
+     * Loaded from config.yml: protection.locked-world
+     * Default: "world"
+     */
+    private final String lockedWorld;
+
     public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
         this.gameModeManager = gameModeManager;
-    }
-
-    private boolean hasBypass(Player player) {
-        return player.hasPermission(PERM_BYPASS);
-    }
-
-    private boolean isBlockFight(World world) {
-        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
+        this.lockedWorld = plugin.getConfig().getString("protection.locked-world", "world");
+        plugin.getServer().getPluginManager().registerEvents(this, (Plugin) plugin);
     }
 
     // ============================================================
     //  Helpers
     // ============================================================
 
-    private String locKey(Block block) {
-        return block.getWorld().getName()
-                + ":" + block.getX()
-                + ":" + block.getY()
-                + ":" + block.getZ();
+    private boolean hasBypass(Player player) {
+        return player.hasPermission(PERM_BYPASS);
     }
 
-    @SuppressWarnings("deprecation")
-    private boolean isLightBlueWool(Block block) {
-        if (block.getType() != Material.WOOL) return false;
-        return block.getData() == LIGHT_BLUE_DATA;
+    /**
+     * True if the world is the main locked world
+     * (where no block modification is allowed).
+     */
+    private boolean isLockedWorld(World world) {
+        if (world == null) return false;
+        return world.getName().equalsIgnoreCase(this.lockedWorld);
     }
 
-    @SuppressWarnings("deprecation")
-    private boolean isLightBlueWoolItem(ItemStack item) {
-        if (item == null) return false;
-        if (item.getType() != Material.WOOL) return false;
-        return item.getData().getData() == LIGHT_BLUE_DATA;
-    }
-
-    // ============================================================
-    //  Block break
-    // ============================================================
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(BlockBreakEvent event) {
-        final Player player = event.getPlayer();
-        final Block block = event.getBlock();
-
-        if (hasBypass(player)) return;
-        if (player.hasPermission(PERM_BREAK)) return;
-
-        if (isLightBlueWool(block)) {
-            String key = locKey(block);
-            if (playerPlacedWool.contains(key)) {
-                event.setCancelled(true);
-                block.setType(Material.AIR);
-                playerPlacedWool.remove(key);
-
-                // In BlockFight, refill wool
-                if (isBlockFight(block.getWorld())) {
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(
-                            this.plugin, new Runnable() {
-                                @Override
-                                public void run() {
-                                    refillWool(player);
-                                }
-                            }, 1L);
-                }
-                return;
-            }
-            event.setCancelled(true);
-            player.sendMessage(colorize("&cYou can only break light blue wool placed by players!"));
-            return;
-        }
-
-        event.setCancelled(true);
-        player.sendMessage(colorize("&cYou can only break light blue wool!"));
+    private String locKey(Location loc) {
+        return loc.getWorld().getName()
+                + ":" + loc.getBlockX()
+                + ":" + loc.getBlockY()
+                + ":" + loc.getBlockZ();
     }
 
     // ============================================================
-    //  Block place — auto-remove for EVERYONE
+    //  Block place — track + auto-remove after 5s
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -124,89 +88,98 @@ public class Protection implements Listener {
         final Player player = event.getPlayer();
         final World world = event.getBlock().getWorld();
 
-        if (hasBypass(player)) return;
-
-        Material type = event.getBlock().getType();
-        if (type == Material.WOOL) {
-
-            // ---- Any mode: light-blue wool is auto-removed after 5s ----
-            if (isLightBlueWool(event.getBlock())) {
-                final Block placedBlock = event.getBlock();
-                final String key = locKey(placedBlock);
-
-                // Register the block
-                playerPlacedWool.add(key);
-
-                // Refill the player's wool stack (infinite wool)
-                Bukkit.getScheduler().scheduleSyncDelayedTask(
-                        this.plugin, new Runnable() {
-                            @Override
-                            public void run() {
-                                refillWool(player);
-                            }
-                        }, 1L);
-
-                // Schedule auto-remove after 5 seconds
-                scheduleWoolRemoval(placedBlock, key);
-                return;
-            }
-
-            // Non-light-blue wool: block unless player has PERM_PLACE
-            if (player.hasPermission(PERM_PLACE)) return;
-
+        // ---- Locked world: never allow any placement ----
+        if (isLockedWorld(world)) {
+            if (hasBypass(player)) return;
             event.setCancelled(true);
-            player.sendMessage(colorize("&cYou cannot place this type of wool here!"));
+            player.sendMessage(colorize("&cYou cannot build in this world!"));
             return;
         }
 
-        if (player.hasPermission(PERM_PLACE)) return;
+        if (hasBypass(player)) return;
+        if (player.hasPermission(PERM_PLACE)) {
+            // Still track for auto-removal
+            trackAndSchedule(event.getBlock());
+            return;
+        }
 
+        // ---- Any block placed by anyone (op or not) is auto-removed ----
+        final Block placedBlock = event.getBlockPlaced();
+        final Location loc = placedBlock.getLocation().clone();
+        final Material type = placedBlock.getType();
+        final byte data = placedBlock.getData();
+
+        // Track it
+        placedBlocks.put(loc, Long.valueOf(System.currentTimeMillis()));
+
+        // Schedule removal after 5 seconds
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                Block b = loc.getBlock();
+                if (b.getType() != Material.AIR && b.getType() == type) {
+                    b.setType(Material.AIR);
+                }
+                placedBlocks.remove(loc);
+            }
+        }, PLACED_DECAY_TICKS);
+    }
+
+    private void trackAndSchedule(final Block block) {
+        final Location loc = block.getLocation().clone();
+        final Material type = block.getType();
+
+        placedBlocks.put(loc, Long.valueOf(System.currentTimeMillis()));
+
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                Block b = loc.getBlock();
+                if (b.getType() != Material.AIR && b.getType() == type) {
+                    b.setType(Material.AIR);
+                }
+                placedBlocks.remove(loc);
+            }
+        }, PLACED_DECAY_TICKS);
+    }
+
+    // ============================================================
+    //  Block break — only player-placed blocks in non-locked worlds
+    // ============================================================
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        final Player player = event.getPlayer();
+        final Block block = event.getBlock();
+        final World world = block.getWorld();
+
+        // ---- Locked world: never allow any break ----
+        if (isLockedWorld(world)) {
+            if (hasBypass(player)) return;
+            event.setCancelled(true);
+            player.sendMessage(colorize("&cYou cannot break blocks in this world!"));
+            return;
+        }
+
+        if (hasBypass(player)) return;
+        if (player.hasPermission(PERM_BREAK)) return;
+
+        // Only allow breaking player-placed blocks
+        Location loc = block.getLocation().clone();
+        if (this.placedBlocks.containsKey(loc)) {
+            event.setCancelled(true);
+            block.setType(Material.AIR);
+            this.placedBlocks.remove(loc);
+            return;
+        }
+
+        // Everything else: cancel
         event.setCancelled(true);
-        player.sendMessage(colorize("&cYou cannot place blocks here!"));
+        player.sendMessage(colorize("&cYou can only break blocks placed by players!"));
     }
 
     // ============================================================
-    //  Auto-remove scheduling — uses BUKKIT scheduler + safety net
-    // ============================================================
-
-    private void scheduleWoolRemoval(final Block placedBlock, final String key) {
-        final World blockWorld = placedBlock.getWorld();
-        final int bx = placedBlock.getX();
-        final int by = placedBlock.getY();
-        final int bz = placedBlock.getZ();
-
-        // Primary: remove after exactly 5 seconds (100 ticks)
-        Bukkit.getScheduler().scheduleSyncDelayedTask(
-                this.plugin, new Runnable() {
-                    @Override
-                    public void run() {
-                        Block b = blockWorld.getBlockAt(bx, by, bz);
-                        if (b.getType() == Material.WOOL
-                                && b.getData() == LIGHT_BLUE_DATA) {
-                            b.setType(Material.AIR);
-                        }
-                        playerPlacedWool.remove(key);
-                    }
-                }, WOOL_AUTO_REMOVE_TICKS);
-
-        // Safety net: check again at 6 seconds (120 ticks) in case
-        // the block was placed again or something interfered
-        Bukkit.getScheduler().scheduleSyncDelayedTask(
-                this.plugin, new Runnable() {
-                    @Override
-                    public void run() {
-                        Block b = blockWorld.getBlockAt(bx, by, bz);
-                        if (b.getType() == Material.WOOL
-                                && b.getData() == LIGHT_BLUE_DATA) {
-                            b.setType(Material.AIR);
-                        }
-                        playerPlacedWool.remove(key);
-                    }
-                }, WOOL_AUTO_REMOVE_TICKS + 20L);
-    }
-
-    // ============================================================
-    //  AntiDrop — cancel + reset kit for EVERYONE
+    //  Drop item — cancel for everyone
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -219,114 +192,33 @@ public class Protection implements Listener {
         player.sendMessage(colorize("&cYou cannot drop items! Your kit has been reset."));
 
         // Reset the kit after 1 tick
-        Bukkit.getScheduler().scheduleSyncDelayedTask(
-                this.plugin, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!player.isOnline()) return;
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
 
-                        player.getInventory().clear();
-                        player.getInventory().setArmorContents(null);
-                        player.updateInventory();
+                player.getInventory().clear();
+                player.getInventory().setArmorContents(null);
+                player.updateInventory();
 
-                        JavaPlugin pl = Protection.this.plugin;
-                        if (pl instanceof Housing) {
-                            Housing housing = (Housing) pl;
-                            PlayerJoin pj = housing.getPlayerJoin();
-                            if (pj != null) {
-                                pj.giveKit(player);
-                            }
-                        }
+                JavaPlugin pl = Protection.this.plugin;
+                if (pl instanceof Housing) {
+                    Housing housing = (Housing) pl;
+                    PlayerJoin pj = housing.getPlayerJoin();
+                    if (pj != null) {
+                        pj.giveKit(player);
                     }
-                }, 1L);
-    }
-
-    // ============================================================
-    //  Refill wool — infinite wool for the player
-    // ============================================================
-
-    /**
-     * Refills the player's light-blue wool stack back to 64.
-     * If the player doesn't have any wool, put 64 in slot 1.
-     */
-    private void refillWool(Player player) {
-        if (player == null || !player.isOnline()) return;
-
-        PlayerInventory inv = player.getInventory();
-
-        // Look for existing light-blue wool
-        for (int i = 0; i < inv.getSize(); i++) {
-            ItemStack item = inv.getItem(i);
-            if (isLightBlueWoolItem(item)) {
-                if (item.getAmount() < 64) {
-                    item.setAmount(64);
-                    inv.setItem(i, item);
-                    player.updateInventory();
-                }
-                return;
-            }
-        }
-
-        // No wool found → give 64 in slot 1
-        ItemStack wool = new ItemStack(Material.WOOL, 64);
-        wool.setDurability(LIGHT_BLUE_DATA);
-        inv.setItem(1, wool);
-        player.updateInventory();
-    }
-
-    // ============================================================
-    //  Prevent wool consumption in hand (infinite wool)
-    // ============================================================
-
-    /**
-     * Fires every time the player's held item changes or they
-     * interact. If they're holding light-blue wool and it's
-     * not full, refill it.
-     */
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onItemHeld(PlayerItemHeldEvent event) {
-        Player player = event.getPlayer();
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (player.isOnline()) {
-                    refillWoolIfNeeded(player);
                 }
             }
         }, 1L);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onInteract(PlayerInteractEvent event) {
-        final Player player = event.getPlayer();
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (player.isOnline()) {
-                    refillWoolIfNeeded(player);
-                }
-            }
-        }, 1L);
-    }
+    // ============================================================
+    //  Utility
+    // ============================================================
 
-    /**
-     * Called every tick-ish to make sure the wool stack never decreases.
-     * Only refills light-blue wool.
-     */
-    private void refillWoolIfNeeded(Player player) {
-        if (!player.isOnline()) return;
-
-        PlayerInventory inv = player.getInventory();
-        for (int i = 0; i < inv.getSize(); i++) {
-            ItemStack item = inv.getItem(i);
-            if (isLightBlueWoolItem(item)) {
-                if (item.getAmount() < 64) {
-                    item.setAmount(64);
-                    inv.setItem(i, item);
-                    player.updateInventory();
-                }
-            }
-        }
+    public boolean isPlayerPlaced(Block block) {
+        return this.placedBlocks.containsKey(block.getLocation().clone());
     }
 
     private String colorize(String message) {

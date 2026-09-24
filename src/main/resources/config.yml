@@ -60,6 +60,27 @@ pvpzone:
   x: 0.0
 
 # ----------------------------------------------------------
+#  Protection
+#  - locked-world: هیچ بلوکی نمی‌تونه گذاشته یا شکسته بشه
+#                  (به جز پلیر با perm housing.bypass)
+#  - All placed blocks in other worlds are auto-removed
+#    after `placed-decay-seconds` seconds.
+# ----------------------------------------------------------
+protection:
+  # The world that must NEVER be modified (no break/place).
+  # Typically the main lobby/main world.
+  locked-world: "world"
+
+  # Auto-remove player-placed blocks after this many seconds.
+  # Applies to every non-locked world.
+  placed-decay-seconds: 5
+
+  # Natural blocks placed by the world itself are NOT restored.
+  # This is the delay for natural block restore (unused for now,
+  # reserved for future use).
+  natural-restore-seconds: 9
+
+# ----------------------------------------------------------
 #  World -> Game Mode mapping
 #  Valid modes: platform, lowmid, onewide, blockfight
 #  Assign with: /housing setworld [world] <mode>
