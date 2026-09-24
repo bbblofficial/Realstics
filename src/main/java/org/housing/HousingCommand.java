@@ -40,10 +40,13 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        // /housing (no args) → join default mode (platform) if player
+        // ============================================================
+        //  /housing  (no args) → ALWAYS join the DEFAULT world
+        //  (locked-world from config, which is mapped to Platform)
+        // ============================================================
         if (args.length == 0) {
             if (sender instanceof Player) {
-                return handleJoin(sender, new String[]{"join", "platform"});
+                return joinDefaultWorld(sender);
             }
             sendHelp(sender);
             return true;
@@ -104,6 +107,96 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
+    //  ★ /housing (no args) — ALWAYS go to default world (Platform)
+    // ============================================================
+
+    /**
+     * Teleports the player to the DEFAULT world, which is:
+     *   1. protection.locked-world  (from config.yml)
+     *   2. mapped to GameMode.PLATFORM
+     *
+     * This method does NOT rely on worldModes iteration order.
+     */
+    private boolean joinDefaultWorld(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use /housing."));
+            return true;
+        }
+        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+
+        final Player player = (Player) sender;
+        final GameMode mode = GameMode.PLATFORM;
+
+        // ---- Read the default world name from config ----
+        String defaultWorldName = plugin.getConfig()
+                .getString("protection.locked-world", "world");
+
+        if (defaultWorldName == null || defaultWorldName.trim().isEmpty()) {
+            defaultWorldName = "world";
+        }
+
+        // ---- Ensure the world is loaded ----
+        World targetWorld = worldLoader.findLoaded(defaultWorldName);
+        if (targetWorld == null) {
+            targetWorld = worldLoader.ensureLoaded(defaultWorldName);
+        }
+
+        if (targetWorld == null) {
+            player.sendMessage(colorize("&cDefault world '&e" + defaultWorldName
+                    + "&c' could not be loaded."));
+            return true;
+        }
+
+        // ---- Make sure the world is mapped to Platform ----
+        gameModeManager.setWorldMode(targetWorld.getName().toLowerCase(), GameMode.PLATFORM);
+
+        final World finalWorld = targetWorld;
+
+        // ---- Already in the target world? Just refresh kit + menu ----
+        if (player.getWorld().equals(finalWorld)) {
+            player.getInventory().clear();
+            player.getInventory().setArmorContents(null);
+            playerJoin.giveKitForMode(player, mode); // this also gives the menu item
+            player.updateInventory();
+
+            player.sendMessage(colorize("&bKit refreshed for &f"
+                    + mode.getDisplayName() + "&b."));
+            return true;
+        }
+
+        // ---- Get spawn location ----
+        Location spawn = playerJoin.getSpawnLocation(finalWorld);
+        if (spawn == null) {
+            spawn = finalWorld.getSpawnLocation();
+        }
+
+        // ---- Clear inventory BEFORE teleport ----
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(null);
+        player.updateInventory();
+
+        // ---- Teleport ----
+        player.teleport(spawn);
+
+        // ---- Give kit + menu AFTER teleport completes ----
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
+
+                player.getInventory().clear();
+                player.getInventory().setArmorContents(null);
+                playerJoin.giveKitForMode(player, mode); // this also gives the menu item
+                player.updateInventory();
+            }
+        }, 5L);
+
+        player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
+                + " &b(world: &f" + finalWorld.getName() + "&b)"));
+        return true;
+    }
+
+    // ============================================================
     //  Commands
     // ============================================================
 
@@ -157,6 +250,11 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        // ★ Special case: "join platform" → go to DEFAULT world (locked-world)
+        if (mode == GameMode.PLATFORM) {
+            return joinDefaultWorld(sender);
+        }
+
         final Player player = (Player) sender;
 
         String worldName = gameModeManager.getWorldForMode(mode);
@@ -181,17 +279,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         final GameMode finalMode = mode;
 
-        // ---- Same world: just refresh kit + re-give menu ----
+        // ---- Same world: just refresh kit + menu ----
         if (player.getWorld().equals(targetWorld)) {
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
             playerJoin.giveKitForMode(player, finalMode);
             player.updateInventory();
-
-            if (plugin instanceof Housing) {
-                ModeMenu menu = ((Housing) plugin).getModeMenu();
-                if (menu != null) menu.giveMenuItem(player);
-            }
 
             player.sendMessage(colorize("&bKit refreshed for &f"
                     + finalMode.getDisplayName() + "&b."));
@@ -203,15 +296,15 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             spawn = targetWorld.getSpawnLocation();
         }
 
-        // Clear inventory before teleport
+        // ---- Clear inventory before teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // Teleport
+        // ---- Teleport ----
         player.teleport(spawn);
 
-        // Give kit + menu item after teleport completes
+        // ---- Give kit + menu after teleport ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -220,12 +313,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
                 playerJoin.giveKitForMode(player, finalMode);
-
-                if (plugin instanceof Housing) {
-                    ModeMenu menu = ((Housing) plugin).getModeMenu();
-                    if (menu != null) menu.giveMenuItem(player);
-                }
-
                 player.updateInventory();
             }
         }, 5L);
@@ -432,12 +519,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             target = (Player) sender;
         }
 
-        playerJoin.giveKitForMode(target, mode);
-
-        if (plugin instanceof Housing) {
-            ModeMenu menu = ((Housing) plugin).getModeMenu();
-            if (menu != null) menu.giveMenuItem(target);
-        }
+        playerJoin.giveKitForMode(target, mode); // also gives the menu item
 
         if (sender.equals(target)) {
             sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));

@@ -1,7 +1,6 @@
 # ==========================================================
 #  Housing Configuration — Platform (default mode)
 #  Version: 1.0
-
 # ==========================================================
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
@@ -59,9 +58,15 @@ pvpzone:
   enabled: true
   x: 0.0
 
-
+# ----------------------------------------------------------
+#  Protection
+#  locked-world: the DEFAULT world. It is:
+#    - The destination of /housing (no args)
+#    - NEVER modifiable (no break/place)
+# ----------------------------------------------------------
 protection:
   # The world that must NEVER be modified (no break/place).
+  # This is also the DEFAULT world for /housing (no args).
   locked-world: "world"
 
   # Auto-remove player-placed blocks after this many seconds.
@@ -83,6 +88,11 @@ menu:
 #  World -> Game Mode mapping
 #  Valid modes: platform, lowmid, onewide, blockfight
 #  Assign with: /housing setworld [world] <mode>
+#
+#  IMPORTANT:
+#    - "world" (the locked-world above) MUST be mapped to platform
+#    - Each mode SHOULD have exactly ONE world mapped to it
+#    - Do NOT map two worlds to the same mode
 # ----------------------------------------------------------
 worlds:
   world: platform

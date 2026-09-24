@@ -42,14 +42,9 @@ public class PlayerJoin implements Listener {
                     return;
                 }
 
-                // Default: kit for current world + spawn + menu
                 giveKit(player);
                 teleportToSpawn(player);
-
-                if (plugin instanceof Housing) {
-                    ModeMenu menu = ((Housing) plugin).getModeMenu();
-                    if (menu != null) menu.giveMenuItem(player);
-                }
+                // giveKit خودش آیتم منو رو میده
             }
         }, 40L);
     }
@@ -62,17 +57,13 @@ public class PlayerJoin implements Listener {
             public void run() {
                 if (!player.isOnline()) return;
                 giveKit(player);
-
-                if (plugin instanceof Housing) {
-                    ModeMenu menu = ((Housing) plugin).getModeMenu();
-                    if (menu != null) menu.giveMenuItem(player);
-                }
+                // giveKit خودش آیتم منو رو میده
             }
         }, 5L);
     }
 
     // ============================================================
-    //  Kit
+    //  Kit  ★ این متد حالا همیشه منو رو هم میده
     // ============================================================
 
     public void giveKit(Player player) {
@@ -87,11 +78,26 @@ public class PlayerJoin implements Listener {
         FileConfiguration kit = gameModeManager.getKit(mode);
         if (kit != null) {
             KitLoader.applyKit(player, kit);
-            return;
+        } else {
+            plugin.getLogger().warning("[Housing] Kit file missing for mode: " + mode.getId());
         }
 
-        // Fallback (در صورتی که فایل کیت خراب باشد)
-        plugin.getLogger().warning("[Housing] Kit file missing for mode: " + mode.getId());
+        // ★★★ همیشه آیتم منو رو بعد از کیت بده ★★★
+        giveMenuItem(player);
+    }
+
+    /**
+     * مستقیم آیتم منو رو از ModeMenu می‌گیره و میده.
+     * این متد باعث میشه هر جا giveKit صدا زده بشه، منو هم بیاد.
+     */
+    public void giveMenuItem(Player player) {
+        if (player == null || !player.isOnline()) return;
+        if (!(plugin instanceof Housing)) return;
+
+        ModeMenu menu = ((Housing) plugin).getModeMenu();
+        if (menu != null) {
+            menu.giveMenuItem(player);
+        }
     }
 
     // ============================================================

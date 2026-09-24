@@ -7,8 +7,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,7 +21,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -49,6 +46,7 @@ public class ModeMenu implements Listener {
         this.gameModeManager = gameModeManager;
         this.playerJoin = playerJoin;
         loadConfig();
+        startSafetyTask(); // ★ چک دوره‌ای
     }
 
     // ============================================================
@@ -68,7 +66,6 @@ public class ModeMenu implements Listener {
 
         this.menuConfig = YamlConfiguration.loadConfiguration(this.menuFile);
 
-        // merge defaults
         InputStream defStream = plugin.getResource("menu.yml");
         if (defStream != null) {
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
@@ -76,7 +73,6 @@ public class ModeMenu implements Listener {
             this.menuConfig.setDefaults(defaults);
             this.menuConfig.options().copyDefaults(true);
 
-            // ensure all keys exist
             for (String key : defaults.getKeys(true)) {
                 if (!this.menuConfig.contains(key)
                         && !defaults.isConfigurationSection(key)) {
@@ -98,6 +94,46 @@ public class ModeMenu implements Listener {
 
     public FileConfiguration getConfig() {
         return this.menuConfig;
+    }
+
+    // ============================================================
+    //  ★ SAFETY TASK
+    //  هر 3 ثانیه چک می‌کنه اگه پلیر آیتم منو رو نداره بهش بده
+    // ============================================================
+
+    private void startSafetyTask() {
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (!menuConfig.getBoolean("item.enabled", true)) return;
+
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (!player.hasPermission(PERM_MENU)) continue;
+                    if (player.isDead()) continue;
+
+                    if (!hasMenuItem(player)) {
+                        giveMenuItem(player);
+                    }
+                }
+            }
+        }, 60L, 60L); // هر 3 ثانیه
+    }
+
+    /**
+     * چک می‌کنه که پلیر آیتم منو رو داره یا نه.
+     */
+    private boolean hasMenuItem(Player player) {
+        int slot = this.menuConfig.getInt("item.slot", 8);
+        if (slot < 0 || slot > 8) slot = 8;
+
+        ItemStack item = player.getInventory().getItem(slot);
+        if (item == null || item.getType() == Material.AIR) return false;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || meta.getDisplayName() == null) return false;
+
+        String expected = colorize(this.menuConfig.getString("item.name", "&b&lMode Selector"));
+        return meta.getDisplayName().equals(expected);
     }
 
     // ============================================================
@@ -169,15 +205,11 @@ public class ModeMenu implements Listener {
 
         Inventory inv = Bukkit.createInventory(null, size, title);
 
-        // ---- Fill with filler ----
         ItemStack filler = buildFiller();
         if (filler != null) {
-            for (int i = 0; i < size; i++) {
-                inv.setItem(i, filler);
-            }
+            for (int i = 0; i < size; i++) inv.setItem(i, filler);
         }
 
-        // ---- Mode buttons ----
         if (this.menuConfig.isConfigurationSection("buttons")) {
             for (String modeId : this.menuConfig.getConfigurationSection("buttons").getKeys(false)) {
                 if (GameMode.fromId(modeId) == null) continue;
@@ -187,13 +219,10 @@ public class ModeMenu implements Listener {
                 if (slot < 0 || slot >= size) continue;
 
                 ItemStack button = buildButton(player, path);
-                if (button != null) {
-                    inv.setItem(slot, button);
-                }
+                if (button != null) inv.setItem(slot, button);
             }
         }
 
-        // ---- Close button ----
         if (this.menuConfig.getBoolean("close-button.enabled", true)) {
             int slot = this.menuConfig.getInt("close-button.slot", size - 5);
             if (slot >= 0 && slot < size) {
@@ -204,7 +233,6 @@ public class ModeMenu implements Listener {
 
         player.openInventory(inv);
 
-        // play sound
         if (this.menuConfig.getBoolean("gui.sound-open", true)) {
             playSound(player, "gui.sound-open-name", "CLICK",
                     "gui.sound-open-volume", 1.0F,
@@ -310,7 +338,6 @@ public class ModeMenu implements Listener {
 
         if (player.getInventory().getHeldItemSlot() != slot) return;
 
-        // check name matches
         ItemMeta meta = item.getItemMeta();
         if (meta == null || meta.getDisplayName() == null) return;
 
@@ -338,7 +365,6 @@ public class ModeMenu implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0) return;
 
-        // close button?
         if (this.menuConfig.getBoolean("close-button.enabled", true)) {
             int closeSlot = this.menuConfig.getInt("close-button.slot", -1);
             if (slot == closeSlot) {
@@ -347,14 +373,12 @@ public class ModeMenu implements Listener {
             }
         }
 
-        // mode buttons?
         if (this.menuConfig.isConfigurationSection("buttons")) {
             for (String modeId : this.menuConfig.getConfigurationSection("buttons").getKeys(false)) {
                 int btnSlot = this.menuConfig.getInt("buttons." + modeId + ".slot", -1);
                 if (slot != btnSlot) continue;
                 if (GameMode.fromId(modeId) == null) continue;
 
-                // play sound
                 if (this.menuConfig.getBoolean("gui.sound-click", true)) {
                     playSound(player, "gui.sound-click-name", "LEVEL_UP",
                             "gui.sound-click-volume", 1.0F,
@@ -393,10 +417,13 @@ public class ModeMenu implements Listener {
             @Override
             public void run() {
                 if (player.isOnline()) {
-                    giveMenuItem(player);
+                    // اگه PlayerJoin قبلاً داده، دست نمیزنیم
+                    if (!hasMenuItem(player)) {
+                        giveMenuItem(player);
+                    }
                 }
             }
-        }, 40L);
+        }, 50L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -407,7 +434,7 @@ public class ModeMenu implements Listener {
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
             @Override
             public void run() {
-                if (player.isOnline()) {
+                if (player.isOnline() && !hasMenuItem(player)) {
                     giveMenuItem(player);
                 }
             }

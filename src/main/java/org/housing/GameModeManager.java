@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,7 +18,9 @@ public class GameModeManager {
     private final JavaPlugin plugin;
     private final WorldLoader worldLoader;
 
-    private final Map<String, GameMode> worldModes = new HashMap<String, GameMode>();
+    // ★ LinkedHashMap → ترتیب درج حفظ میشه
+    private final Map<String, GameMode> worldModes = new LinkedHashMap<String, GameMode>();
+
     private final Map<GameMode, FileConfiguration> modeConfigs =
             new HashMap<GameMode, FileConfiguration>();
     private final Map<GameMode, FileConfiguration> modeScoreboards =
@@ -42,12 +45,25 @@ public class GameModeManager {
     public void loadWorldMappings() {
         worldModes.clear();
         FileConfiguration cfg = plugin.getConfig();
+
+        // ★ اول locked-world رو اضافه کن که همیشه اول لیست باشه
+        String locked = cfg.getString("protection.locked-world", "world");
+        String lockedModeId = cfg.getString("worlds." + locked.toLowerCase(), "platform");
+        GameMode lockedMode = GameMode.fromId(lockedModeId);
+        if (lockedMode != null) {
+            worldModes.put(locked.toLowerCase(), lockedMode);
+        }
+
+        // ★ بعد بقیه worlds
         if (cfg.isConfigurationSection("worlds")) {
             for (String world : cfg.getConfigurationSection("worlds").getKeys(false)) {
+                String wl = world.toLowerCase();
+                if (worldModes.containsKey(wl)) continue; // locked-world رو رد کن
+
                 String modeId = cfg.getString("worlds." + world);
                 GameMode mode = GameMode.fromId(modeId);
                 if (mode != null) {
-                    worldModes.put(world.toLowerCase(), mode);
+                    worldModes.put(wl, mode);
                 }
             }
         }
@@ -72,10 +88,28 @@ public class GameModeManager {
         plugin.saveConfig();
     }
 
+    /**
+     * ★ FIX نهایی: برای هر mode، حتماً world اصلی (locked-world) رو
+     * اگه به این mode مپ شده باشه، اول برمی‌گردونه.
+     * برای Platform: همیشه locked-world (پیش‌فرض: "world")
+     */
     public String getWorldForMode(GameMode mode) {
         if (mode == null) return null;
+
+        // ---- مرحله 1: locked-world اگه به این mode مپ شده ----
+        String locked = plugin.getConfig()
+                .getString("protection.locked-world", "world").toLowerCase();
+
+        GameMode lockedMode = worldModes.get(locked);
+        if (lockedMode == mode) {
+            return locked;
+        }
+
+        // ---- مرحله 2: اولین world توی LinkedHashMap (با ترتیب) ----
         for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
-            if (entry.getValue() == mode) return entry.getKey();
+            if (entry.getValue() == mode) {
+                return entry.getKey();
+            }
         }
         return null;
     }
@@ -131,10 +165,6 @@ public class GameModeManager {
         modeConfigs.put(mode, cfg);
     }
 
-    // ============================================================
-    //  Scoreboard
-    // ============================================================
-
     private void ensureModeScoreboard(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getScoreboardFile());
         if (!file.exists()) {
@@ -173,10 +203,6 @@ public class GameModeManager {
 
         modeScoreboards.put(mode, cfg);
     }
-
-    // ============================================================
-    //  Kit
-    // ============================================================
 
     private void ensureModeKit(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getKitFile());
@@ -217,40 +243,23 @@ public class GameModeManager {
         modeKits.put(mode, cfg);
     }
 
-    // ============================================================
-    //  Getters
-    // ============================================================
-
     public FileConfiguration getConfig(GameMode mode) {
         FileConfiguration cfg = modeConfigs.get(mode);
-        if (cfg == null) {
-            ensureModeConfig(mode);
-            cfg = modeConfigs.get(mode);
-        }
+        if (cfg == null) { ensureModeConfig(mode); cfg = modeConfigs.get(mode); }
         return cfg;
     }
 
     public FileConfiguration getScoreboard(GameMode mode) {
         FileConfiguration cfg = modeScoreboards.get(mode);
-        if (cfg == null) {
-            ensureModeScoreboard(mode);
-            cfg = modeScoreboards.get(mode);
-        }
+        if (cfg == null) { ensureModeScoreboard(mode); cfg = modeScoreboards.get(mode); }
         return cfg;
     }
 
     public FileConfiguration getKit(GameMode mode) {
         FileConfiguration cfg = modeKits.get(mode);
-        if (cfg == null) {
-            ensureModeKit(mode);
-            cfg = modeKits.get(mode);
-        }
+        if (cfg == null) { ensureModeKit(mode); cfg = modeKits.get(mode); }
         return cfg;
     }
-
-    // ============================================================
-    //  Reload / Save
-    // ============================================================
 
     public void reloadMode(GameMode mode) {
         ensureModeConfig(mode);
