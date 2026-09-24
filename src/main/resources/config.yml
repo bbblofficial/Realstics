@@ -50,6 +50,35 @@ join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
 quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
 
 # ----------------------------------------------------------
+#  Death Messages (global)
+#  Placeholders: %victim%, %killer%, %world%
+# ----------------------------------------------------------
+death:
+  # Enable custom death messages? (If false, vanilla messages are used)
+  enabled: true
+
+  # Default death message (no killer)
+  default: '&c%victim% &7died'
+
+  # Killed by another player
+  killed-by-player: '&c%victim% &7was slain by &c%killer%'
+
+  # Killed by a mob / entity
+  killed-by-mob: '&c%victim% &7was killed by &c%killer%'
+
+  # ★ Respawn behavior
+  #  true  → player respawns in the SAME world they died in
+  #          (only for modes with real damage — LowMid)
+  #  false → player always respawns in the lobby (Platform)
+  respawn-in-same-world: true
+
+  # Modes where players CAN actually die (real damage).
+  # If a player dies in one of these modes, they respawn there.
+  # Any other mode → they respawn in the lobby.
+  real-damage-modes:
+    - lowmid
+
+# ----------------------------------------------------------
 #  PvP Zone (Platform only)
 #  PvP is enabled only when the attacker's X >= pvpzone.x
 #  Set with: /housing platform setpvpzone [x]
@@ -79,10 +108,6 @@ protection:
   # ------------------------------------------------------
   #  Block Freeze — prevents stack size from decreasing
   # ------------------------------------------------------
-  # When a player places a block, the stack in their hand
-  # is restored to its ORIGINAL size (e.g. 64) instead of
-  # decreasing.
-  # ------------------------------------------------------
   block-freeze:
     # Master switch for the block-freeze feature.
     enabled: true
@@ -99,8 +124,6 @@ protection:
 
     # ★ Permissions that can bypass the freeze.
     #   Only used when `apply-to-everyone` is FALSE.
-    #   Example: a player with this permission will lose
-    #   blocks normally when placing.
     bypass-permissions:
       - "housing.bypass.freeze"
 

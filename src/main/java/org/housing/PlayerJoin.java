@@ -1,5 +1,6 @@
 package org.housing;
 
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -21,6 +22,10 @@ public class PlayerJoin implements Listener {
         this.plugin = plugin;
         this.gameModeManager = gameModeManager;
     }
+
+    // ============================================================
+    //  JOIN
+    // ============================================================
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
@@ -49,15 +54,54 @@ public class PlayerJoin implements Listener {
         }, 40L);
     }
 
+    // ============================================================
+    //  RESPAWN
+    // ============================================================
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(final PlayerRespawnEvent event) {
         final Player player = event.getPlayer();
+
+        // ---- Check if we should respawn in the same world ----
+        FileConfiguration cfg = plugin.getConfig();
+        boolean sameWorld = cfg.getBoolean("death.respawn-in-same-world", true);
+
+        if (sameWorld) {
+            GameMode mode = gameModeManager.getModeForWorld(
+                    event.getRespawnLocation().getWorld());
+
+            List<String> realModes = cfg.getStringList("death.real-damage-modes");
+            boolean isRealDamageMode = false;
+
+            if (realModes != null) {
+                for (String m : realModes) {
+                    if (m != null && m.equalsIgnoreCase(mode.getId())) {
+                        isRealDamageMode = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isRealDamageMode) {
+                // Respawn in the SAME world (e.g. LowMid)
+                // DeathListener already handled teleport + kit, but we
+                // re-give the kit to be safe.
+                Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!player.isOnline()) return;
+                        giveKit(player);
+                    }
+                }, 5L);
+                return;
+            }
+        }
+
+        // ---- Default: send to lobby (Platform) ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
-
-                // ★ After death, respawn at the lobby too
                 joinLobby(player);
             }
         }, 5L);
@@ -69,8 +113,7 @@ public class PlayerJoin implements Listener {
 
     /**
      * Sends the player to the LOBBY world (default world = Platform).
-     * This is used on join and respawn, so players never land
-     * in their previous mode's world.
+     * Used on join and (optionally) on respawn.
      */
     public void joinLobby(final Player player) {
         if (player == null || !player.isOnline()) return;
@@ -97,7 +140,7 @@ public class PlayerJoin implements Listener {
 
         final World targetWorld = lobbyWorld;
 
-        // ---- Get Platform spawn from its config (which is the lobby spawn) ----
+        // ---- Get Platform spawn from its config ----
         FileConfiguration platformCfg = gameModeManager.getConfig(GameMode.PLATFORM);
         Location spawn = readSpawn(platformCfg);
 
@@ -131,7 +174,7 @@ public class PlayerJoin implements Listener {
                 if (!player.isOnline()) return;
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
-                giveKitForMode(player, GameMode.PLATFORM); // gives kit + menu
+                giveKitForMode(player, GameMode.PLATFORM);
                 player.updateInventory();
             }
         }, 5L);

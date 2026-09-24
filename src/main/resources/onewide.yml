@@ -2,9 +2,11 @@
 #  Housing — OneWide mode
 #  Theme: Aqua + White
 # ==========================================================
+#  AUTO-MERGED on plugin update. Existing values are preserved.
+# ==========================================================
 
 spawn:
-  world: world
+  world: onewide
   x: 0.5
   y: 100.0
   z: 0.5

@@ -87,6 +87,10 @@ public final class Housing extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
+        // ★ Custom death messages + LowMid respawn logic
+        getServer().getPluginManager().registerEvents(
+                new DeathListener(this, this.gameModeManager), this);
+
         this.voidSystem = new Void(this, this.playerJoin, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.voidSystem, this);
 
@@ -202,6 +206,16 @@ public final class Housing extends JavaPlugin {
 
         // ---- Scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
+
+        // ---- Death Messages ----
+        setIfMissing(cfg, "death.enabled", Boolean.valueOf(true));
+        setIfMissingOrEmpty(cfg, "death.default", "&c%victim% &7died");
+        setIfMissingOrEmpty(cfg, "death.killed-by-player",
+                "&c%victim% &7was slain by &c%killer%");
+        setIfMissingOrEmpty(cfg, "death.killed-by-mob",
+                "&c%victim% &7was killed by &c%killer%");
+        setIfMissing(cfg, "death.respawn-in-same-world", Boolean.valueOf(true));
+        setIfMissing(cfg, "death.real-damage-modes", Arrays.asList("lowmid"));
 
         // ---- PvP zone ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));

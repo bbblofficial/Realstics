@@ -63,6 +63,10 @@ public class Void implements Listener {
     }
 
     private void handleVoidFall(final Player player) {
+        final World currentWorld = player.getWorld();
+        final GameMode currentMode = gameModeManager.getModeForWorld(currentWorld);
+
+        // Reset vitals
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
         player.setSaturation(20.0F);
@@ -77,18 +81,27 @@ public class Void implements Listener {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
-        Location spawn = playerJoin.getSpawnLocation(player.getWorld());
-        if (spawn != null) {
-            player.teleport(spawn);
-        } else {
-            player.teleport(player.getWorld().getSpawnLocation());
+        // ============================================================
+        //  ★ Determine spawn location
+        //  Priority:
+        //    1. Mode spawn IF it belongs to the current world
+        //    2. Current world's default spawn
+        // ============================================================
+        Location spawn = playerJoin.getSpawnLocation(currentWorld);
+
+        if (spawn == null || !spawn.getWorld().equals(currentWorld)) {
+            // Configured spawn is in a DIFFERENT world → fall back
+            spawn = currentWorld.getSpawnLocation();
         }
 
+        player.teleport(spawn);
+
+        // Give the mode's kit (not the lobby kit)
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (player.isOnline()) {
-                    playerJoin.giveKit(player);
+                    playerJoin.giveKitForMode(player, currentMode);
                 }
             }
         }, 2L);
