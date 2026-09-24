@@ -32,6 +32,9 @@ permissions:
   housing.setspawn:
     description: Set spawn for a mode
     default: op
+  housing.setlobbyspawn:
+    description: Set the lobby spawn point
+    default: op
   housing.setvoid:
     description: Set void Y level
     default: op

@@ -31,6 +31,7 @@ public class PlayerJoin implements Listener {
             public void run() {
                 if (!player.isOnline()) return;
 
+                // ---- Pending mode from external source? ----
                 String pendingMode = null;
                 if (plugin instanceof Housing) {
                     pendingMode = ((Housing) plugin)
@@ -42,9 +43,8 @@ public class PlayerJoin implements Listener {
                     return;
                 }
 
-                giveKit(player);
-                teleportToSpawn(player);
-                // giveKit خودش آیتم منو رو میده
+                // ★★★ ALWAYS go to LOBBY (Platform / default world) ★★★
+                joinLobby(player);
             }
         }, 40L);
     }
@@ -56,14 +56,89 @@ public class PlayerJoin implements Listener {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
-                giveKit(player);
-                // giveKit خودش آیتم منو رو میده
+
+                // ★ After death, respawn at the lobby too
+                joinLobby(player);
             }
         }, 5L);
     }
 
     // ============================================================
-    //  Kit  ★ این متد حالا همیشه منو رو هم میده
+    //  ★ JOIN LOBBY — always teleport to the default world (Platform)
+    // ============================================================
+
+    /**
+     * Sends the player to the LOBBY world (default world = Platform).
+     * This is used on join and respawn, so players never land
+     * in their previous mode's world.
+     */
+    public void joinLobby(final Player player) {
+        if (player == null || !player.isOnline()) return;
+
+        // ---- Resolve lobby world ----
+        String lobbyName = plugin.getConfig()
+                .getString("protection.locked-world", "world");
+        if (lobbyName == null || lobbyName.trim().isEmpty()) {
+            lobbyName = "world";
+        }
+
+        World lobbyWorld = Bukkit.getWorld(lobbyName);
+        if (lobbyWorld == null && plugin instanceof Housing) {
+            WorldLoader loader = ((Housing) plugin).getWorldLoader();
+            if (loader != null) {
+                lobbyWorld = loader.ensureLoaded(lobbyName);
+            }
+        }
+        if (lobbyWorld == null) {
+            plugin.getLogger().warning("[Housing] Lobby world '"
+                    + lobbyName + "' not found!");
+            return;
+        }
+
+        final World targetWorld = lobbyWorld;
+
+        // ---- Get Platform spawn from its config (which is the lobby spawn) ----
+        FileConfiguration platformCfg = gameModeManager.getConfig(GameMode.PLATFORM);
+        Location spawn = readSpawn(platformCfg);
+
+        // fallback: use world's default spawn
+        if (spawn == null || !spawn.getWorld().equals(targetWorld)) {
+            spawn = targetWorld.getSpawnLocation();
+        }
+
+        final Location finalSpawn = spawn;
+
+        // ---- Already in lobby world? Just refresh kit + menu ----
+        if (player.getWorld().equals(targetWorld)) {
+            player.teleport(finalSpawn);
+            giveKitForMode(player, GameMode.PLATFORM);
+            player.updateInventory();
+            return;
+        }
+
+        // ---- Clear inventory BEFORE teleport ----
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(null);
+        player.updateInventory();
+
+        // ---- Teleport ----
+        player.teleport(finalSpawn);
+
+        // ---- Give kit + menu AFTER teleport ----
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
+                player.getInventory().clear();
+                player.getInventory().setArmorContents(null);
+                giveKitForMode(player, GameMode.PLATFORM); // gives kit + menu
+                player.updateInventory();
+            }
+        }, 5L);
+    }
+
+    // ============================================================
+    //  Kit
     // ============================================================
 
     public void giveKit(Player player) {
@@ -82,22 +157,14 @@ public class PlayerJoin implements Listener {
             plugin.getLogger().warning("[Housing] Kit file missing for mode: " + mode.getId());
         }
 
-        // ★★★ همیشه آیتم منو رو بعد از کیت بده ★★★
         giveMenuItem(player);
     }
 
-    /**
-     * مستقیم آیتم منو رو از ModeMenu می‌گیره و میده.
-     * این متد باعث میشه هر جا giveKit صدا زده بشه، منو هم بیاد.
-     */
     public void giveMenuItem(Player player) {
         if (player == null || !player.isOnline()) return;
         if (!(plugin instanceof Housing)) return;
-
         ModeMenu menu = ((Housing) plugin).getModeMenu();
-        if (menu != null) {
-            menu.giveMenuItem(player);
-        }
+        if (menu != null) menu.giveMenuItem(player);
     }
 
     // ============================================================

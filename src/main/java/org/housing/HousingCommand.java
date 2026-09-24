@@ -56,11 +56,13 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase();
 
         // ---- Player commands ----
-        if (sub.equals("help"))    { sendHelp(sender); return true; }
-        if (sub.equals("creator")) { return handleCreator(sender); }
-        if (sub.equals("worlds"))  { return handleWorlds(sender); }
-        if (sub.equals("join"))    { return handleJoin(sender, args); }
-        if (sub.equals("menu"))    { return handleMenu(sender); }
+        if (sub.equals("help"))         { sendHelp(sender); return true; }
+        if (sub.equals("creator"))      { return handleCreator(sender); }
+        if (sub.equals("worlds"))       { return handleWorlds(sender); }
+        if (sub.equals("join"))         { return handleJoin(sender, args); }
+        if (sub.equals("menu"))         { return handleMenu(sender); }
+        if (sub.equals("lobby"))        { return handleLobby(sender); }
+        if (sub.equals("setlobbyspawn")){ return handleSetLobbySpawn(sender); }
 
         // ---- Admin: reload ----
         if (sub.equals("reload")) {
@@ -111,16 +113,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     //  ★ /housing (no args) — ALWAYS Platform in "world"
     // ============================================================
 
-    /**
-     * Teleports the player to the DEFAULT world (Platform).
-     *
-     * Priority:
-     *   1. protection.locked-world from config.yml
-     *   2. Hard-coded fallback: "world"
-     *
-     * The message shown will ALWAYS be:
-     *   "Joined Platform (world: world)"
-     */
     private boolean joinDefaultWorld(CommandSender sender) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use /housing."));
@@ -131,22 +123,18 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         final Player player = (Player) sender;
         final GameMode mode = GameMode.PLATFORM;
 
-        // ---- Read locked-world from config (with hard fallback) ----
         String defaultWorldName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
 
-        // HARD FALLBACK: if config is broken, force "world"
         if (defaultWorldName == null || defaultWorldName.trim().isEmpty()) {
             defaultWorldName = "world";
         }
 
-        // Ensure the world is loaded
         World targetWorld = worldLoader.findLoaded(defaultWorldName);
         if (targetWorld == null) {
             targetWorld = worldLoader.ensureLoaded(defaultWorldName);
         }
 
-        // If it STILL failed and the name is not "world", try "world" as fallback
         if (targetWorld == null && !defaultWorldName.equalsIgnoreCase("world")) {
             targetWorld = worldLoader.findLoaded("world");
             if (targetWorld == null) {
@@ -160,39 +148,32 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // Force the world to be mapped to Platform
         gameModeManager.setWorldMode(targetWorld.getName().toLowerCase(), GameMode.PLATFORM);
 
         final World finalWorld = targetWorld;
 
-        // ---- Already in the target world? Just refresh kit + menu ----
         if (player.getWorld().equals(finalWorld)) {
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
             playerJoin.giveKitForMode(player, mode);
             player.updateInventory();
 
-            // ALWAYS print the target message
             player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
                     + " &b(world: &f" + finalWorld.getName() + "&b)"));
             return true;
         }
 
-        // ---- Get spawn location ----
         Location spawn = playerJoin.getSpawnLocation(finalWorld);
         if (spawn == null) {
             spawn = finalWorld.getSpawnLocation();
         }
 
-        // ---- Clear inventory BEFORE teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // ---- Teleport ----
         player.teleport(spawn);
 
-        // ---- Give kit + menu AFTER teleport completes ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -205,9 +186,55 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             }
         }, 5L);
 
-        // ALWAYS print the target message
         player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
                 + " &b(world: &f" + finalWorld.getName() + "&b)"));
+        return true;
+    }
+
+    // ============================================================
+    //  ★ /housing lobby — Teleport player to the LOBBY (Platform)
+    // ============================================================
+
+    private boolean handleLobby(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use /housing lobby."));
+            return true;
+        }
+        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+
+        Player player = (Player) sender;
+        playerJoin.joinLobby(player);
+        player.sendMessage(colorize("&bTeleported to the lobby."));
+        return true;
+    }
+
+    // ============================================================
+    //  ★ /housing setlobbyspawn — Set the LOBBY spawn
+    //  (Saved to Platform mode's spawn config)
+    // ============================================================
+
+    private boolean handleSetLobbySpawn(CommandSender sender) {
+        if (!sender.hasPermission("housing.setlobbyspawn")) { sendNoPerm(sender); return true; }
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use setlobbyspawn."));
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Location loc = player.getLocation();
+
+        FileConfiguration config = gameModeManager.getConfig(GameMode.PLATFORM);
+        config.set("spawn.world", loc.getWorld().getName());
+        config.set("spawn.x", Double.valueOf(loc.getX()));
+        config.set("spawn.y", Double.valueOf(loc.getY()));
+        config.set("spawn.z", Double.valueOf(loc.getZ()));
+        config.set("spawn.yaw", Float.valueOf(loc.getYaw()));
+        config.set("spawn.pitch", Float.valueOf(loc.getPitch()));
+        gameModeManager.saveModeConfig(GameMode.PLATFORM);
+
+        player.sendMessage(colorize("&b[Lobby] &fLobby spawn set to &b"
+                + loc.getWorld().getName() + " "
+                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "&b."));
         return true;
     }
 
@@ -265,7 +292,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ★ Special case: "join platform" → go to DEFAULT world
         if (mode == GameMode.PLATFORM) {
             return joinDefaultWorld(sender);
         }
@@ -294,7 +320,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         final GameMode finalMode = mode;
 
-        // ---- Same world: just refresh kit + menu ----
         if (player.getWorld().equals(targetWorld)) {
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
@@ -311,15 +336,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             spawn = targetWorld.getSpawnLocation();
         }
 
-        // ---- Clear inventory before teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // ---- Teleport ----
         player.teleport(spawn);
 
-        // ---- Give kit + menu after teleport ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -589,10 +611,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b/housing &f- Join the default mode (Platform)"));
         sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
         sender.sendMessage(colorize("&b/housing menu &f- Open the mode selection menu"));
+        sender.sendMessage(colorize("&b/housing lobby &f- Teleport to the lobby"));
         sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
         sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
         sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
         sender.sendMessage(colorize("&b/housing setworld [world] <mode> &f- Assign a world"));
+        sender.sendMessage(colorize("&b/housing setlobbyspawn &f- Set the lobby spawn"));
         sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&b/housing <mode> setspawn &f- Set spawn"));
@@ -635,6 +659,8 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             subs.add("creator"); subs.add("help"); subs.add("worlds");
             subs.add("reload");  subs.add("setworld"); subs.add("join");
             subs.add("menu");
+            subs.add("lobby");
+            subs.add("setlobbyspawn");
             subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
