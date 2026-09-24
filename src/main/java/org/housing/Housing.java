@@ -7,7 +7,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.configuration.file.FileConfiguration;
@@ -29,6 +31,12 @@ public final class Housing extends JavaPlugin {
      * Key = player UUID, Value = mode ID (e.g. "onewide").
      */
     private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
+
+    /**
+     * ★ Build Mode — players in this set keep ALL placed blocks
+     *   (no auto-decay). Toggle with /housing buildmode
+     */
+    private final Set<UUID> buildModePlayers = new HashSet<UUID>();
 
     @Override
     public void onEnable() {
@@ -146,6 +154,39 @@ public final class Housing extends JavaPlugin {
 
     public boolean hasPendingMode(UUID uuid) {
         return uuid != null && this.pendingModes.containsKey(uuid);
+    }
+
+    // ============================================================
+    //  ★ Build Mode API
+    // ============================================================
+
+    /**
+     * Toggle build mode for a player.
+     * @return true if build mode is now ENABLED, false if DISABLED
+     */
+    public boolean toggleBuildMode(UUID uuid) {
+        if (uuid == null) return false;
+        if (this.buildModePlayers.contains(uuid)) {
+            this.buildModePlayers.remove(uuid);
+            return false;
+        } else {
+            this.buildModePlayers.add(uuid);
+            return true;
+        }
+    }
+
+    public boolean isInBuildMode(UUID uuid) {
+        return uuid != null && this.buildModePlayers.contains(uuid);
+    }
+
+    public void setBuildMode(UUID uuid, boolean enabled) {
+        if (uuid == null) return;
+        if (enabled) this.buildModePlayers.add(uuid);
+        else         this.buildModePlayers.remove(uuid);
+    }
+
+    public Set<UUID> getBuildModePlayers() {
+        return this.buildModePlayers;
     }
 
     // ============================================================

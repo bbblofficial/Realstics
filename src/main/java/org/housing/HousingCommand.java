@@ -64,6 +64,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         if (sub.equals("lobby"))        { return handleLobby(sender); }
         if (sub.equals("setlobbyspawn")){ return handleSetLobbySpawn(sender); }
 
+        // ★ NEW: /housing buildmode
+        if (sub.equals("buildmode"))    { return handleBuildMode(sender, args); }
+
         // ---- Admin: reload ----
         if (sub.equals("reload")) {
             if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
@@ -110,6 +113,54 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
+    //  ★ /housing buildmode — Toggle build mode
+    // ============================================================
+
+    private boolean handleBuildMode(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can use buildmode."));
+            return true;
+        }
+        if (!sender.hasPermission("housing.buildmode")) { sendNoPerm(sender); return true; }
+
+        Player player = (Player) sender;
+
+        // Optional: /housing buildmode <on|off|toggle>
+        boolean enable;
+        if (args.length >= 2) {
+            String mode = args[1].toLowerCase();
+            if (mode.equals("on") || mode.equals("true") || mode.equals("1")) {
+                enable = true;
+            } else if (mode.equals("off") || mode.equals("false") || mode.equals("0")) {
+                enable = false;
+            } else {
+                enable = !((Housing) plugin).isInBuildMode(player.getUniqueId());
+            }
+        } else {
+            enable = !((Housing) plugin).isInBuildMode(player.getUniqueId());
+        }
+
+        ((Housing) plugin).setBuildMode(player.getUniqueId(), enable);
+
+        if (enable) {
+            player.sendMessage(colorize("&b&m-------------------------------"));
+            player.sendMessage(colorize("&b&lBUILD MODE &f&l» &aENABLED"));
+            player.sendMessage(colorize("&fAll placed blocks will &aSTAY&f."));
+            player.sendMessage(colorize("&7(Blue wool still decays.)"));
+            player.sendMessage(colorize("&b&m-------------------------------"));
+        } else {
+            player.sendMessage(colorize("&b&m-------------------------------"));
+            player.sendMessage(colorize("&b&lBUILD MODE &f&l» &cDISABLED"));
+            player.sendMessage(colorize("&fNormal mode restored."));
+            player.sendMessage(colorize("&7(Blocks decay after "
+                    + plugin.getConfig().getLong("protection.placed-decay-seconds", 5L)
+                    + "s.)"));
+            player.sendMessage(colorize("&b&m-------------------------------"));
+        }
+        return true;
+    }
+
+    // ============================================================
     //  ★ /housing (no args) — ALWAYS Platform in "world"
     // ============================================================
 
@@ -123,21 +174,18 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         final Player player = (Player) sender;
         final GameMode mode = GameMode.PLATFORM;
 
-        // ---- Read locked-world from config (with hard fallback) ----
         String defaultWorldName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
         if (defaultWorldName == null || defaultWorldName.trim().isEmpty()) {
             defaultWorldName = "world";
         }
 
-        // ★★★ Already in Platform (default world)? Show message and stop. ★★★
         if (player.getWorld().getName().equalsIgnoreCase(defaultWorldName)) {
             player.sendMessage(colorize("&b&lHousing &f&l» &fYou are already in &b"
                     + mode.getDisplayName() + "&f!"));
             return true;
         }
 
-        // ---- Ensure the world is loaded ----
         World targetWorld = worldLoader.findLoaded(defaultWorldName);
         if (targetWorld == null) {
             targetWorld = worldLoader.ensureLoaded(defaultWorldName);
@@ -157,21 +205,17 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         gameModeManager.setWorldMode(targetWorld.getName().toLowerCase(), GameMode.PLATFORM);
         final World finalWorld = targetWorld;
 
-        // ---- Get spawn location ----
         Location spawn = playerJoin.getSpawnLocation(finalWorld);
         if (spawn == null) {
             spawn = finalWorld.getSpawnLocation();
         }
 
-        // ---- Clear inventory BEFORE teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // ---- Teleport ----
         player.teleport(spawn);
 
-        // ---- Give kit + menu AFTER teleport completes ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -189,7 +233,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing lobby — Teleport player to the LOBBY (Platform)
+    //  ★ /housing lobby
     // ============================================================
 
     private boolean handleLobby(CommandSender sender) {
@@ -201,7 +245,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         Player player = (Player) sender;
 
-        // ★ Already in lobby (default world)?
         String defaultWorldName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
         if (defaultWorldName != null
@@ -216,7 +259,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing setlobbyspawn — Set the LOBBY spawn
+    //  ★ /housing setlobbyspawn
     // ============================================================
 
     private boolean handleSetLobbySpawn(CommandSender sender) {
@@ -298,14 +341,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ★ Special case: "join platform" → go to DEFAULT world
         if (mode == GameMode.PLATFORM) {
             return joinDefaultWorld(sender);
         }
 
         final Player player = (Player) sender;
 
-        // ★★★ Already in this mode? Show message and stop. ★★★
         GameMode currentMode = gameModeManager.getModeForWorld(player.getWorld());
         if (currentMode == mode) {
             player.sendMessage(colorize("&b&lHousing &f&l» &fYou are already in &b"
@@ -340,15 +381,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             spawn = targetWorld.getSpawnLocation();
         }
 
-        // ---- Clear inventory before teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // ---- Teleport ----
         player.teleport(spawn);
 
-        // ---- Give kit + menu after teleport ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
@@ -619,6 +657,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
         sender.sendMessage(colorize("&b/housing menu &f- Open the mode selection menu"));
         sender.sendMessage(colorize("&b/housing lobby &f- Teleport to the lobby"));
+        sender.sendMessage(colorize("&b/housing buildmode &f- Toggle build mode"));
         sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
         sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
         sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
@@ -668,6 +707,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             subs.add("menu");
             subs.add("lobby");
             subs.add("setlobbyspawn");
+            subs.add("buildmode");   // ★ NEW
             subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
@@ -677,6 +717,15 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
+
+            // ★ /housing buildmode <on|off|toggle>
+            if (sub.equals("buildmode")) {
+                out.add("on"); out.add("off"); out.add("toggle");
+                String partial = args[1].toLowerCase();
+                List<String> filtered = new ArrayList<String>();
+                for (String s : out) if (s.startsWith(partial)) filtered.add(s);
+                return filtered;
+            }
 
             if (sub.equals("setworld")) {
                 out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");

@@ -87,25 +87,37 @@ public class Protection implements Listener {
 
     /**
      * ★ Decide whether the freeze should apply to this player.
-     *
-     * Rules:
-     *   - If freezeEnabled is false → no freeze for anyone
-     *   - If freezeApplyToEveryone is TRUE → freeze EVERYONE (including OP)
-     *   - If freezeApplyToEveryone is FALSE → check bypass-permissions list
      */
     private boolean shouldFreeze(Player player) {
         if (!this.freezeEnabled) return false;
-
-        // Apply to everyone → no bypass at all
         if (this.freezeApplyToEveryone) return true;
 
-        // Check bypass-permissions list
         for (String perm : this.freezeBypassPermissions) {
             if (perm != null && !perm.isEmpty() && player.hasPermission(perm)) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * ★ Check if the player has Build Mode enabled.
+     */
+    private boolean isInBuildMode(Player player) {
+        if (player == null) return false;
+        if (!(plugin instanceof Housing)) return false;
+        return ((Housing) plugin).isInBuildMode(player.getUniqueId());
+    }
+
+    /**
+     * ★ Check if the block is the special "blue wool" (data 3).
+     *   In build mode, blue wool is the ONLY block that still decays.
+     */
+    @SuppressWarnings("deprecation")
+    private boolean isBlueWool(Block block) {
+        if (block == null) return false;
+        if (block.getType() != Material.WOOL) return false;
+        return block.getData() == 3;
     }
 
     // ============================================================
@@ -134,12 +146,10 @@ public class Protection implements Listener {
             if (hand != null && hand.getType() != Material.AIR) {
                 final ItemStack restore;
                 if (this.freezeForceSize > 0) {
-                    // Fixed size (e.g. force 64)
                     restore = hand.clone();
                     int forced = Math.min(this.freezeForceSize, restore.getMaxStackSize());
                     restore.setAmount(forced);
                 } else {
-                    // Restore to ORIGINAL size + 1 (because 1 was consumed)
                     restore = hand.clone();
                     int targetAmount = hand.getAmount() + 1;
                     if (targetAmount > restore.getMaxStackSize()) {
@@ -154,7 +164,6 @@ public class Protection implements Listener {
                         if (!player.isOnline()) return;
                         ItemStack current = player.getInventory().getItem(slot);
 
-                        // Only restore if the slot still holds the SAME material
                         if (current == null
                                 || current.getType() == Material.AIR
                                 || current.getType() == restore.getType()) {
@@ -175,6 +184,21 @@ public class Protection implements Listener {
         final String key = locKey(loc);
 
         this.placedBlocks.put(key, Long.valueOf(System.currentTimeMillis()));
+
+        // ============================================================
+        //  ★ BUILD MODE CHECK
+        //  If the player is in build mode AND the block is NOT blue
+        //  wool → skip auto-removal (keep the block forever).
+        //  Blue wool ALWAYS decays, even in build mode.
+        // ============================================================
+        boolean buildMode = isInBuildMode(player);
+        boolean blueWool = isBlueWool(placedBlock);
+
+        if (buildMode && !blueWool) {
+            // Keep the block — no auto-removal
+            // Still track it so block-break protection works correctly
+            return;
+        }
 
         // ============================================================
         //  Auto-remove after N seconds
