@@ -16,7 +16,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PlayerJoin implements Listener {
@@ -24,98 +23,44 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680;   // Red
+    private static final int LEATHER_COLOR = 16711680;
     private static final short LIGHT_BLUE_WOOL_DATA = 3;
-
-    private static final String META_APPLIED = "housing_mode_applied";
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
         this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  Join — multiple checks for pending mode
-    // ============================================================
-
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
-        if (player.hasMetadata(META_APPLIED)) {
-            player.removeMetadata(META_APPLIED, this.plugin);
-        }
-
-        // Check at 40 ticks (2 seconds)
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
-                tryApplyPendingMode(player, "initial");
+
+                String pendingMode = null;
+                if (plugin instanceof Housing) {
+                    pendingMode = ((Housing) plugin)
+                            .consumePendingMode(player.getUniqueId());
+                }
+
+                if (pendingMode != null) {
+                    player.performCommand("housing join " + pendingMode);
+                    return;
+                }
+
+                // Default: platform
+                giveKit(player);
+                teleportToSpawn(player);
+
+                // Give the mode-selector menu item
+                if (plugin instanceof Housing) {
+                    ((Housing) plugin).getModeMenu().giveMenuItem(player);
+                }
             }
         }, 40L);
-
-        // Fallback at 100 ticks (5 seconds)
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                tryApplyPendingMode(player, "fallback");
-            }
-        }, 100L);
-
-        // Final fallback at 160 ticks (8 seconds)
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                tryApplyFinalDefault(player);
-            }
-        }, 160L);
-    }
-
-    private void tryApplyPendingMode(Player player, String source) {
-        if (player.hasMetadata(META_APPLIED)) return;
-
-        String pendingMode = null;
-        if (plugin instanceof Housing) {
-            pendingMode = ((Housing) plugin).consumePendingMode(player.getUniqueId());
-        }
-
-        if (pendingMode == null) {
-            plugin.getLogger().info("[PlayerJoin] No pending mode for "
-                    + player.getName() + " at " + source);
-            return;
-        }
-
-        player.setMetadata(META_APPLIED, new FixedMetadataValue(plugin, true));
-
-        plugin.getLogger().info("[PlayerJoin] Applying pending mode '"
-                + pendingMode + "' for " + player.getName() + " (via " + source + ")");
-
-        player.performCommand("housing join " + pendingMode);
-    }
-
-    private void tryApplyFinalDefault(Player player) {
-        if (player.hasMetadata(META_APPLIED)) return;
-
-        String pendingMode = null;
-        if (plugin instanceof Housing) {
-            pendingMode = ((Housing) plugin).consumePendingMode(player.getUniqueId());
-        }
-
-        if (pendingMode != null) {
-            player.setMetadata(META_APPLIED, new FixedMetadataValue(plugin, true));
-            plugin.getLogger().info("[PlayerJoin] Late pending mode '"
-                    + pendingMode + "' for " + player.getName());
-            player.performCommand("housing join " + pendingMode);
-            return;
-        }
-
-        plugin.getLogger().info("[PlayerJoin] Applying default (platform) for "
-                + player.getName());
-        giveKit(player);
-        teleportToSpawn(player);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -126,14 +71,15 @@ public class PlayerJoin implements Listener {
             public void run() {
                 if (!player.isOnline()) return;
                 giveKit(player);
+
+                if (plugin instanceof Housing) {
+                    ((Housing) plugin).getModeMenu().giveMenuItem(player);
+                }
             }
         }, 5L);
     }
 
-    // ============================================================
-    //  Kit dispatch
-    // ============================================================
-
+    // ... بقیه متدها همونطور که قبلاً بودن
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         giveKitForMode(player, mode);
@@ -152,10 +98,6 @@ public class PlayerJoin implements Listener {
         }
     }
 
-    // ============================================================
-    //  PLATFORM KIT
-    // ============================================================
-
     private void givePlatformKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -172,10 +114,6 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
-
-    // ============================================================
-    //  LOWMID KIT
-    // ============================================================
 
     private void giveLowMidKit(Player player) {
         player.getInventory().clear();
@@ -200,10 +138,6 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  ONEWIDE KIT
-    // ============================================================
-
     private void giveOneWideKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
@@ -214,10 +148,6 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
-
-    // ============================================================
-    //  BLOCKFIGHT KIT
-    // ============================================================
 
     private void giveBlockFightKit(Player player) {
         player.getInventory().clear();
@@ -236,10 +166,6 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
-
-    // ============================================================
-    //  Helpers
-    // ============================================================
 
     private void refillFood(Player player) {
         player.setFoodLevel(20);
@@ -274,10 +200,6 @@ public class PlayerJoin implements Listener {
         item.setItemMeta(meta);
         return item;
     }
-
-    // ============================================================
-    //  Spawn location
-    // ============================================================
 
     public void teleportToSpawn(Player player) {
         Location spawn = getSpawnLocation(player.getWorld());

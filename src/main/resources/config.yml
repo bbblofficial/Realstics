@@ -1,7 +1,7 @@
 # ==========================================================
 #  Housing Configuration — Platform (default mode)
 #  Version: 1.0
-#  Theme: Aqua + White
+
 # ==========================================================
 #  AUTO-MERGED on plugin update. Existing values are preserved.
 # ==========================================================
@@ -59,26 +59,25 @@ pvpzone:
   enabled: true
   x: 0.0
 
-# ----------------------------------------------------------
-#  Protection
-#  - locked-world: هیچ بلوکی نمی‌تونه گذاشته یا شکسته بشه
-#                  (به جز پلیر با perm housing.bypass)
-#  - All placed blocks in other worlds are auto-removed
-#    after `placed-decay-seconds` seconds.
-# ----------------------------------------------------------
+
 protection:
   # The world that must NEVER be modified (no break/place).
-  # Typically the main lobby/main world.
   locked-world: "world"
 
   # Auto-remove player-placed blocks after this many seconds.
   # Applies to every non-locked world.
   placed-decay-seconds: 5
 
-  # Natural blocks placed by the world itself are NOT restored.
-  # This is the delay for natural block restore (unused for now,
-  # reserved for future use).
+  # Reserved for future use — natural block restore delay.
   natural-restore-seconds: 9
+
+# ----------------------------------------------------------
+#  Mode Selection Menu
+#  - The item itself and the GUI are configured in menu.yml
+#  - This section only controls a global on/off switch
+# ----------------------------------------------------------
+menu:
+  enabled: true
 
 # ----------------------------------------------------------
 #  World -> Game Mode mapping

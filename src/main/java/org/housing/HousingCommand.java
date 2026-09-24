@@ -40,7 +40,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        // /housing  (no args)  →  join the DEFAULT mode (platform)
+        // /housing (no args) → join default mode (platform) if player
         if (args.length == 0) {
             if (sender instanceof Player) {
                 return handleJoin(sender, new String[]{"join", "platform"});
@@ -51,25 +51,36 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         String sub = args[0].toLowerCase();
 
+        // ---- Player commands ----
         if (sub.equals("help"))    { sendHelp(sender); return true; }
         if (sub.equals("creator")) { return handleCreator(sender); }
         if (sub.equals("worlds"))  { return handleWorlds(sender); }
         if (sub.equals("join"))    { return handleJoin(sender, args); }
+        if (sub.equals("menu"))    { return handleMenu(sender); }
 
+        // ---- Admin: reload ----
         if (sub.equals("reload")) {
             if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
             this.plugin.reloadConfig();
             this.gameModeManager.reloadAll();
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             if (this.voidSystem != null) this.voidSystem.reloadConfig();
+
+            if (plugin instanceof Housing) {
+                ModeMenu menu = ((Housing) plugin).getModeMenu();
+                if (menu != null) menu.reloadConfig();
+            }
+
             sender.sendMessage(colorize("&bHousing configuration reloaded."));
             return true;
         }
 
+        // ---- Admin: setworld ----
         if (sub.equals("setworld")) {
             return handleSetWorld(sender, args);
         }
 
+        // ---- Mode-specific commands ----
         GameMode mode = GameMode.fromId(sub);
         if (mode == null) {
             sender.sendMessage(colorize("&cUnknown subcommand. Use /housing help"));
@@ -92,17 +103,36 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    // ============================================================
+    //  Commands
+    // ============================================================
+
     private boolean handleWorlds(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&bHousing &f- &bLoaded Worlds"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-
         for (World w : Bukkit.getWorlds()) {
             GameMode mode = gameModeManager.getModeForWorld(w);
             sender.sendMessage(colorize("&b" + w.getName() + " &f» &b" + mode.getDisplayName()));
         }
-
         sender.sendMessage(colorize("&b&m----------------------------------"));
+        return true;
+    }
+
+    private boolean handleMenu(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(colorize("&cOnly players can open the mode menu."));
+            return true;
+        }
+        if (!sender.hasPermission("housing.menu")) { sendNoPerm(sender); return true; }
+
+        Player player = (Player) sender;
+        if (plugin instanceof Housing) {
+            ModeMenu menu = ((Housing) plugin).getModeMenu();
+            if (menu != null) {
+                menu.openMenu(player);
+            }
+        }
         return true;
     }
 
@@ -151,12 +181,18 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         final GameMode finalMode = mode;
 
-        // Same world → just refresh kit for that mode
+        // ---- Same world: just refresh kit + re-give menu ----
         if (player.getWorld().equals(targetWorld)) {
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
             playerJoin.giveKitForMode(player, finalMode);
             player.updateInventory();
+
+            if (plugin instanceof Housing) {
+                ModeMenu menu = ((Housing) plugin).getModeMenu();
+                if (menu != null) menu.giveMenuItem(player);
+            }
+
             player.sendMessage(colorize("&bKit refreshed for &f"
                     + finalMode.getDisplayName() + "&b."));
             return true;
@@ -167,22 +203,29 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             spawn = targetWorld.getSpawnLocation();
         }
 
-        // 1) Clear inventory IMMEDIATELY (before teleport)
+        // Clear inventory before teleport
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // 2) Teleport to target world
+        // Teleport
         player.teleport(spawn);
 
-        // 3) Give the TARGET mode's kit after teleport is complete
+        // Give kit + menu item after teleport completes
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
+
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
                 playerJoin.giveKitForMode(player, finalMode);
+
+                if (plugin instanceof Housing) {
+                    ModeMenu menu = ((Housing) plugin).getModeMenu();
+                    if (menu != null) menu.giveMenuItem(player);
+                }
+
                 player.updateInventory();
             }
         }, 5L);
@@ -210,8 +253,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             worldName = ((Player) sender).getWorld().getName();
-        }
-        else if (args.length >= 3) {
+        } else if (args.length >= 3) {
             worldName = args[1];
             mode = GameMode.fromId(args[2]);
             if (mode == null) {
@@ -219,8 +261,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
                 return true;
             }
-        }
-        else {
+        } else {
             sender.sendMessage(colorize("&cUsage: /housing setworld [world] <mode>"));
             sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
             return true;
@@ -235,7 +276,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         if (world == null) {
             sender.sendMessage(colorize("&cCould not load or create world: &e" + worldName));
-            sender.sendMessage(colorize("&7Loaded worlds: &f" + worldLoader.listLoadedWorldNames()));
             return true;
         }
 
@@ -249,18 +289,15 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             }
             player.sendMessage(colorize("&bWorld &f" + world.getName()
                     + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
-            player.sendMessage(colorize("&7Next: &f/housing " + mode.getId() + " setspawn"));
         } else {
             sender.sendMessage(colorize("&bWorld &f" + world.getName()
                     + " &bis now game mode &f" + mode.getDisplayName() + "&b."));
         }
-
         return true;
     }
 
     private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
         if (!sender.hasPermission("housing.setspawn")) { sendNoPerm(sender); return true; }
-
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use setspawn."));
             return true;
@@ -288,11 +325,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission("housing.setvoid")) { sendNoPerm(sender); return true; }
 
         double y;
-
         if (args.length >= 3) {
-            try {
-                y = Double.parseDouble(args[2]);
-            } catch (NumberFormatException e) {
+            try { y = Double.parseDouble(args[2]); }
+            catch (NumberFormatException e) {
                 sender.sendMessage(colorize("&cInvalid number: &e" + args[2]));
                 return true;
             }
@@ -324,9 +359,8 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         double z;
         if (args.length >= 3) {
-            try {
-                z = Double.parseDouble(args[2]);
-            } catch (NumberFormatException e) {
+            try { z = Double.parseDouble(args[2]); }
+            catch (NumberFormatException e) {
                 sender.sendMessage(colorize("&cInvalid number: &e" + args[2]));
                 return true;
             }
@@ -346,11 +380,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    // ============================================================
-    //  /housing <mode> setpvpzone [x]
-    //  PvP is allowed only when the player's X >= zone.
-    //  Supported: Platform, OneWide
-    // ============================================================
     private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
         if (!sender.hasPermission("housing.setpvpzone")) { sendNoPerm(sender); return true; }
 
@@ -361,9 +390,8 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         double x;
         if (args.length >= 3) {
-            try {
-                x = Double.parseDouble(args[2]);
-            } catch (NumberFormatException e) {
+            try { x = Double.parseDouble(args[2]); }
+            catch (NumberFormatException e) {
                 sender.sendMessage(colorize("&cInvalid number: &e" + args[2]));
                 return true;
             }
@@ -405,6 +433,11 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         }
 
         playerJoin.giveKitForMode(target, mode);
+
+        if (plugin instanceof Housing) {
+            ModeMenu menu = ((Housing) plugin).getModeMenu();
+            if (menu != null) menu.giveMenuItem(target);
+        }
 
         if (sender.equals(target)) {
             sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));
@@ -448,12 +481,17 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    // ============================================================
+    //  Help
+    // ============================================================
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&bHousing &f- &bCommands"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&b/housing &f- Join the default mode (Platform)"));
         sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
+        sender.sendMessage(colorize("&b/housing menu &f- Open the mode selection menu"));
         sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
         sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
         sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
@@ -487,6 +525,10 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
+    // ============================================================
+    //  Tab completion
+    // ============================================================
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<String>();
@@ -495,6 +537,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             List<String> subs = new ArrayList<String>();
             subs.add("creator"); subs.add("help"); subs.add("worlds");
             subs.add("reload");  subs.add("setworld"); subs.add("join");
+            subs.add("menu");
             subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
 
             String partial = args[0].toLowerCase();
