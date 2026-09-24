@@ -23,13 +23,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  *   - PvP damage is APPLIED (real damage)
  *   - Fall damage is APPLIED (real damage)
  *   - Other damage causes (fire, poison, drowning, etc.) are cancelled
- *
- * Platform / OneWide:
- *   - PvP is only allowed when the attacker's X >= pvpzone.x
- *   - Outside the zone, hits are cancelled entirely
- *
- * BlockFight:
- *   - PvP always allowed (no zone check)
  */
 public class NoDamage implements Listener {
 
@@ -50,19 +43,14 @@ public class NoDamage implements Listener {
         return modeOf(world) == GameMode.LOWMID;
     }
 
-    // ============================================================
-    //  Zone check — X axis
-    // ============================================================
     private boolean isInPvpZone(Player attacker) {
         World world = attacker.getWorld();
         GameMode mode = gameModeManager.getModeForWorld(world);
 
-        // LowMid & BlockFight — always allow PvP
         if (mode == GameMode.LOWMID || mode == GameMode.BLOCKFIGHT) {
             return true;
         }
 
-        // Platform / OneWide — read zone from config
         FileConfiguration cfg = gameModeManager.getConfig(mode);
         boolean enabled = cfg.getBoolean("pvpzone.enabled", true);
         if (!enabled) return true;
@@ -71,9 +59,6 @@ public class NoDamage implements Listener {
         return attacker.getLocation().getX() >= zoneX;
     }
 
-    // ============================================================
-    //  Main damage event
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAnyDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -82,33 +67,21 @@ public class NoDamage implements Listener {
         World world = victim.getWorld();
         EntityDamageEvent.DamageCause cause = event.getCause();
 
-        // Void damage is always ignored (handled by Void system)
         if (cause == EntityDamageEvent.DamageCause.VOID) return;
 
         if (isLowMid(world)) {
-            // LowMid: allow FALL and ENTITY_ATTACK; cancel everything else
-            if (cause == EntityDamageEvent.DamageCause.FALL) {
-                return;
-            }
-            if (cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
-                return;
-            }
-            if (cause == EntityDamageEvent.DamageCause.PROJECTILE) {
-                return;
-            }
+            if (cause == EntityDamageEvent.DamageCause.FALL) return;
+            if (cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
+            if (cause == EntityDamageEvent.DamageCause.PROJECTILE) return;
 
             event.setCancelled(true);
             event.setDamage(0);
             return;
         }
 
-        // Other modes: cancel all damage
         event.setDamage(0);
     }
 
-    // ============================================================
-    //  PvP damage — zone-aware
-    // ============================================================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -116,7 +89,6 @@ public class NoDamage implements Listener {
         Player victim = (Player) event.getEntity();
         World world = victim.getWorld();
 
-        // Non-player attacker
         if (!(event.getDamager() instanceof Player)) {
             if (isLowMid(world)) {
                 event.setCancelled(true);
@@ -131,12 +103,10 @@ public class NoDamage implements Listener {
 
         Player attacker = (Player) event.getDamager();
 
-        // ---- LowMid: apply real damage ----
         if (isLowMid(world)) {
             return;
         }
 
-        // ---- Other modes: cosmetic PvP with zone check ----
         if (isInPvpZone(attacker)) {
             if (!event.isCancelled()) {
                 event.setDamage(0);
@@ -148,9 +118,6 @@ public class NoDamage implements Listener {
         }
     }
 
-    // ============================================================
-    //  Fall damage
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
@@ -166,9 +133,6 @@ public class NoDamage implements Listener {
         event.setDamage(0);
     }
 
-    // ============================================================
-    //  Infinite food
-    // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFoodChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player)) return;

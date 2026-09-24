@@ -25,9 +25,6 @@ public final class Housing extends JavaPlugin {
     /**
      * Pending mode requests from HousingBackendBridge (Velocity).
      * Key = player UUID, Value = mode ID (e.g. "onewide").
-     *
-     * When a player joins, PlayerJoin checks this map first.
-     * If a mode is found, it applies that mode instead of the default.
      */
     private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
 
@@ -92,24 +89,15 @@ public final class Housing extends JavaPlugin {
     }
 
     // ============================================================
-    //  Pending mode (used by HousingBackendBridge on Velocity)
+    //  Pending mode API (used by HousingBackendBridge)
     // ============================================================
 
-    /**
-     * Store a pending mode for a player.
-     * Called by HousingBackendBridge when a mode message arrives
-     * from Velocity (BEFORE the player fully joins).
-     */
     public void setPendingMode(UUID uuid, String mode) {
         if (uuid == null || mode == null) return;
         this.pendingModes.put(uuid, mode.toLowerCase());
         getLogger().info("[Housing] Pending mode set: " + mode + " for " + uuid);
     }
 
-    /**
-     * Get and remove a pending mode for a player.
-     * Called by PlayerJoin when the player joins.
-     */
     public String consumePendingMode(UUID uuid) {
         if (uuid == null) return null;
         String mode = this.pendingModes.remove(uuid);
@@ -119,12 +107,8 @@ public final class Housing extends JavaPlugin {
         return mode;
     }
 
-    /**
-     * Peek at a pending mode without removing it.
-     */
-    public String peekPendingMode(UUID uuid) {
-        if (uuid == null) return null;
-        return this.pendingModes.get(uuid);
+    public boolean hasPendingMode(UUID uuid) {
+        return uuid != null && this.pendingModes.containsKey(uuid);
     }
 
     // ============================================================
@@ -181,11 +165,9 @@ public final class Housing extends JavaPlugin {
 
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
-        // ---- pvp zone (X axis) ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "pvpzone.x", Double.valueOf(0.0D));
 
-        // Migrate old pvpzone.z → pvpzone.x
         if (cfg.contains("pvpzone.z")) {
             if (!cfg.contains("pvpzone.x")) {
                 double oldZ = cfg.getDouble("pvpzone.z", 0.0);

@@ -34,7 +34,6 @@ public class Protection implements Listener {
     private static final String PERM_BYPASS = "housing.bypass";
     private static final String PERM_BREAK  = "housing.break";
     private static final String PERM_PLACE  = "housing.place";
-    private static final String PERM_DROP   = "housing.drop";
 
     public Protection(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -93,7 +92,6 @@ public class Protection implements Listener {
                 block.setType(Material.AIR);
                 playerPlacedWool.remove(key);
 
-                // In BlockFight, refill wool after break
                 if (isBlockFight(block.getWorld())) {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(
                             this.plugin, new Runnable() {
@@ -115,7 +113,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Block place
+    //  Block place — auto-remove for EVERYONE (op, perm, normal)
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -128,10 +126,12 @@ public class Protection implements Listener {
         Material type = event.getBlock().getType();
         if (type == Material.WOOL) {
 
-            // ---- Any mode: only light-blue wool is auto-removed ----
+            // ---- ALL players: light-blue wool is auto-removed after 5s ----
             if (isLightBlueWool(event.getBlock())) {
                 final Block placedBlock = event.getBlock();
                 final String key = locKey(placedBlock);
+
+                // Register the block
                 playerPlacedWool.add(key);
 
                 // In BlockFight, refill the player's wool stack
@@ -145,13 +145,12 @@ public class Protection implements Listener {
                             }, 1L);
                 }
 
-                // Schedule auto-remove after 5 seconds (ALL modes)
+                // Schedule auto-remove after 5 seconds
                 scheduleWoolRemoval(placedBlock, key);
                 return;
             }
 
-            // Non-light-blue wool: treat as normal block placement
-            // (blocked unless player has PERM_PLACE)
+            // Non-light-blue wool: block unless player has PERM_PLACE
             if (player.hasPermission(PERM_PLACE)) return;
 
             event.setCancelled(true);
@@ -190,17 +189,51 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Item drop
+    //  AntiDrop — cancel + reset kit for EVERYONE (op, perm, normal)
     // ============================================================
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    /**
+     * When a player tries to drop an item:
+     *   1) Cancel the drop.
+     *   2) Clear their inventory + armor.
+     *   3) Give them a fresh kit for their current mode.
+     *
+     * This applies to ALL players — even ops and players with
+     * housing.drop permission (that permission no longer exists).
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onDrop(PlayerDropItemEvent event) {
-        Player player = event.getPlayer();
-        if (hasBypass(player)) return;
-        if (player.hasPermission(PERM_DROP)) return;
+        final Player player = event.getPlayer();
 
+        // ---- Cancel the drop ----
         event.setCancelled(true);
-        player.sendMessage(colorize("&cYou cannot drop items here!"));
+
+        // ---- Notify ----
+        player.sendMessage(colorize("&cYou cannot drop items! Your kit has been reset."));
+
+        // ---- Reset the kit after a short delay ----
+        Bukkit.getScheduler().scheduleSyncDelayedTask(
+                this.plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!player.isOnline()) return;
+
+                        // Clear inventory
+                        player.getInventory().clear();
+                        player.getInventory().setArmorContents(null);
+                        player.updateInventory();
+
+                        // Give fresh kit for current mode
+                        JavaPlugin pl = Protection.this.plugin;
+                        if (pl instanceof Housing) {
+                            Housing housing = (Housing) pl;
+                            PlayerJoin pj = housing.getPlayerJoin();
+                            if (pj != null) {
+                                pj.giveKit(player);
+                            }
+                        }
+                    }
+                }, 1L);
     }
 
     // ============================================================

@@ -39,15 +39,13 @@ permissions:
     description: Toggle the scoreboard
     default: true
 
+  # ---- Protection ----
   housing.bypass:
-    description: Bypass ALL protection
+    description: Bypass ALL protection (including AntiDrop)
     default: op
   housing.break:
     description: Allow breaking blocks
     default: false
   housing.place:
     description: Allow placing blocks
-    default: false
-  housing.drop:
-    description: Allow dropping items
     default: false
