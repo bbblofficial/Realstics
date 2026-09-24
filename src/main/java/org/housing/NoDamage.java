@@ -42,10 +42,6 @@ public class NoDamage implements Listener {
         this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  Mode helpers
-    // ============================================================
-
     private GameMode modeOf(World world) {
         return gameModeManager.getModeForWorld(world);
     }
@@ -77,8 +73,6 @@ public class NoDamage implements Listener {
 
     // ============================================================
     //  Main damage event
-    //  - LowMid: allow PvP and FALL damage; cancel everything else
-    //  - Other modes: cancel all damage except VOID
     // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onAnyDamage(EntityDamageEvent event) {
@@ -92,21 +86,17 @@ public class NoDamage implements Listener {
         if (cause == EntityDamageEvent.DamageCause.VOID) return;
 
         if (isLowMid(world)) {
-            // In LowMid:
-            //   - FALL damage → allowed (real damage)
-            //   - ENTITY_ATTACK / ENTITY_SWEEP_ATTACK → allowed
-            //     (handled in onEntityDamageByEntity to enforce zone)
-            //   - Everything else → cancelled
+            // LowMid: allow FALL and ENTITY_ATTACK; cancel everything else
             if (cause == EntityDamageEvent.DamageCause.FALL) {
-                return; // let it apply
+                return;
             }
-            if (cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK
-                    || cause == EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK
-                    || cause == EntityDamageEvent.DamageCause.PROJECTILE) {
-                return; // let it apply (handled in onEntityDamageByEntity)
+            if (cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
+                return;
+            }
+            if (cause == EntityDamageEvent.DamageCause.PROJECTILE) {
+                return;
             }
 
-            // Other causes: cancel
             event.setCancelled(true);
             event.setDamage(0);
             return;
@@ -118,8 +108,6 @@ public class NoDamage implements Listener {
 
     // ============================================================
     //  PvP damage — zone-aware
-    //  - LowMid: apply real damage
-    //  - Other modes: zero damage (cosmetic), zone check
     // ============================================================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
@@ -128,11 +116,9 @@ public class NoDamage implements Listener {
         Player victim = (Player) event.getEntity();
         World world = victim.getWorld();
 
-        // Non-player attacker → zero damage in non-LowMid; cancel in LowMid
+        // Non-player attacker
         if (!(event.getDamager() instanceof Player)) {
             if (isLowMid(world)) {
-                // Allow mob/projectile damage only if it's a direct player? No.
-                // Just cancel to keep LowMid purely PvP+fall.
                 event.setCancelled(true);
                 event.setDamage(0);
             } else {
@@ -147,7 +133,6 @@ public class NoDamage implements Listener {
 
         // ---- LowMid: apply real damage ----
         if (isLowMid(world)) {
-            // Real PvP damage — do not touch event
             return;
         }
 
@@ -165,8 +150,6 @@ public class NoDamage implements Listener {
 
     // ============================================================
     //  Fall damage
-    //  - LowMid: allow real fall damage
-    //  - Other modes: cancel
     // ============================================================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onFallDamage(EntityDamageEvent event) {
@@ -176,7 +159,7 @@ public class NoDamage implements Listener {
         Player player = (Player) event.getEntity();
 
         if (isLowMid(player.getWorld())) {
-            return; // let real fall damage apply
+            return;
         }
 
         event.setCancelled(true);
