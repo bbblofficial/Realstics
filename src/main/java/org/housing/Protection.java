@@ -14,6 +14,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,6 +26,7 @@ public class Protection implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
+    /** Keys of player-placed light-blue wool blocks (world:x:y:z) */
     private final Set<String> playerPlacedWool = new HashSet<String>();
 
     private static final byte LIGHT_BLUE_DATA = 3;
@@ -42,6 +45,10 @@ public class Protection implements Listener {
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
+    }
+
+    private boolean isBlockFight(World world) {
+        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
     }
 
     // ============================================================
@@ -68,10 +75,6 @@ public class Protection implements Listener {
         return item.getData().getData() == LIGHT_BLUE_DATA;
     }
 
-    private boolean isBlockFight(World world) {
-        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
-    }
-
     // ============================================================
     //  Block break
     // ============================================================
@@ -84,7 +87,6 @@ public class Protection implements Listener {
         if (hasBypass(player)) return;
         if (player.hasPermission(PERM_BREAK)) return;
 
-        // Any light-blue wool that was placed by a player can be broken.
         if (isLightBlueWool(block)) {
             String key = locKey(block);
             if (playerPlacedWool.contains(key)) {
@@ -92,6 +94,7 @@ public class Protection implements Listener {
                 block.setType(Material.AIR);
                 playerPlacedWool.remove(key);
 
+                // In BlockFight, refill wool
                 if (isBlockFight(block.getWorld())) {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(
                             this.plugin, new Runnable() {
@@ -113,7 +116,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Block place — auto-remove for EVERYONE (op, perm, normal)
+    //  Block place — auto-remove for EVERYONE
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -126,7 +129,7 @@ public class Protection implements Listener {
         Material type = event.getBlock().getType();
         if (type == Material.WOOL) {
 
-            // ---- ALL players: light-blue wool is auto-removed after 5s ----
+            // ---- Any mode: light-blue wool is auto-removed after 5s ----
             if (isLightBlueWool(event.getBlock())) {
                 final Block placedBlock = event.getBlock();
                 final String key = locKey(placedBlock);
@@ -134,16 +137,14 @@ public class Protection implements Listener {
                 // Register the block
                 playerPlacedWool.add(key);
 
-                // In BlockFight, refill the player's wool stack
-                if (isBlockFight(world)) {
-                    Bukkit.getScheduler().scheduleSyncDelayedTask(
-                            this.plugin, new Runnable() {
-                                @Override
-                                public void run() {
-                                    refillWool(player);
-                                }
-                            }, 1L);
-                }
+                // Refill the player's wool stack (infinite wool)
+                Bukkit.getScheduler().scheduleSyncDelayedTask(
+                        this.plugin, new Runnable() {
+                            @Override
+                            public void run() {
+                                refillWool(player);
+                            }
+                        }, 1L);
 
                 // Schedule auto-remove after 5 seconds
                 scheduleWoolRemoval(placedBlock, key);
@@ -165,7 +166,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Auto-remove scheduling
+    //  Auto-remove scheduling — uses BUKKIT scheduler + safety net
     // ============================================================
 
     private void scheduleWoolRemoval(final Block placedBlock, final String key) {
@@ -174,6 +175,7 @@ public class Protection implements Listener {
         final int by = placedBlock.getY();
         final int bz = placedBlock.getZ();
 
+        // Primary: remove after exactly 5 seconds (100 ticks)
         Bukkit.getScheduler().scheduleSyncDelayedTask(
                 this.plugin, new Runnable() {
                     @Override
@@ -182,48 +184,51 @@ public class Protection implements Listener {
                         if (b.getType() == Material.WOOL
                                 && b.getData() == LIGHT_BLUE_DATA) {
                             b.setType(Material.AIR);
-                            playerPlacedWool.remove(key);
                         }
+                        playerPlacedWool.remove(key);
                     }
                 }, WOOL_AUTO_REMOVE_TICKS);
+
+        // Safety net: check again at 6 seconds (120 ticks) in case
+        // the block was placed again or something interfered
+        Bukkit.getScheduler().scheduleSyncDelayedTask(
+                this.plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        Block b = blockWorld.getBlockAt(bx, by, bz);
+                        if (b.getType() == Material.WOOL
+                                && b.getData() == LIGHT_BLUE_DATA) {
+                            b.setType(Material.AIR);
+                        }
+                        playerPlacedWool.remove(key);
+                    }
+                }, WOOL_AUTO_REMOVE_TICKS + 20L);
     }
 
     // ============================================================
-    //  AntiDrop — cancel + reset kit for EVERYONE (op, perm, normal)
+    //  AntiDrop — cancel + reset kit for EVERYONE
     // ============================================================
 
-    /**
-     * When a player tries to drop an item:
-     *   1) Cancel the drop.
-     *   2) Clear their inventory + armor.
-     *   3) Give them a fresh kit for their current mode.
-     *
-     * This applies to ALL players — even ops and players with
-     * housing.drop permission (that permission no longer exists).
-     */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onDrop(PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
 
-        // ---- Cancel the drop ----
+        // Cancel the drop
         event.setCancelled(true);
 
-        // ---- Notify ----
         player.sendMessage(colorize("&cYou cannot drop items! Your kit has been reset."));
 
-        // ---- Reset the kit after a short delay ----
+        // Reset the kit after 1 tick
         Bukkit.getScheduler().scheduleSyncDelayedTask(
                 this.plugin, new Runnable() {
                     @Override
                     public void run() {
                         if (!player.isOnline()) return;
 
-                        // Clear inventory
                         player.getInventory().clear();
                         player.getInventory().setArmorContents(null);
                         player.updateInventory();
 
-                        // Give fresh kit for current mode
                         JavaPlugin pl = Protection.this.plugin;
                         if (pl instanceof Housing) {
                             Housing housing = (Housing) pl;
@@ -237,13 +242,19 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Refill wool (BlockFight only)
+    //  Refill wool — infinite wool for the player
     // ============================================================
 
+    /**
+     * Refills the player's light-blue wool stack back to 64.
+     * If the player doesn't have any wool, put 64 in slot 1.
+     */
     private void refillWool(Player player) {
         if (player == null || !player.isOnline()) return;
 
         PlayerInventory inv = player.getInventory();
+
+        // Look for existing light-blue wool
         for (int i = 0; i < inv.getSize(); i++) {
             ItemStack item = inv.getItem(i);
             if (isLightBlueWoolItem(item)) {
@@ -256,10 +267,66 @@ public class Protection implements Listener {
             }
         }
 
+        // No wool found → give 64 in slot 1
         ItemStack wool = new ItemStack(Material.WOOL, 64);
         wool.setDurability(LIGHT_BLUE_DATA);
         inv.setItem(1, wool);
         player.updateInventory();
+    }
+
+    // ============================================================
+    //  Prevent wool consumption in hand (infinite wool)
+    // ============================================================
+
+    /**
+     * Fires every time the player's held item changes or they
+     * interact. If they're holding light-blue wool and it's
+     * not full, refill it.
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onItemHeld(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (player.isOnline()) {
+                    refillWoolIfNeeded(player);
+                }
+            }
+        }, 1L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInteract(PlayerInteractEvent event) {
+        final Player player = event.getPlayer();
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+            @Override
+            public void run() {
+                if (player.isOnline()) {
+                    refillWoolIfNeeded(player);
+                }
+            }
+        }, 1L);
+    }
+
+    /**
+     * Called every tick-ish to make sure the wool stack never decreases.
+     * Only refills light-blue wool.
+     */
+    private void refillWoolIfNeeded(Player player) {
+        if (!player.isOnline()) return;
+
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (isLightBlueWoolItem(item)) {
+                if (item.getAmount() < 64) {
+                    item.setAmount(64);
+                    inv.setItem(i, item);
+                    player.updateInventory();
+                }
+            }
+        }
     }
 
     private String colorize(String message) {
