@@ -28,7 +28,7 @@ public class Protection implements Listener {
 
     private static final byte LIGHT_BLUE_DATA = 3;
 
-    /** Auto-remove player-placed wool after this many ticks (5 seconds = 100 ticks) */
+    /** Auto-remove player-placed light-blue wool after 5 seconds (100 ticks). */
     private static final long WOOL_AUTO_REMOVE_TICKS = 100L;
 
     private static final String PERM_BYPASS = "housing.bypass";
@@ -43,33 +43,6 @@ public class Protection implements Listener {
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
-    }
-
-    // ============================================================
-    //  Mode checks
-    // ============================================================
-
-    /**
-     * BlockFight: full wool mechanics (refill + auto-remove after 5s).
-     */
-    private boolean isBlockFight(World world) {
-        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
-    }
-
-    /**
-     * LowMid: also auto-removes wool after 5s, but does NOT refill it.
-     * This prevents players from bringing infinite wool from other sources.
-     */
-    private boolean isLowMid(World world) {
-        return gameModeManager.getModeForWorld(world) == GameMode.LOWMID;
-    }
-
-    /**
-     * True if the world uses wool auto-removal (BlockFight OR LowMid).
-     */
-    private boolean usesWoolAutoRemove(World world) {
-        GameMode mode = gameModeManager.getModeForWorld(world);
-        return mode == GameMode.BLOCKFIGHT || mode == GameMode.LOWMID;
     }
 
     // ============================================================
@@ -96,6 +69,10 @@ public class Protection implements Listener {
         return item.getData().getData() == LIGHT_BLUE_DATA;
     }
 
+    private boolean isBlockFight(World world) {
+        return gameModeManager.getModeForWorld(world) == GameMode.BLOCKFIGHT;
+    }
+
     // ============================================================
     //  Block break
     // ============================================================
@@ -108,34 +85,24 @@ public class Protection implements Listener {
         if (hasBypass(player)) return;
         if (player.hasPermission(PERM_BREAK)) return;
 
-        // ---- BlockFight: only player-placed light-blue wool ----
-        if (isBlockFight(block.getWorld()) && isLightBlueWool(block)) {
+        // Any light-blue wool that was placed by a player can be broken.
+        if (isLightBlueWool(block)) {
             String key = locKey(block);
             if (playerPlacedWool.contains(key)) {
                 event.setCancelled(true);
                 block.setType(Material.AIR);
                 playerPlacedWool.remove(key);
-                Bukkit.getScheduler().scheduleSyncDelayedTask(
-                        this.plugin, new Runnable() {
-                            @Override
-                            public void run() {
-                                refillWool(player);
-                            }
-                        }, 1L);
-                return;
-            }
-            event.setCancelled(true);
-            player.sendMessage(colorize("&cYou can only break light blue wool placed by players!"));
-            return;
-        }
 
-        // ---- LowMid: only player-placed light-blue wool, NO refill ----
-        if (isLowMid(block.getWorld()) && isLightBlueWool(block)) {
-            String key = locKey(block);
-            if (playerPlacedWool.contains(key)) {
-                event.setCancelled(true);
-                block.setType(Material.AIR);
-                playerPlacedWool.remove(key);
+                // In BlockFight, refill wool after break
+                if (isBlockFight(block.getWorld())) {
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(
+                            this.plugin, new Runnable() {
+                                @Override
+                                public void run() {
+                                    refillWool(player);
+                                }
+                            }, 1L);
+                }
                 return;
             }
             event.setCancelled(true);
@@ -161,38 +128,34 @@ public class Protection implements Listener {
         Material type = event.getBlock().getType();
         if (type == Material.WOOL) {
 
-            // ---- BlockFight: register + refill + auto-remove ----
-            if (isBlockFight(world) && isLightBlueWool(event.getBlock())) {
+            // ---- Any mode: only light-blue wool is auto-removed ----
+            if (isLightBlueWool(event.getBlock())) {
                 final Block placedBlock = event.getBlock();
                 final String key = locKey(placedBlock);
                 playerPlacedWool.add(key);
 
-                // Refill player's wool immediately
-                Bukkit.getScheduler().scheduleSyncDelayedTask(
-                        this.plugin, new Runnable() {
-                            @Override
-                            public void run() {
-                                refillWool(player);
-                            }
-                        }, 1L);
+                // In BlockFight, refill the player's wool stack
+                if (isBlockFight(world)) {
+                    Bukkit.getScheduler().scheduleSyncDelayedTask(
+                            this.plugin, new Runnable() {
+                                @Override
+                                public void run() {
+                                    refillWool(player);
+                                }
+                            }, 1L);
+                }
 
-                // Schedule auto-remove after 5s
+                // Schedule auto-remove after 5 seconds (ALL modes)
                 scheduleWoolRemoval(placedBlock, key);
                 return;
             }
 
-            // ---- LowMid: register + auto-remove (NO refill) ----
-            if (isLowMid(world) && isLightBlueWool(event.getBlock())) {
-                final Block placedBlock = event.getBlock();
-                final String key = locKey(placedBlock);
-                playerPlacedWool.add(key);
+            // Non-light-blue wool: treat as normal block placement
+            // (blocked unless player has PERM_PLACE)
+            if (player.hasPermission(PERM_PLACE)) return;
 
-                // Schedule auto-remove after 5s
-                scheduleWoolRemoval(placedBlock, key);
-                return;
-            }
-
-            // Other worlds: allow wool placement normally (or block if no perm)
+            event.setCancelled(true);
+            player.sendMessage(colorize("&cYou cannot place this type of wool here!"));
             return;
         }
 
@@ -206,11 +169,6 @@ public class Protection implements Listener {
     //  Auto-remove scheduling
     // ============================================================
 
-    /**
-     * Schedules a light-blue wool block to be removed after
-     * WOOL_AUTO_REMOVE_TICKS (5 seconds). Uses captured coordinates
-     * so the block reference remains valid even if the chunk unloads.
-     */
     private void scheduleWoolRemoval(final Block placedBlock, final String key) {
         final World blockWorld = placedBlock.getWorld();
         final int bx = placedBlock.getX();

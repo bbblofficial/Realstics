@@ -44,7 +44,6 @@ public class PlayerJoin implements Listener {
             public void run() {
                 if (!player.isOnline()) return;
 
-                // ---- 1) Check for pending mode from Velocity ----
                 String pendingMode = null;
                 if (plugin instanceof Housing) {
                     pendingMode = ((Housing) plugin)
@@ -58,7 +57,6 @@ public class PlayerJoin implements Listener {
                     return;
                 }
 
-                // ---- 2) No pending mode → default behavior ----
                 giveKit(player);
                 teleportToSpawn(player);
             }
@@ -101,12 +99,35 @@ public class PlayerJoin implements Listener {
 
     // ============================================================
     //  PLATFORM KIT
-    //  - Leather Helmet + Chestplate (Red, Prot III, Unbreakable)
-    //  - Iron Leggings + Boots (Prot III, Unbreakable)
-    //  - Wood Sword (Sharpness I, Unbreakable)
     // ============================================================
 
     private void givePlatformKit(Player player) {
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(null);
+
+        player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
+        player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
+        player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
+        player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
+
+        ItemStack sword = new ItemStack(Material.WOOD_SWORD);
+        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
+        player.getInventory().setItem(0, unbreakable(sword));
+
+        refillFood(player);
+        player.updateInventory();
+    }
+
+    // ============================================================
+    //  LOWMID KIT
+    //  - Leather Cap + Tunic (Red, Prot III)
+    //  - Iron Leggings + Boots (Prot III)
+    //  - Wood Sword (Sharpness I)
+    //  - 64x Light Blue Wool
+    //  - Shears (Unbreakable)
+    // ============================================================
+
+    private void giveLowMidKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
@@ -121,31 +142,13 @@ public class PlayerJoin implements Listener {
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
         player.getInventory().setItem(0, unbreakable(sword));
 
-        refillFood(player);
-        player.updateInventory();
-    }
+        // Wool
+        ItemStack wool = new ItemStack(Material.WOOL, 64);
+        wool.setDurability(LIGHT_BLUE_WOOL_DATA);
+        player.getInventory().setItem(1, wool);
 
-    // ============================================================
-    //  LOWMID KIT
-    //  - Leather Cap + Leather Tunic (Red, Prot III, Unbreakable)
-    //  - Iron Leggings + Iron Boots (Prot III, Unbreakable)
-    //  - Wood Sword (Sharpness I, Unbreakable)
-    // ============================================================
-
-    private void giveLowMidKit(Player player) {
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
-
-        // Armor: Leather Cap + Tunic (Red, Prot III), Iron Leggings + Boots (Prot III)
-        player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
-        player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
-        player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
-        player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
-
-        // Sword
-        ItemStack sword = new ItemStack(Material.WOOD_SWORD);
-        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
-        player.getInventory().setItem(0, unbreakable(sword));
+        // Shears
+        player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
 
         refillFood(player);
         player.updateInventory();
@@ -153,7 +156,6 @@ public class PlayerJoin implements Listener {
 
     // ============================================================
     //  ONEWIDE KIT
-    //  - Iron Sword (Unbreakable)
     // ============================================================
 
     private void giveOneWideKit(Player player) {
@@ -169,9 +171,6 @@ public class PlayerJoin implements Listener {
 
     // ============================================================
     //  BLOCKFIGHT KIT
-    //  - Diamond Sword (Sharpness IV, Unbreakable)
-    //  - 64x Light Blue Wool
-    //  - Shears (Unbreakable)
     // ============================================================
 
     private void giveBlockFightKit(Player player) {
@@ -202,9 +201,6 @@ public class PlayerJoin implements Listener {
         player.setExhaustion(0.0F);
     }
 
-    /**
-     * Creates a piece of leather armor dyed red with Protection III and Unbreakable.
-     */
     private ItemStack dyedLeather(Material mat) {
         ItemStack item = new ItemStack(mat);
         LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
@@ -215,9 +211,6 @@ public class PlayerJoin implements Listener {
         return item;
     }
 
-    /**
-     * Creates a piece of iron armor with Protection III and Unbreakable.
-     */
     private ItemStack protectionIron(Material mat) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
