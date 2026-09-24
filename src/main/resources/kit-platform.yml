@@ -1,0 +1,44 @@
+
+
+# ---------------- Armor ----------------
+armor:
+  helmet:
+    material: LEATHER_HELMET
+    color: '#FF0000'
+    unbreakable: true
+    enchantments:
+      PROTECTION_ENVIRONMENTAL: 3
+
+  chestplate:
+    material: LEATHER_CHESTPLATE
+    color: '#FF0000'
+    unbreakable: true
+    enchantments:
+      PROTECTION_ENVIRONMENTAL: 3
+
+  leggings:
+    material: IRON_LEGGINGS
+    unbreakable: true
+    enchantments:
+      PROTECTION_ENVIRONMENTAL: 3
+
+  boots:
+    material: IRON_BOOTS
+    unbreakable: true
+    enchantments:
+      PROTECTION_ENVIRONMENTAL: 3
+
+# ---------------- Items (slot 0-35) ----------------
+items:
+  sword:
+    slot: 0
+    material: WOOD_SWORD
+    amount: 1
+    unbreakable: true
+    enchantments:
+      DAMAGE_ALL: 1
+
+# ---------------- Food ----------------
+food:
+  level: 20
+  saturation: 20.0

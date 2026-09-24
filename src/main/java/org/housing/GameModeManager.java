@@ -22,6 +22,8 @@ public class GameModeManager {
             new HashMap<GameMode, FileConfiguration>();
     private final Map<GameMode, FileConfiguration> modeScoreboards =
             new HashMap<GameMode, FileConfiguration>();
+    private final Map<GameMode, FileConfiguration> modeKits =
+            new HashMap<GameMode, FileConfiguration>();
 
     public GameModeManager(JavaPlugin plugin, WorldLoader worldLoader) {
         this.plugin = plugin;
@@ -32,6 +34,7 @@ public class GameModeManager {
         for (GameMode mode : GameMode.values()) {
             ensureModeConfig(mode);
             ensureModeScoreboard(mode);
+            ensureModeKit(mode);
         }
         loadWorldMappings();
     }
@@ -85,11 +88,13 @@ public class GameModeManager {
         return worldModes;
     }
 
+    // ============================================================
+    //  Config
+    // ============================================================
+
     private void ensureModeConfig(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getConfigFile());
-        boolean isNew = !file.exists();
-
-        if (isNew) {
+        if (!file.exists()) {
             try {
                 file.getParentFile().mkdirs();
                 file.createNewFile();
@@ -117,9 +122,8 @@ public class GameModeManager {
             }
         }
 
-        try {
-            cfg.save(file);
-        } catch (IOException e) {
+        try { cfg.save(file); }
+        catch (IOException e) {
             plugin.getLogger().warning("Could not save " + mode.getConfigFile()
                     + ": " + e.getMessage());
         }
@@ -127,11 +131,13 @@ public class GameModeManager {
         modeConfigs.put(mode, cfg);
     }
 
+    // ============================================================
+    //  Scoreboard
+    // ============================================================
+
     private void ensureModeScoreboard(GameMode mode) {
         File file = new File(plugin.getDataFolder(), mode.getScoreboardFile());
-        boolean isNew = !file.exists();
-
-        if (isNew) {
+        if (!file.exists()) {
             try {
                 file.getParentFile().mkdirs();
                 file.createNewFile();
@@ -159,15 +165,61 @@ public class GameModeManager {
             }
         }
 
-        try {
-            cfg.save(file);
-        } catch (IOException e) {
+        try { cfg.save(file); }
+        catch (IOException e) {
             plugin.getLogger().warning("Could not save " + mode.getScoreboardFile()
                     + ": " + e.getMessage());
         }
 
         modeScoreboards.put(mode, cfg);
     }
+
+    // ============================================================
+    //  Kit
+    // ============================================================
+
+    private void ensureModeKit(GameMode mode) {
+        File file = new File(plugin.getDataFolder(), mode.getKitFile());
+        if (!file.exists()) {
+            try {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            } catch (IOException e) {
+                plugin.getLogger().warning("Could not create " + mode.getKitFile()
+                        + ": " + e.getMessage());
+                return;
+            }
+        }
+
+        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+
+        InputStream defStream = plugin.getResource(mode.getKitFile());
+        if (defStream != null) {
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(defStream, StandardCharsets.UTF_8));
+            cfg.setDefaults(defaults);
+        }
+
+        if (cfg.getDefaults() != null) {
+            for (String key : cfg.getDefaults().getKeys(true)) {
+                if (!cfg.contains(key)) {
+                    cfg.set(key, cfg.getDefaults().get(key));
+                }
+            }
+        }
+
+        try { cfg.save(file); }
+        catch (IOException e) {
+            plugin.getLogger().warning("Could not save " + mode.getKitFile()
+                    + ": " + e.getMessage());
+        }
+
+        modeKits.put(mode, cfg);
+    }
+
+    // ============================================================
+    //  Getters
+    // ============================================================
 
     public FileConfiguration getConfig(GameMode mode) {
         FileConfiguration cfg = modeConfigs.get(mode);
@@ -187,9 +239,23 @@ public class GameModeManager {
         return cfg;
     }
 
+    public FileConfiguration getKit(GameMode mode) {
+        FileConfiguration cfg = modeKits.get(mode);
+        if (cfg == null) {
+            ensureModeKit(mode);
+            cfg = modeKits.get(mode);
+        }
+        return cfg;
+    }
+
+    // ============================================================
+    //  Reload / Save
+    // ============================================================
+
     public void reloadMode(GameMode mode) {
         ensureModeConfig(mode);
         ensureModeScoreboard(mode);
+        ensureModeKit(mode);
     }
 
     public void reloadAll() {
@@ -203,9 +269,8 @@ public class GameModeManager {
         File file = new File(plugin.getDataFolder(), mode.getConfigFile());
         FileConfiguration cfg = modeConfigs.get(mode);
         if (cfg == null || file == null) return;
-        try {
-            cfg.save(file);
-        } catch (IOException e) {
+        try { cfg.save(file); }
+        catch (IOException e) {
             plugin.getLogger().warning("Could not save " + mode.getConfigFile()
                     + ": " + e.getMessage());
         }

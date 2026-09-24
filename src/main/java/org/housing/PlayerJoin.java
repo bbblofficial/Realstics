@@ -1,30 +1,21 @@
 package org.housing;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PlayerJoin implements Listener {
 
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
-
-    private static final int LEATHER_COLOR = 16711680;
-    private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
         this.plugin = plugin;
@@ -51,13 +42,13 @@ public class PlayerJoin implements Listener {
                     return;
                 }
 
-                // Default: platform
+                // Default: kit for current world + spawn + menu
                 giveKit(player);
                 teleportToSpawn(player);
 
-                // Give the mode-selector menu item
                 if (plugin instanceof Housing) {
-                    ((Housing) plugin).getModeMenu().giveMenuItem(player);
+                    ModeMenu menu = ((Housing) plugin).getModeMenu();
+                    if (menu != null) menu.giveMenuItem(player);
                 }
             }
         }, 40L);
@@ -73,13 +64,17 @@ public class PlayerJoin implements Listener {
                 giveKit(player);
 
                 if (plugin instanceof Housing) {
-                    ((Housing) plugin).getModeMenu().giveMenuItem(player);
+                    ModeMenu menu = ((Housing) plugin).getModeMenu();
+                    if (menu != null) menu.giveMenuItem(player);
                 }
             }
         }, 5L);
     }
 
-    // ... بقیه متدها همونطور که قبلاً بودن
+    // ============================================================
+    //  Kit
+    // ============================================================
+
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         giveKitForMode(player, mode);
@@ -89,117 +84,19 @@ public class PlayerJoin implements Listener {
         if (player == null || !player.isOnline()) return;
         if (mode == null) mode = GameMode.PLATFORM;
 
-        switch (mode) {
-            case LOWMID:     giveLowMidKit(player);     break;
-            case ONEWIDE:    giveOneWideKit(player);    break;
-            case BLOCKFIGHT: giveBlockFightKit(player); break;
-            case PLATFORM:
-            default:         givePlatformKit(player);   break;
+        FileConfiguration kit = gameModeManager.getKit(mode);
+        if (kit != null) {
+            KitLoader.applyKit(player, kit);
+            return;
         }
+
+        // Fallback (در صورتی که فایل کیت خراب باشد)
+        plugin.getLogger().warning("[Housing] Kit file missing for mode: " + mode.getId());
     }
 
-    private void givePlatformKit(Player player) {
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
-
-        player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
-        player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
-        player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
-        player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
-
-        ItemStack sword = new ItemStack(Material.WOOD_SWORD);
-        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
-        player.getInventory().setItem(0, unbreakable(sword));
-
-        refillFood(player);
-        player.updateInventory();
-    }
-
-    private void giveLowMidKit(Player player) {
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
-
-        player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
-        player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
-        player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
-        player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
-
-        ItemStack sword = new ItemStack(Material.WOOD_SWORD);
-        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
-        player.getInventory().setItem(0, unbreakable(sword));
-
-        ItemStack wool = new ItemStack(Material.WOOL, 64);
-        wool.setDurability(LIGHT_BLUE_WOOL_DATA);
-        player.getInventory().setItem(1, wool);
-
-        player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
-
-        refillFood(player);
-        player.updateInventory();
-    }
-
-    private void giveOneWideKit(Player player) {
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
-
-        ItemStack sword = new ItemStack(Material.IRON_SWORD);
-        player.getInventory().setItem(0, unbreakable(sword));
-
-        refillFood(player);
-        player.updateInventory();
-    }
-
-    private void giveBlockFightKit(Player player) {
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
-
-        ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
-        sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 4);
-        player.getInventory().setItem(0, unbreakable(sword));
-
-        ItemStack wool = new ItemStack(Material.WOOL, 64);
-        wool.setDurability(LIGHT_BLUE_WOOL_DATA);
-        player.getInventory().setItem(1, wool);
-
-        player.getInventory().setItem(2, unbreakable(new ItemStack(Material.SHEARS)));
-
-        refillFood(player);
-        player.updateInventory();
-    }
-
-    private void refillFood(Player player) {
-        player.setFoodLevel(20);
-        player.setSaturation(20.0F);
-        player.setExhaustion(0.0F);
-    }
-
-    private ItemStack dyedLeather(Material mat) {
-        ItemStack item = new ItemStack(mat);
-        LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
-        meta.setColor(Color.fromRGB(LEATHER_COLOR));
-        meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 3, true);
-        meta.spigot().setUnbreakable(true);
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    private ItemStack protectionIron(Material mat) {
-        ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
-        meta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 3, true);
-        meta.spigot().setUnbreakable(true);
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    private ItemStack unbreakable(ItemStack item) {
-        if (item == null) return null;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
-        meta.spigot().setUnbreakable(true);
-        item.setItemMeta(meta);
-        return item;
-    }
+    // ============================================================
+    //  Spawn
+    // ============================================================
 
     public void teleportToSpawn(Player player) {
         Location spawn = getSpawnLocation(player.getWorld());
