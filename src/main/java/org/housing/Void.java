@@ -82,7 +82,7 @@ public class Void implements Listener {
         player.getInventory().setArmorContents(null);
 
         // ============================================================
-        //  ★ Determine spawn location
+        //  Determine spawn location
         //  Priority:
         //    1. Mode spawn IF it belongs to the current world
         //    2. Current world's default spawn

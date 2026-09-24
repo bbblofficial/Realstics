@@ -87,7 +87,7 @@ public final class Housing extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
-        // ★ Custom death messages + LowMid respawn logic
+        // ★ Custom death messages
         getServer().getPluginManager().registerEvents(
                 new DeathListener(this, this.gameModeManager), this);
 
@@ -244,7 +244,7 @@ public final class Housing extends JavaPlugin {
         setIfMissing(cfg, "protection.block-freeze.bypass-permissions",
                 Arrays.asList("housing.bypass.freeze"));
 
-        // ---- Menu (mirror from menu.yml, but stored here as fallback) ----
+        // ---- Menu ----
         setIfMissing(cfg, "menu.enabled", Boolean.valueOf(true));
 
         try {

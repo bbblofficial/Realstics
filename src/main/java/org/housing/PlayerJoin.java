@@ -36,7 +36,6 @@ public class PlayerJoin implements Listener {
             public void run() {
                 if (!player.isOnline()) return;
 
-                // ---- Pending mode from external source? ----
                 String pendingMode = null;
                 if (plugin instanceof Housing) {
                     pendingMode = ((Housing) plugin)
@@ -48,34 +47,35 @@ public class PlayerJoin implements Listener {
                     return;
                 }
 
-                // ★★★ ALWAYS go to LOBBY (Platform / default world) ★★★
                 joinLobby(player);
             }
         }, 40L);
     }
 
     // ============================================================
-    //  RESPAWN
+    //  RESPAWN — Single source of truth for respawn location
+    //  Uses event.setRespawnLocation() so there's NO race.
     // ============================================================
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onRespawn(final PlayerRespawnEvent event) {
         final Player player = event.getPlayer();
 
-        // ---- Check if we should respawn in the same world ----
+        // At this point (before respawn), the player is STILL in the
+        // world they died in. Use that to determine the death mode.
+        final World deathWorld = player.getWorld();
+        final GameMode deathMode = gameModeManager.getModeForWorld(deathWorld);
+
         FileConfiguration cfg = plugin.getConfig();
         boolean sameWorld = cfg.getBoolean("death.respawn-in-same-world", true);
 
         if (sameWorld) {
-            GameMode mode = gameModeManager.getModeForWorld(
-                    event.getRespawnLocation().getWorld());
-
+            // Check if this mode is a real-damage mode
             List<String> realModes = cfg.getStringList("death.real-damage-modes");
             boolean isRealDamageMode = false;
-
             if (realModes != null) {
                 for (String m : realModes) {
-                    if (m != null && m.equalsIgnoreCase(mode.getId())) {
+                    if (m != null && m.equalsIgnoreCase(deathMode.getId())) {
                         isRealDamageMode = true;
                         break;
                     }
@@ -83,42 +83,71 @@ public class PlayerJoin implements Listener {
             }
 
             if (isRealDamageMode) {
-                // Respawn in the SAME world (e.g. LowMid)
-                // DeathListener already handled teleport + kit, but we
-                // re-give the kit to be safe.
+                // ---- Respawn in the SAME world ----
+                Location spawn = getSpawnLocation(deathWorld);
+
+                // Fallback: if the configured spawn is in a different world,
+                // use the current world's default spawn
+                if (spawn == null || !spawn.getWorld().equals(deathWorld)) {
+                    spawn = deathWorld.getSpawnLocation();
+                }
+
+                // ★ Set the respawn location directly — no delayed teleport
+                event.setRespawnLocation(spawn);
+
+                final GameMode kitMode = deathMode;
+
+                // Give the mode's kit after respawn
                 Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
                     @Override
                     public void run() {
                         if (!player.isOnline()) return;
-                        giveKit(player);
+                        giveKitForMode(player, kitMode);
                     }
                 }, 5L);
                 return;
             }
         }
 
-        // ---- Default: send to lobby (Platform) ----
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                joinLobby(player);
+        // ---- Default: respawn at lobby (Platform) ----
+        String lobbyName = cfg.getString("protection.locked-world", "world");
+        if (lobbyName == null || lobbyName.trim().isEmpty()) {
+            lobbyName = "world";
+        }
+
+        World lobbyWorld = Bukkit.getWorld(lobbyName);
+        if (lobbyWorld == null && plugin instanceof Housing) {
+            WorldLoader loader = ((Housing) plugin).getWorldLoader();
+            if (loader != null) {
+                lobbyWorld = loader.ensureLoaded(lobbyName);
             }
-        }, 5L);
+        }
+
+        if (lobbyWorld != null) {
+            FileConfiguration platformCfg = gameModeManager.getConfig(GameMode.PLATFORM);
+            Location spawn = readSpawn(platformCfg);
+            if (spawn == null || !spawn.getWorld().equals(lobbyWorld)) {
+                spawn = lobbyWorld.getSpawnLocation();
+            }
+            event.setRespawnLocation(spawn);
+
+            Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+                @Override
+                public void run() {
+                    if (!player.isOnline()) return;
+                    giveKitForMode(player, GameMode.PLATFORM);
+                }
+            }, 5L);
+        }
     }
 
     // ============================================================
-    //  ★ JOIN LOBBY — always teleport to the default world (Platform)
+    //  JOIN LOBBY — always teleport to the default world (Platform)
     // ============================================================
 
-    /**
-     * Sends the player to the LOBBY world (default world = Platform).
-     * Used on join and (optionally) on respawn.
-     */
     public void joinLobby(final Player player) {
         if (player == null || !player.isOnline()) return;
 
-        // ---- Resolve lobby world ----
         String lobbyName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
         if (lobbyName == null || lobbyName.trim().isEmpty()) {
@@ -140,18 +169,14 @@ public class PlayerJoin implements Listener {
 
         final World targetWorld = lobbyWorld;
 
-        // ---- Get Platform spawn from its config ----
         FileConfiguration platformCfg = gameModeManager.getConfig(GameMode.PLATFORM);
         Location spawn = readSpawn(platformCfg);
-
-        // fallback: use world's default spawn
         if (spawn == null || !spawn.getWorld().equals(targetWorld)) {
             spawn = targetWorld.getSpawnLocation();
         }
 
         final Location finalSpawn = spawn;
 
-        // ---- Already in lobby world? Just refresh kit + menu ----
         if (player.getWorld().equals(targetWorld)) {
             player.teleport(finalSpawn);
             giveKitForMode(player, GameMode.PLATFORM);
@@ -159,15 +184,12 @@ public class PlayerJoin implements Listener {
             return;
         }
 
-        // ---- Clear inventory BEFORE teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
-        // ---- Teleport ----
         player.teleport(finalSpawn);
 
-        // ---- Give kit + menu AFTER teleport ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
