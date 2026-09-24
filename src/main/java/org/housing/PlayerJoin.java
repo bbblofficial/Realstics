@@ -35,14 +35,36 @@ public class PlayerJoin implements Listener {
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
+        // Delay to let the player fully load AND let
+        // HousingBackendBridge deliver the pending mode.
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
+
+                // ---- 1) Check for a pending mode from Velocity ----
+                String pendingMode = null;
+                if (plugin instanceof Housing) {
+                    pendingMode = ((Housing) plugin)
+                            .consumePendingMode(player.getUniqueId());
+                }
+
+                if (pendingMode != null) {
+                    // Player chose a specific mode via /onewide, /lowmid, etc.
+                    plugin.getLogger().info("[PlayerJoin] Applying pending mode '"
+                            + pendingMode + "' for " + player.getName());
+
+                    // Use the command so all side-effects run:
+                    // teleport, kit, scoreboard, etc.
+                    player.performCommand("housing join " + pendingMode);
+                    return;
+                }
+
+                // ---- 2) No pending mode → apply default behaviour ----
                 giveKit(player);
                 teleportToSpawn(player);
             }
-        }, 5L);
+        }, 40L); // 2 seconds — enough for Velocity message to arrive
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

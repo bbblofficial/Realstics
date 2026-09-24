@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,6 +21,15 @@ public final class Housing extends JavaPlugin {
     private ComboSystem comboSystem;
     private GameModeManager gameModeManager;
     private WorldLoader worldLoader;
+
+    /**
+     * Pending mode requests from HousingBackendBridge (Velocity).
+     * Key = player UUID, Value = mode ID (e.g. "onewide").
+     *
+     * When a player joins, PlayerJoin checks this map first.
+     * If a mode is found, it applies that mode instead of the default.
+     */
+    private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
 
     @Override
     public void onEnable() {
@@ -77,6 +90,46 @@ public final class Housing extends JavaPlugin {
         }
         getLogger().info("Housing disabled.");
     }
+
+    // ============================================================
+    //  Pending mode (used by HousingBackendBridge on Velocity)
+    // ============================================================
+
+    /**
+     * Store a pending mode for a player.
+     * Called by HousingBackendBridge when a mode message arrives
+     * from Velocity (BEFORE the player fully joins).
+     */
+    public void setPendingMode(UUID uuid, String mode) {
+        if (uuid == null || mode == null) return;
+        this.pendingModes.put(uuid, mode.toLowerCase());
+        getLogger().info("[Housing] Pending mode set: " + mode + " for " + uuid);
+    }
+
+    /**
+     * Get and remove a pending mode for a player.
+     * Called by PlayerJoin when the player joins.
+     */
+    public String consumePendingMode(UUID uuid) {
+        if (uuid == null) return null;
+        String mode = this.pendingModes.remove(uuid);
+        if (mode != null) {
+            getLogger().info("[Housing] Pending mode consumed: " + mode + " for " + uuid);
+        }
+        return mode;
+    }
+
+    /**
+     * Peek at a pending mode without removing it.
+     */
+    public String peekPendingMode(UUID uuid) {
+        if (uuid == null) return null;
+        return this.pendingModes.get(uuid);
+    }
+
+    // ============================================================
+    //  Config
+    // ============================================================
 
     private void createConfigIfMissing() {
         File configFile = new File(getDataFolder(), "config.yml");
