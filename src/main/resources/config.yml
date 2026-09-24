@@ -76,6 +76,28 @@ protection:
   # Reserved for future use — natural block restore delay.
   natural-restore-seconds: 9
 
+  # ------------------------------------------------------
+  #  Block Freeze — prevents stack size from decreasing
+  # ------------------------------------------------------
+  # When a player places a block, the stack in their hand
+  # is restored to its ORIGINAL size (e.g. 64) instead of
+  # decreasing.
+  #
+  # Example: player has 64 wool → places 1 → still 64 wool.
+  # ------------------------------------------------------
+  block-freeze:
+    # Master switch for the block-freeze feature.
+    enabled: true
+
+    # Force the hand stack back to this size after placing.
+    # Set to -1 to restore to the ORIGINAL stack size instead
+    # of a fixed value.
+    force-stack-size: -1
+
+    # Players with this permission bypass the freeze and lose
+    # items normally when placing blocks.
+    bypass-permission: "housing.bypass.freeze"
+
 # ----------------------------------------------------------
 #  Mode Selection Menu
 #  - The item itself and the GUI are configured in menu.yml

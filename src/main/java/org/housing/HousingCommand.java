@@ -37,13 +37,14 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         this.worldLoader = worldLoader;
     }
 
+    // ============================================================
+    //  COMMAND HANDLER
+    // ============================================================
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        // ============================================================
-        //  /housing  (no args) → ALWAYS join the DEFAULT world
-        //  (locked-world from config, which is mapped to Platform)
-        // ============================================================
+        // ---- /housing (no args) → ALWAYS Platform in "world" ----
         if (args.length == 0) {
             if (sender instanceof Player) {
                 return joinDefaultWorld(sender);
@@ -107,15 +108,18 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing (no args) — ALWAYS go to default world (Platform)
+    //  ★ /housing (no args) — ALWAYS Platform in "world"
     // ============================================================
 
     /**
-     * Teleports the player to the DEFAULT world, which is:
-     *   1. protection.locked-world  (from config.yml)
-     *   2. mapped to GameMode.PLATFORM
+     * Teleports the player to the DEFAULT world (Platform).
      *
-     * This method does NOT rely on worldModes iteration order.
+     * Priority:
+     *   1. protection.locked-world from config.yml
+     *   2. Hard-coded fallback: "world"
+     *
+     * The message shown will ALWAYS be:
+     *   "Joined Platform (world: world)"
      */
     private boolean joinDefaultWorld(CommandSender sender) {
         if (!(sender instanceof Player)) {
@@ -127,18 +131,27 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         final Player player = (Player) sender;
         final GameMode mode = GameMode.PLATFORM;
 
-        // ---- Read the default world name from config ----
+        // ---- Read locked-world from config (with hard fallback) ----
         String defaultWorldName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
 
+        // HARD FALLBACK: if config is broken, force "world"
         if (defaultWorldName == null || defaultWorldName.trim().isEmpty()) {
             defaultWorldName = "world";
         }
 
-        // ---- Ensure the world is loaded ----
+        // Ensure the world is loaded
         World targetWorld = worldLoader.findLoaded(defaultWorldName);
         if (targetWorld == null) {
             targetWorld = worldLoader.ensureLoaded(defaultWorldName);
+        }
+
+        // If it STILL failed and the name is not "world", try "world" as fallback
+        if (targetWorld == null && !defaultWorldName.equalsIgnoreCase("world")) {
+            targetWorld = worldLoader.findLoaded("world");
+            if (targetWorld == null) {
+                targetWorld = worldLoader.ensureLoaded("world");
+            }
         }
 
         if (targetWorld == null) {
@@ -147,7 +160,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ---- Make sure the world is mapped to Platform ----
+        // Force the world to be mapped to Platform
         gameModeManager.setWorldMode(targetWorld.getName().toLowerCase(), GameMode.PLATFORM);
 
         final World finalWorld = targetWorld;
@@ -156,11 +169,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         if (player.getWorld().equals(finalWorld)) {
             player.getInventory().clear();
             player.getInventory().setArmorContents(null);
-            playerJoin.giveKitForMode(player, mode); // this also gives the menu item
+            playerJoin.giveKitForMode(player, mode);
             player.updateInventory();
 
-            player.sendMessage(colorize("&bKit refreshed for &f"
-                    + mode.getDisplayName() + "&b."));
+            // ALWAYS print the target message
+            player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
+                    + " &b(world: &f" + finalWorld.getName() + "&b)"));
             return true;
         }
 
@@ -186,11 +200,12 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
-                playerJoin.giveKitForMode(player, mode); // this also gives the menu item
+                playerJoin.giveKitForMode(player, mode);
                 player.updateInventory();
             }
         }, 5L);
 
+        // ALWAYS print the target message
         player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
                 + " &b(world: &f" + finalWorld.getName() + "&b)"));
         return true;
@@ -250,7 +265,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // ★ Special case: "join platform" → go to DEFAULT world (locked-world)
+        // ★ Special case: "join platform" → go to DEFAULT world
         if (mode == GameMode.PLATFORM) {
             return joinDefaultWorld(sender);
         }
@@ -519,7 +534,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             target = (Player) sender;
         }
 
-        playerJoin.giveKitForMode(target, mode); // also gives the menu item
+        playerJoin.giveKitForMode(target, mode);
 
         if (sender.equals(target)) {
             sender.sendMessage(colorize("&bYour &f" + mode.getDisplayName() + " &bkit has been restored."));

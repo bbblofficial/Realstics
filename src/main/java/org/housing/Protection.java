@@ -23,10 +23,16 @@ public class Protection implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
+    /** world:x:y:z -> place time */
     private final Map<String, Long> placedBlocks = new HashMap<String, Long>();
 
     private final String lockedWorld;
     private final long placedDecaySeconds;
+
+    // ---- Block Freeze config ----
+    private final boolean freezeEnabled;
+    private final int freezeForceSize;           // -1 = restore original
+    private final String freezeBypassPermission;
 
     private static final String PERM_BYPASS = "housing.bypass";
     private static final String PERM_BREAK  = "housing.break";
@@ -36,7 +42,16 @@ public class Protection implements Listener {
         this.gameModeManager = gameModeManager;
         this.lockedWorld = plugin.getConfig().getString("protection.locked-world", "world");
         this.placedDecaySeconds = plugin.getConfig().getLong("protection.placed-decay-seconds", 5L);
-        // ⚠️ registerEvents اینجا انجام نمیشه (توی Housing.java انجام میشه)
+
+        // ---- Block Freeze ----
+        this.freezeEnabled = plugin.getConfig()
+                .getBoolean("protection.block-freeze.enabled", true);
+        this.freezeForceSize = plugin.getConfig()
+                .getInt("protection.block-freeze.force-stack-size", -1);
+        this.freezeBypassPermission = plugin.getConfig()
+                .getString("protection.block-freeze.bypass-permission",
+                           "housing.bypass.freeze");
+        // ⚠️ registerEvents is done in Housing.java — do NOT register here.
     }
 
     // ============================================================
@@ -45,6 +60,11 @@ public class Protection implements Listener {
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
+    }
+
+    private boolean hasFreezeBypass(Player player) {
+        if (freezeBypassPermission == null || freezeBypassPermission.isEmpty()) return false;
+        return player.hasPermission(freezeBypassPermission);
     }
 
     private boolean isLockedWorld(World world) {
@@ -60,7 +80,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Block place
+    //  Block place — freeze + track + auto-remove
     // ============================================================
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -75,29 +95,54 @@ public class Protection implements Listener {
             return;
         }
 
-        // ---- 1) آیتم دست کم نشه ----
-        final int slot = player.getInventory().getHeldItemSlot();
-        final ItemStack hand = player.getItemInHand();
-        if (hand != null && hand.getType() != Material.AIR) {
-            final ItemStack restore = hand.clone();
+        // ============================================================
+        //  1) BLOCK FREEZE — restore the hand stack to 64 (or original)
+        // ============================================================
+        if (this.freezeEnabled && !hasFreezeBypass(player) && !hasBypass(player)) {
+            final int slot = player.getInventory().getHeldItemSlot();
+            final ItemStack hand = player.getItemInHand();
 
-            Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
-                @Override
-                public void run() {
-                    if (!player.isOnline()) return;
-                    ItemStack current = player.getInventory().getItem(slot);
-                    // فقط اگه هنوز همون آیتمه برگردون
-                    if (current == null
-                            || current.getType() == Material.AIR
-                            || current.getType() == restore.getType()) {
-                        player.getInventory().setItem(slot, restore);
-                        player.updateInventory();
+            if (hand != null && hand.getType() != Material.AIR) {
+                // Take a snapshot BEFORE the place event consumes the item.
+                // We add +1 because Bukkit already decremented it by now.
+                final ItemStack restore;
+                if (this.freezeForceSize > 0) {
+                    // Fixed size (e.g. force 64)
+                    restore = hand.clone();
+                    int forced = Math.min(this.freezeForceSize, restore.getMaxStackSize());
+                    restore.setAmount(forced);
+                } else {
+                    // Restore to ORIGINAL size + 1 (because 1 was consumed)
+                    restore = hand.clone();
+                    int targetAmount = hand.getAmount() + 1;
+                    if (targetAmount > restore.getMaxStackSize()) {
+                        targetAmount = restore.getMaxStackSize();
                     }
+                    restore.setAmount(targetAmount);
                 }
-            }, 1L);
+
+                Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!player.isOnline()) return;
+                        ItemStack current = player.getInventory().getItem(slot);
+
+                        // Only restore if the slot still holds the SAME material
+                        // (so we don't overwrite something the player swapped in)
+                        if (current == null
+                                || current.getType() == Material.AIR
+                                || current.getType() == restore.getType()) {
+                            player.getInventory().setItem(slot, restore);
+                            player.updateInventory();
+                        }
+                    }
+                }, 1L);
+            }
         }
 
-        // ---- 2) Track کردن بلاک ----
+        // ============================================================
+        //  2) Track the placed block for auto-removal
+        // ============================================================
         final Block placedBlock = event.getBlockPlaced();
         final Location loc = placedBlock.getLocation().clone();
         final Material type = placedBlock.getType();
@@ -105,7 +150,9 @@ public class Protection implements Listener {
 
         this.placedBlocks.put(key, Long.valueOf(System.currentTimeMillis()));
 
-        // ---- 3) حذف خودکار بعد 5 ثانیه ----
+        // ============================================================
+        //  3) Auto-remove after N seconds
+        // ============================================================
         long delayTicks = this.placedDecaySeconds * 20L;
         if (delayTicks < 1L) delayTicks = 100L;
 
@@ -114,7 +161,7 @@ public class Protection implements Listener {
             public void run() {
                 Block b = loc.getBlock();
                 if (b.getType() == type) {
-                    b.setType(Material.AIR);
+                    b.setType(Material.AIR); // no drops
                 }
                 placedBlocks.remove(key);
             }
@@ -122,7 +169,7 @@ public class Protection implements Listener {
     }
 
     // ============================================================
-    //  Block break — بدون drop
+    //  Block break — no drops
     // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -140,7 +187,7 @@ public class Protection implements Listener {
         Location loc = block.getLocation().clone();
         String key = locKey(loc);
 
-        // ---- بلاک player-placed → بدون drop ----
+        // Player-placed → remove WITHOUT drops
         if (this.placedBlocks.containsKey(key)) {
             event.setCancelled(true);
             block.setType(Material.AIR);
