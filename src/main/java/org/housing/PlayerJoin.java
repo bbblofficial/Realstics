@@ -23,7 +23,7 @@ public class PlayerJoin implements Listener {
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
-    private static final int LEATHER_COLOR = 16711680;
+    private static final int LEATHER_COLOR = 16711680;   // Red
     private static final short LIGHT_BLUE_WOOL_DATA = 3;
 
     public PlayerJoin(JavaPlugin plugin, GameModeManager gameModeManager) {
@@ -31,18 +31,20 @@ public class PlayerJoin implements Listener {
         this.gameModeManager = gameModeManager;
     }
 
+    // ============================================================
+    //  Join / Respawn
+    // ============================================================
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
-        // Delay to let the player fully load AND let
-        // HousingBackendBridge deliver the pending mode.
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
 
-                // ---- 1) Check for a pending mode from Velocity ----
+                // ---- 1) Check for pending mode from Velocity ----
                 String pendingMode = null;
                 if (plugin instanceof Housing) {
                     pendingMode = ((Housing) plugin)
@@ -50,21 +52,17 @@ public class PlayerJoin implements Listener {
                 }
 
                 if (pendingMode != null) {
-                    // Player chose a specific mode via /onewide, /lowmid, etc.
                     plugin.getLogger().info("[PlayerJoin] Applying pending mode '"
                             + pendingMode + "' for " + player.getName());
-
-                    // Use the command so all side-effects run:
-                    // teleport, kit, scoreboard, etc.
                     player.performCommand("housing join " + pendingMode);
                     return;
                 }
 
-                // ---- 2) No pending mode → apply default behaviour ----
+                // ---- 2) No pending mode → default behavior ----
                 giveKit(player);
                 teleportToSpawn(player);
             }
-        }, 40L); // 2 seconds — enough for Velocity message to arrive
+        }, 40L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -79,18 +77,15 @@ public class PlayerJoin implements Listener {
         }, 5L);
     }
 
-    /**
-     * Gives the kit based on the player's CURRENT world mode.
-     */
+    // ============================================================
+    //  Kit dispatch
+    // ============================================================
+
     public void giveKit(Player player) {
         GameMode mode = gameModeManager.getModeForWorld(player.getWorld());
         giveKitForMode(player, mode);
     }
 
-    /**
-     * Gives a specific mode's kit explicitly.
-     * Use this when you know the target mode (e.g. /housing join <mode>).
-     */
     public void giveKitForMode(Player player, GameMode mode) {
         if (player == null || !player.isOnline()) return;
         if (mode == null) mode = GameMode.PLATFORM;
@@ -104,15 +99,24 @@ public class PlayerJoin implements Listener {
         }
     }
 
+    // ============================================================
+    //  PLATFORM KIT
+    //  - Leather Helmet + Chestplate (Red, Prot III, Unbreakable)
+    //  - Iron Leggings + Boots (Prot III, Unbreakable)
+    //  - Wood Sword (Sharpness I, Unbreakable)
+    // ============================================================
+
     private void givePlatformKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
+        // Armor
         player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
         player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
         player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
         player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
 
+        // Sword
         ItemStack sword = new ItemStack(Material.WOOD_SWORD);
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
         player.getInventory().setItem(0, unbreakable(sword));
@@ -120,11 +124,25 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
+
+    // ============================================================
+    //  LOWMID KIT
+    //  - Leather Cap + Leather Tunic (Red, Prot III, Unbreakable)
+    //  - Iron Leggings + Iron Boots (Prot III, Unbreakable)
+    //  - Wood Sword (Sharpness I, Unbreakable)
+    // ============================================================
 
     private void giveLowMidKit(Player player) {
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
 
+        // Armor: Leather Cap + Tunic (Red, Prot III), Iron Leggings + Boots (Prot III)
+        player.getInventory().setHelmet(dyedLeather(Material.LEATHER_HELMET));
+        player.getInventory().setChestplate(dyedLeather(Material.LEATHER_CHESTPLATE));
+        player.getInventory().setLeggings(protectionIron(Material.IRON_LEGGINGS));
+        player.getInventory().setBoots(protectionIron(Material.IRON_BOOTS));
+
+        // Sword
         ItemStack sword = new ItemStack(Material.WOOD_SWORD);
         sword.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 1);
         player.getInventory().setItem(0, unbreakable(sword));
@@ -132,6 +150,11 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
+
+    // ============================================================
+    //  ONEWIDE KIT
+    //  - Iron Sword (Unbreakable)
+    // ============================================================
 
     private void giveOneWideKit(Player player) {
         player.getInventory().clear();
@@ -143,6 +166,13 @@ public class PlayerJoin implements Listener {
         refillFood(player);
         player.updateInventory();
     }
+
+    // ============================================================
+    //  BLOCKFIGHT KIT
+    //  - Diamond Sword (Sharpness IV, Unbreakable)
+    //  - 64x Light Blue Wool
+    //  - Shears (Unbreakable)
+    // ============================================================
 
     private void giveBlockFightKit(Player player) {
         player.getInventory().clear();
@@ -162,12 +192,19 @@ public class PlayerJoin implements Listener {
         player.updateInventory();
     }
 
+    // ============================================================
+    //  Helpers
+    // ============================================================
+
     private void refillFood(Player player) {
         player.setFoodLevel(20);
         player.setSaturation(20.0F);
         player.setExhaustion(0.0F);
     }
 
+    /**
+     * Creates a piece of leather armor dyed red with Protection III and Unbreakable.
+     */
     private ItemStack dyedLeather(Material mat) {
         ItemStack item = new ItemStack(mat);
         LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
@@ -178,6 +215,9 @@ public class PlayerJoin implements Listener {
         return item;
     }
 
+    /**
+     * Creates a piece of iron armor with Protection III and Unbreakable.
+     */
     private ItemStack protectionIron(Material mat) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
@@ -195,6 +235,10 @@ public class PlayerJoin implements Listener {
         item.setItemMeta(meta);
         return item;
     }
+
+    // ============================================================
+    //  Spawn location
+    // ============================================================
 
     public void teleportToSpawn(Player player) {
         Location spawn = getSpawnLocation(player.getWorld());
