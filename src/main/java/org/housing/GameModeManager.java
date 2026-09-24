@@ -18,7 +18,6 @@ public class GameModeManager {
     private final JavaPlugin plugin;
     private final WorldLoader worldLoader;
 
-    // ★ LinkedHashMap → ترتیب درج حفظ میشه
     private final Map<String, GameMode> worldModes = new LinkedHashMap<String, GameMode>();
 
     private final Map<GameMode, FileConfiguration> modeConfigs =
@@ -46,7 +45,6 @@ public class GameModeManager {
         worldModes.clear();
         FileConfiguration cfg = plugin.getConfig();
 
-        // ★ اول locked-world رو اضافه کن که همیشه اول لیست باشه
         String locked = cfg.getString("protection.locked-world", "world");
         String lockedModeId = cfg.getString("worlds." + locked.toLowerCase(), "platform");
         GameMode lockedMode = GameMode.fromId(lockedModeId);
@@ -54,11 +52,10 @@ public class GameModeManager {
             worldModes.put(locked.toLowerCase(), lockedMode);
         }
 
-        // ★ بعد بقیه worlds
         if (cfg.isConfigurationSection("worlds")) {
             for (String world : cfg.getConfigurationSection("worlds").getKeys(false)) {
                 String wl = world.toLowerCase();
-                if (worldModes.containsKey(wl)) continue; // locked-world رو رد کن
+                if (worldModes.containsKey(wl)) continue;
 
                 String modeId = cfg.getString("worlds." + world);
                 GameMode mode = GameMode.fromId(modeId);
@@ -88,15 +85,9 @@ public class GameModeManager {
         plugin.saveConfig();
     }
 
-    /**
-     * ★ FIX نهایی: برای هر mode، حتماً world اصلی (locked-world) رو
-     * اگه به این mode مپ شده باشه، اول برمی‌گردونه.
-     * برای Platform: همیشه locked-world (پیش‌فرض: "world")
-     */
     public String getWorldForMode(GameMode mode) {
         if (mode == null) return null;
 
-        // ---- مرحله 1: locked-world اگه به این mode مپ شده ----
         String locked = plugin.getConfig()
                 .getString("protection.locked-world", "world").toLowerCase();
 
@@ -105,7 +96,6 @@ public class GameModeManager {
             return locked;
         }
 
-        // ---- مرحله 2: اولین world توی LinkedHashMap (با ترتیب) ----
         for (Map.Entry<String, GameMode> entry : worldModes.entrySet()) {
             if (entry.getValue() == mode) {
                 return entry.getKey();
@@ -145,15 +135,7 @@ public class GameModeManager {
         if (defStream != null) {
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(defStream, StandardCharsets.UTF_8));
-            cfg.setDefaults(defaults);
-        }
-
-        if (cfg.getDefaults() != null) {
-            for (String key : cfg.getDefaults().getKeys(true)) {
-                if (!cfg.contains(key)) {
-                    cfg.set(key, cfg.getDefaults().get(key));
-                }
-            }
+            applyDefaults(cfg, defaults);
         }
 
         try { cfg.save(file); }
@@ -184,15 +166,7 @@ public class GameModeManager {
         if (defStream != null) {
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(defStream, StandardCharsets.UTF_8));
-            cfg.setDefaults(defaults);
-        }
-
-        if (cfg.getDefaults() != null) {
-            for (String key : cfg.getDefaults().getKeys(true)) {
-                if (!cfg.contains(key)) {
-                    cfg.set(key, cfg.getDefaults().get(key));
-                }
-            }
+            applyDefaults(cfg, defaults);
         }
 
         try { cfg.save(file); }
@@ -223,15 +197,7 @@ public class GameModeManager {
         if (defStream != null) {
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(defStream, StandardCharsets.UTF_8));
-            cfg.setDefaults(defaults);
-        }
-
-        if (cfg.getDefaults() != null) {
-            for (String key : cfg.getDefaults().getKeys(true)) {
-                if (!cfg.contains(key)) {
-                    cfg.set(key, cfg.getDefaults().get(key));
-                }
-            }
+            applyDefaults(cfg, defaults);
         }
 
         try { cfg.save(file); }
@@ -241,6 +207,28 @@ public class GameModeManager {
         }
 
         modeKits.put(mode, cfg);
+    }
+
+    /**
+     * ★ FIX: Copies missing keys from defaults into cfg WITHOUT creating
+     * empty sections. Skips section headers so children get set properly.
+     */
+    private void applyDefaults(FileConfiguration cfg, YamlConfiguration defaults) {
+        if (defaults == null) return;
+
+        // Deep-copy every missing key from defaults → cfg
+        for (String key : defaults.getKeys(true)) {
+            // Skip section headers — only set leaf values
+            if (defaults.isConfigurationSection(key)) continue;
+
+            // Only set if cfg doesn't have this leaf key
+            if (!cfg.contains(key)) {
+                Object value = defaults.get(key);
+                if (value != null) {
+                    cfg.set(key, value);
+                }
+            }
+        }
     }
 
     public FileConfiguration getConfig(GameMode mode) {

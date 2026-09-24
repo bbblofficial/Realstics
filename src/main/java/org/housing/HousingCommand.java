@@ -123,25 +123,31 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         final Player player = (Player) sender;
         final GameMode mode = GameMode.PLATFORM;
 
+        // ---- Read locked-world from config (with hard fallback) ----
         String defaultWorldName = plugin.getConfig()
                 .getString("protection.locked-world", "world");
-
         if (defaultWorldName == null || defaultWorldName.trim().isEmpty()) {
             defaultWorldName = "world";
         }
 
+        // ★★★ Already in Platform (default world)? Show message and stop. ★★★
+        if (player.getWorld().getName().equalsIgnoreCase(defaultWorldName)) {
+            player.sendMessage(colorize("&b&lHousing &f&l» &fYou are already in &b"
+                    + mode.getDisplayName() + "&f!"));
+            return true;
+        }
+
+        // ---- Ensure the world is loaded ----
         World targetWorld = worldLoader.findLoaded(defaultWorldName);
         if (targetWorld == null) {
             targetWorld = worldLoader.ensureLoaded(defaultWorldName);
         }
-
         if (targetWorld == null && !defaultWorldName.equalsIgnoreCase("world")) {
             targetWorld = worldLoader.findLoaded("world");
             if (targetWorld == null) {
                 targetWorld = worldLoader.ensureLoaded("world");
             }
         }
-
         if (targetWorld == null) {
             player.sendMessage(colorize("&cDefault world '&e" + defaultWorldName
                     + "&c' could not be loaded."));
@@ -149,36 +155,27 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         }
 
         gameModeManager.setWorldMode(targetWorld.getName().toLowerCase(), GameMode.PLATFORM);
-
         final World finalWorld = targetWorld;
 
-        if (player.getWorld().equals(finalWorld)) {
-            player.getInventory().clear();
-            player.getInventory().setArmorContents(null);
-            playerJoin.giveKitForMode(player, mode);
-            player.updateInventory();
-
-            player.sendMessage(colorize("&bJoined &f" + mode.getDisplayName()
-                    + " &b(world: &f" + finalWorld.getName() + "&b)"));
-            return true;
-        }
-
+        // ---- Get spawn location ----
         Location spawn = playerJoin.getSpawnLocation(finalWorld);
         if (spawn == null) {
             spawn = finalWorld.getSpawnLocation();
         }
 
+        // ---- Clear inventory BEFORE teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
+        // ---- Teleport ----
         player.teleport(spawn);
 
+        // ---- Give kit + menu AFTER teleport completes ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
-
                 player.getInventory().clear();
                 player.getInventory().setArmorContents(null);
                 playerJoin.giveKitForMode(player, mode);
@@ -203,6 +200,16 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
 
         Player player = (Player) sender;
+
+        // ★ Already in lobby (default world)?
+        String defaultWorldName = plugin.getConfig()
+                .getString("protection.locked-world", "world");
+        if (defaultWorldName != null
+                && player.getWorld().getName().equalsIgnoreCase(defaultWorldName)) {
+            player.sendMessage(colorize("&b&lHousing &f&l» &fYou are already in the &bLobby&f!"));
+            return true;
+        }
+
         playerJoin.joinLobby(player);
         player.sendMessage(colorize("&bTeleported to the lobby."));
         return true;
@@ -210,7 +217,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
     // ============================================================
     //  ★ /housing setlobbyspawn — Set the LOBBY spawn
-    //  (Saved to Platform mode's spawn config)
     // ============================================================
 
     private boolean handleSetLobbySpawn(CommandSender sender) {
@@ -292,11 +298,20 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        // ★ Special case: "join platform" → go to DEFAULT world
         if (mode == GameMode.PLATFORM) {
             return joinDefaultWorld(sender);
         }
 
         final Player player = (Player) sender;
+
+        // ★★★ Already in this mode? Show message and stop. ★★★
+        GameMode currentMode = gameModeManager.getModeForWorld(player.getWorld());
+        if (currentMode == mode) {
+            player.sendMessage(colorize("&b&lHousing &f&l» &fYou are already in &b"
+                    + mode.getDisplayName() + "&f!"));
+            return true;
+        }
 
         String worldName = gameModeManager.getWorldForMode(mode);
 
@@ -320,28 +335,20 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         final GameMode finalMode = mode;
 
-        if (player.getWorld().equals(targetWorld)) {
-            player.getInventory().clear();
-            player.getInventory().setArmorContents(null);
-            playerJoin.giveKitForMode(player, finalMode);
-            player.updateInventory();
-
-            player.sendMessage(colorize("&bKit refreshed for &f"
-                    + finalMode.getDisplayName() + "&b."));
-            return true;
-        }
-
         Location spawn = playerJoin.getSpawnLocation(targetWorld);
         if (spawn == null) {
             spawn = targetWorld.getSpawnLocation();
         }
 
+        // ---- Clear inventory before teleport ----
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.updateInventory();
 
+        // ---- Teleport ----
         player.teleport(spawn);
 
+        // ---- Give kit + menu after teleport ----
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
             public void run() {
