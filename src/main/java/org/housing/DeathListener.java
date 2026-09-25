@@ -1,65 +1,70 @@
 package org.housing;
 
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class DeathListener implements Listener {
+public class Welcome implements Listener {
 
     private final JavaPlugin plugin;
-    private final GameModeManager gameModeManager;
 
-    public DeathListener(JavaPlugin plugin, GameModeManager gameModeManager) {
+    public Welcome(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.gameModeManager = gameModeManager;
     }
 
-    // ============================================================
-    //  CUSTOM DEATH MESSAGE ONLY
-    //  Respawn location is handled entirely by PlayerJoin.onRespawn.
-    // ============================================================
+    private Messages M() {
+        if (plugin instanceof Housing) return ((Housing) plugin).getMessages();
+        return null;
+    }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onDeath(PlayerDeathEvent event) {
-        FileConfiguration cfg = plugin.getConfig();
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
 
-        if (!cfg.getBoolean("death.enabled", true)) return;
-
-        Player victim = event.getEntity();
-        Player killer = victim.getKiller();
-
-        if (killer != null) {
-            String format = cfg.getString("death.killed-by-player",
-                    "&c%victim% &7was slain by &c%killer%");
-            event.setDeathMessage(colorize(format
-                    .replace("%victim%", victim.getName())
-                    .replace("%killer%", killer.getName())
-                    .replace("%world%", victim.getWorld().getName())));
-        } else if (victim.getLastDamageCause() != null
-                && victim.getLastDamageCause().getEntity() != null) {
-            String format = cfg.getString("death.killed-by-mob",
-                    "&c%victim% &7was killed by &c%killer%");
-            String entityName = victim.getLastDamageCause().getEntity().getType().name();
-            event.setDeathMessage(colorize(format
-                    .replace("%victim%", victim.getName())
-                    .replace("%killer%", entityName)
-                    .replace("%world%", victim.getWorld().getName())));
-        } else {
-            String format = cfg.getString("death.default",
-                    "&c%victim% &7died");
-            event.setDeathMessage(colorize(format
-                    .replace("%victim%", victim.getName())
-                    .replace("%world%", victim.getWorld().getName())));
+        if (player.getGameMode() != GameMode.SURVIVAL) {
+            player.setGameMode(GameMode.SURVIVAL);
         }
+
+        event.setJoinMessage(null);
+
+        Messages m = M();
+        String rendered;
+        if (m != null) {
+            rendered = m.msg("join-message",
+                    "player", player.getName(),
+                    "online", String.valueOf(Bukkit.getOnlinePlayers().size()),
+                    "max_online", String.valueOf(Bukkit.getMaxPlayers()));
+        } else {
+            rendered = "&b" + player.getName() + " &fjoined the game";
+        }
+
+        Bukkit.broadcastMessage(rendered);
     }
 
-    private String colorize(String message) {
-        if (message == null) return "";
-        return ChatColor.translateAlternateColorCodes('&', message);
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        event.setQuitMessage(null);
+
+        int onlineAfter = Math.max(0, Bukkit.getOnlinePlayers().size() - 1);
+
+        Messages m = M();
+        String rendered;
+        if (m != null) {
+            rendered = m.msg("quit-message",
+                    "player", player.getName(),
+                    "online", String.valueOf(onlineAfter),
+                    "max_online", String.valueOf(Bukkit.getMaxPlayers()));
+        } else {
+            rendered = "&b" + player.getName() + " &fleft the game";
+        }
+
+        Bukkit.broadcastMessage(rendered);
     }
 }

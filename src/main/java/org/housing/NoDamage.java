@@ -1,6 +1,5 @@
 package org.housing;
 
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -12,21 +11,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- * Cosmetic PvP rules + PvP-zone enforcement.
- *
- * All modes EXCEPT LowMid:
- *   - HP never drops (damage set to 0)
- *   - Fall damage off
- *
- * LowMid:
- *   - PvP damage is APPLIED (real damage)
- *   - Fall damage is APPLIED (real damage)
- *   - Other damage causes (fire, poison, drowning, etc.) are cancelled
- */
 public class NoDamage implements Listener {
 
-    @SuppressWarnings("unused")
     private final JavaPlugin plugin;
     private final GameModeManager gameModeManager;
 
@@ -114,7 +100,10 @@ public class NoDamage implements Listener {
         } else {
             event.setCancelled(true);
             event.setDamage(0);
-            attacker.sendMessage(colorize("&bYou must enter the PvP zone first!"));
+            if (plugin instanceof Housing) {
+                Messages m = ((Housing) plugin).getMessages();
+                if (m != null) m.send(attacker, "pvp.must-enter-zone");
+            }
         }
     }
 
@@ -143,9 +132,5 @@ public class NoDamage implements Listener {
             player.setSaturation(20.0F);
             player.setExhaustion(0.0F);
         }
-    }
-
-    private String colorize(String message) {
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

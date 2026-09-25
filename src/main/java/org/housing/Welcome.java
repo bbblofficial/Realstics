@@ -1,9 +1,7 @@
 package org.housing;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -20,6 +18,11 @@ public class Welcome implements Listener {
         this.plugin = plugin;
     }
 
+    private Messages M() {
+        if (plugin instanceof Housing) return ((Housing) plugin).getMessages();
+        return null;
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -30,14 +33,16 @@ public class Welcome implements Listener {
 
         event.setJoinMessage(null);
 
-        FileConfiguration config = this.plugin.getConfig();
-        String joinMessage = config.getString("join-message",
-                "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
-
-        String rendered = colorize(joinMessage)
-                .replace("%player%", player.getName())
-                .replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size()))
-                .replace("%max_online%", String.valueOf(Bukkit.getMaxPlayers()));
+        Messages m = M();
+        String rendered;
+        if (m != null) {
+            rendered = m.msg("join-message",
+                    "player", player.getName(),
+                    "online", String.valueOf(Bukkit.getOnlinePlayers().size()),
+                    "max_online", String.valueOf(Bukkit.getMaxPlayers()));
+        } else {
+            rendered = "&b" + player.getName() + " &fjoined the game";
+        }
 
         Bukkit.broadcastMessage(rendered);
     }
@@ -47,22 +52,19 @@ public class Welcome implements Listener {
         Player player = event.getPlayer();
         event.setQuitMessage(null);
 
-        FileConfiguration config = this.plugin.getConfig();
-        String quitMessage = config.getString("quit-message",
-                "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
-
         int onlineAfter = Math.max(0, Bukkit.getOnlinePlayers().size() - 1);
 
-        String rendered = colorize(quitMessage)
-                .replace("%player%", player.getName())
-                .replace("%online%", String.valueOf(onlineAfter))
-                .replace("%max_online%", String.valueOf(Bukkit.getMaxPlayers()));
+        Messages m = M();
+        String rendered;
+        if (m != null) {
+            rendered = m.msg("quit-message",
+                    "player", player.getName(),
+                    "online", String.valueOf(onlineAfter),
+                    "max_online", String.valueOf(Bukkit.getMaxPlayers()));
+        } else {
+            rendered = "&b" + player.getName() + " &fleft the game";
+        }
 
         Bukkit.broadcastMessage(rendered);
-    }
-
-    private String colorize(String message) {
-        if (message == null) return "";
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

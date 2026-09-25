@@ -46,12 +46,8 @@ public class ModeMenu implements Listener {
         this.gameModeManager = gameModeManager;
         this.playerJoin = playerJoin;
         loadConfig();
-        startSafetyTask(); // ★ چک دوره‌ای
+        startSafetyTask();
     }
-
-    // ============================================================
-    //  CONFIG LOAD / MERGE
-    // ============================================================
 
     public void loadConfig() {
         this.menuFile = new File(plugin.getDataFolder(), "menu.yml");
@@ -96,11 +92,6 @@ public class ModeMenu implements Listener {
         return this.menuConfig;
     }
 
-    // ============================================================
-    //  ★ SAFETY TASK
-    //  هر 3 ثانیه چک می‌کنه اگه پلیر آیتم منو رو نداره بهش بده
-    // ============================================================
-
     private void startSafetyTask() {
         Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
             @Override
@@ -116,12 +107,9 @@ public class ModeMenu implements Listener {
                     }
                 }
             }
-        }, 60L, 60L); // هر 3 ثانیه
+        }, 60L, 60L);
     }
 
-    /**
-     * چک می‌کنه که پلیر آیتم منو رو داره یا نه.
-     */
     private boolean hasMenuItem(Player player) {
         int slot = this.menuConfig.getInt("item.slot", 8);
         if (slot < 0 || slot > 8) slot = 8;
@@ -135,10 +123,6 @@ public class ModeMenu implements Listener {
         String expected = colorize(this.menuConfig.getString("item.name", "&b&lMode Selector"));
         return meta.getDisplayName().equals(expected);
     }
-
-    // ============================================================
-    //  GIVE ITEM
-    // ============================================================
 
     public void giveMenuItem(Player player) {
         if (player == null || !player.isOnline()) return;
@@ -186,14 +170,13 @@ public class ModeMenu implements Listener {
         player.updateInventory();
     }
 
-    // ============================================================
-    //  OPEN MENU
-    // ============================================================
-
     public void openMenu(Player player) {
         if (player == null || !player.isOnline()) return;
         if (!player.hasPermission(PERM_MENU)) {
-            player.sendMessage(colorize("&cYou don't have permission to use the mode menu."));
+            if (plugin instanceof Housing) {
+                Messages m = ((Housing) plugin).getMessages();
+                if (m != null) m.send(player, "menu.no-permission");
+            }
             return;
         }
 
@@ -318,10 +301,6 @@ public class ModeMenu implements Listener {
         return item;
     }
 
-    // ============================================================
-    //  EVENTS
-    // ============================================================
-
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR
@@ -417,7 +396,6 @@ public class ModeMenu implements Listener {
             @Override
             public void run() {
                 if (player.isOnline()) {
-                    // اگه PlayerJoin قبلاً داده، دست نمیزنیم
                     if (!hasMenuItem(player)) {
                         giveMenuItem(player);
                     }
@@ -440,10 +418,6 @@ public class ModeMenu implements Listener {
             }
         }, 10L);
     }
-
-    // ============================================================
-    //  HELPERS
-    // ============================================================
 
     @SuppressWarnings("deprecation")
     private void playSound(Player player, String namePath, String defName,

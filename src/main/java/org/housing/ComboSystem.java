@@ -49,21 +49,24 @@ public class ComboSystem implements Listener {
         this.enabled        = config.getBoolean("combo.enabled", true);
         this.comboStep      = config.getInt("combo.step", 10);
         this.comboResetTime = config.getLong("combo.reset-time", 3000L);
+        this.soundEnabled   = config.getBoolean("combo.sound-enabled", true);
 
-        String msg = config.getString("combo.broadcast-message", null);
+        String msg = null;
+        if (plugin instanceof Housing) {
+            Messages m = ((Housing) plugin).getMessages();
+            if (m != null) msg = m.get("combo.broadcast");
+        }
+        if (msg == null || msg.trim().isEmpty()) {
+            // Fallback to old config path
+            msg = config.getString("combo.broadcast-message", null);
+        }
         if (msg == null || msg.trim().isEmpty()) {
             msg = DEFAULT_MESSAGE;
         }
         this.broadcastMessage = msg;
 
-        this.soundEnabled = config.getBoolean("combo.sound-enabled", true);
-
         if (this.comboStep < 1) this.comboStep = 10;
         if (this.comboResetTime < 500L) this.comboResetTime = 3000L;
-
-        if (this.broadcastMessage != null) {
-            this.broadcastMessage = this.broadcastMessage.replace("\\n", "\n");
-        }
     }
 
     public void reloadConfig() {
@@ -98,13 +101,13 @@ public class ComboSystem implements Listener {
     }
 
     private void announceCombo(Player attacker, Player victim, int combo) {
+        // broadcastMessage is ALREADY colored (from Messages.get)
         String raw = this.broadcastMessage
                 .replace("%combo%", String.valueOf(combo))
                 .replace("%attacker%", attacker.getName())
                 .replace("%victim%", victim.getName());
 
-        String colored = colorize(raw);
-        String[] lines = colored.split("\\r?\\n");
+        String[] lines = raw.split("\\r?\\n");
         for (Player p : Bukkit.getOnlinePlayers()) {
             for (String line : lines) {
                 p.sendMessage(line);
@@ -174,9 +177,5 @@ public class ComboSystem implements Listener {
 
     public boolean isEnabled() {
         return this.enabled;
-    }
-
-    private String colorize(String message) {
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

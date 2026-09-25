@@ -2,7 +2,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 
 ├── .git
 │   ├── COMMIT_EDITMSG
-  SQiiiL
+  Initial commit
 │   ├── HEAD
   ref: refs/heads/main
 │   ├── config
@@ -951,6 +951,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   cb7174c9edcd3a24a91e08e1da8197549e9e3878 e26bbf20f52ce3f77aa5d9eb29f713e1e009861d muvixo <godarshia20@gmail.com> 1790272640 +0330	commit: SQiiiL
   e26bbf20f52ce3f77aa5d9eb29f713e1e009861d c423718002d78dc425a61454498d8481922366fe muvixo <godarshia20@gmail.com> 1790287821 +0330	commit: Initial commit
   c423718002d78dc425a61454498d8481922366fe cf5a9153a7de0161c4283e61f859bacaf151f17c muvixo <godarshia20@gmail.com> 1790289225 +0330	commit: SQiiiL
+  cf5a9153a7de0161c4283e61f859bacaf151f17c 5f47d338276b48df28786ecbbe6a83db788d0c80 muvixo <godarshia20@gmail.com> 1790300560 +0330	commit: Initial commit
 │   │   └── refs
 │   │       ├── heads
 │   │       │   └── main
@@ -988,6 +989,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   cb7174c9edcd3a24a91e08e1da8197549e9e3878 e26bbf20f52ce3f77aa5d9eb29f713e1e009861d muvixo <godarshia20@gmail.com> 1790272640 +0330	commit: SQiiiL
   e26bbf20f52ce3f77aa5d9eb29f713e1e009861d c423718002d78dc425a61454498d8481922366fe muvixo <godarshia20@gmail.com> 1790287821 +0330	commit: Initial commit
   c423718002d78dc425a61454498d8481922366fe cf5a9153a7de0161c4283e61f859bacaf151f17c muvixo <godarshia20@gmail.com> 1790289225 +0330	commit: SQiiiL
+  cf5a9153a7de0161c4283e61f859bacaf151f17c 5f47d338276b48df28786ecbbe6a83db788d0c80 muvixo <godarshia20@gmail.com> 1790300560 +0330	commit: Initial commit
 │   │       └── remotes
 │   │           └── origin
 │   │               └── main
@@ -1024,6 +1026,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   cb7174c9edcd3a24a91e08e1da8197549e9e3878 e26bbf20f52ce3f77aa5d9eb29f713e1e009861d muvixo <godarshia20@gmail.com> 1790272653 +0330	update by push
   e26bbf20f52ce3f77aa5d9eb29f713e1e009861d c423718002d78dc425a61454498d8481922366fe muvixo <godarshia20@gmail.com> 1790287835 +0330	update by push
   c423718002d78dc425a61454498d8481922366fe cf5a9153a7de0161c4283e61f859bacaf151f17c muvixo <godarshia20@gmail.com> 1790289237 +0330	update by push
+  cf5a9153a7de0161c4283e61f859bacaf151f17c 5f47d338276b48df28786ecbbe6a83db788d0c80 muvixo <godarshia20@gmail.com> 1790300574 +0330	update by push
 │   ├── objects
 │   │   ├── 00
 │   │   │   ├── 197156e3627785d18b600e5c07511e7c2df6a2
@@ -1131,6 +1134,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   └── c32c404def5e01330a563daa405db98d848101
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   ├── 15
+│   │   │   └── 3fe18804e581b2f67eb4c9228600780d77f837
+  [Error: 'utf-8' codec can't decode bytes in position 2-3: invalid continuation byte]
 │   │   ├── 16
 │   │   │   ├── 05a2e637b5e0a2cf37e7cc25c6b7f96c430288
   [Error: 'utf-8' codec can't decode byte 0xd5 in position 2: invalid continuation byte]
@@ -1189,10 +1195,15 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   ├── 27
 │   │   │   ├── 35ce2f0a3623c9c34b296368ec541b00986729
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   │   ├── 68efb67801d47b638572f33b62517fbf3b37b9
+  [Error: 'utf-8' codec can't decode byte 0x8d in position 2: invalid start byte]
 │   │   │   ├── de839f607790a332fdeef83cff310f7ba25a08
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   └── e86be2dcf2fdd0cd4c1d0e64aa0666ebfc1308
   [Error: 'utf-8' codec can't decode byte 0xce in position 19: invalid continuation byte]
+│   │   ├── 28
+│   │   │   └── fcaaefd5bb63caa99d93322a7eefd00983c624
+  [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   ├── 29
 │   │   │   └── 03dc8e2290f58815ac127d3cae7b83ebfd4ed7
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
@@ -1483,8 +1494,10 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   │   └── c03cb36c2d6234afbdbf83e72fdb492db93526
   [Error: 'utf-8' codec can't decode byte 0x95 in position 2: invalid start byte]
 │   │   ├── 5f
-│   │   │   └── 1415a4708bf20ebf83164031cba730a26b9883
+│   │   │   ├── 1415a4708bf20ebf83164031cba730a26b9883
   [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
+│   │   │   └── 47d338276b48df28786ecbbe6a83db788d0c80
+  [Error: 'utf-8' codec can't decode byte 0x95 in position 2: invalid start byte]
 │   │   ├── 61
 │   │   │   └── 2e0834c33ec0f041e151c441701155f9b0f10d
   [Error: 'utf-8' codec can't decode byte 0xdd in position 2: invalid continuation byte]
@@ -1541,6 +1554,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   ├── 6e
 │   │   │   └── 8fa45a0d043e2c68bdd59243fbb1e07b912d2a
   [Error: 'utf-8' codec can't decode byte 0xd5 in position 2: invalid continuation byte]
+│   │   ├── 6f
+│   │   │   └── 2056a673f33e31ffd729bd897516c3dffdc565
+  [Error: 'utf-8' codec can't decode byte 0xca in position 19: invalid continuation byte]
 │   │   ├── 70
 │   │   │   ├── 85765d0be567085204841f6423c99fe5ed6a6f
   [Error: 'utf-8' codec can't decode byte 0xce in position 19: invalid continuation byte]
@@ -1573,6 +1589,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   ├── 77
 │   │   │   └── 990a7919b6e05848ca6e56c623ea51244f49f2
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   ├── 79
+│   │   │   └── 0983d7baca9a5ac14698986b8840ba8306c98f
+  [Error: 'utf-8' codec can't decode byte 0xbd in position 2: invalid start byte]
 │   │   ├── 7a
 │   │   │   ├── 1f82047ba91c9a6eaf321dfc930e48440d393f
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
@@ -1625,6 +1644,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   └── c502605f9a8fed7170f917aacada9fee4cfc0f
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   ├── 82
+│   │   │   └── fb22ddf770e4f0b5b28fd39cb19daf2f61e52f
+  [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
 │   │   ├── 83
 │   │   │   └── 3405b3d313591c7d0078679c7ce6e7405b6f59
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
@@ -1660,6 +1682,8 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   │   └── 78b100d61250e7e362f7b6f2c2391148243977
   [Error: 'utf-8' codec can't decode byte 0xa5 in position 2: invalid start byte]
 │   │   ├── 8e
+│   │   │   ├── 3b66310dd582f031a4246fe76b1ab23e3ed4a9
+  [Error: 'utf-8' codec can't decode byte 0xbd in position 16: invalid start byte]
 │   │   │   ├── 674c2c32f95a98a38a9d1fb7c3f3f3f5539707
   [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
 │   │   │   └── 82ed99c1de037f3c4e99f6895601461157df2c
@@ -1805,6 +1829,8 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   ├── b3
 │   │   │   ├── 1cb06c842cba3f2c471b1dacb35a56109e2886
   [Error: 'utf-8' codec can't decode byte 0xca in position 3: invalid continuation byte]
+│   │   │   ├── 85027d4bbbad3bfabc2ef21895f57885832441
+  [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   ├── e3260b937d7eb4cbb2baf31a79625d8ca1fc5a
   [Error: 'utf-8' codec can't decode byte 0xcb in position 4: invalid continuation byte]
 │   │   │   └── f0dc0bd4c5c7248669b81ce2f58a7c1d08b36a
@@ -1845,10 +1871,14 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   │   └── 52d7f4343de446877850b8329bcedbd687a999
   [Error: 'utf-8' codec can't decode byte 0xad in position 2: invalid start byte]
 │   │   ├── bb
+│   │   │   ├── 0207771ecfea86caf3884f2289869b93cd01e6
+  [Error: 'utf-8' codec can't decode byte 0xad in position 2: invalid start byte]
 │   │   │   ├── 0c3b2cb085806672002e5d8bdb2924d5915a03
   [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
 │   │   │   ├── 1e1addce2f88be1fce7cb6a3fab5c1f8c1f60a
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   │   ├── 5735c552bf22716b80954a0f005d7ed3e4a429
+  [Error: 'utf-8' codec can't decode byte 0x8f in position 5: invalid start byte]
 │   │   │   ├── 5bb2e825fd6b2b3e40f12736c0603407d43a55
   [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
 │   │   │   ├── 648ff7f7369df634774ee959070d031d4a2fcc
@@ -1892,6 +1922,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   ├── c5
 │   │   │   └── f610e27034900335ec16893ae4903e19c7de3f
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
+│   │   ├── c6
+│   │   │   └── de142552a3c480450c682c5f7553782adce05f
+  [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   ├── c9
 │   │   │   └── 96b491854de3ef2c7373e4a1889b403740391b
   [Error: 'utf-8' codec can't decode byte 0xed in position 2: invalid continuation byte]
@@ -1900,8 +1933,10 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   ├── 5b88c73e0118a9beb3e0be2ee8876e359a4be0
   [Error: 'utf-8' codec can't decode byte 0xad in position 2: invalid start byte]
-│   │   │   └── 7c917b90f15e126f93641f644fdd898e95b183
+│   │   │   ├── 7c917b90f15e126f93641f644fdd898e95b183
   [Error: 'utf-8' codec can't decode byte 0xbd in position 16: invalid start byte]
+│   │   │   └── 9d2d8105885685aa1bd49082be4a5ffece69d9
+  [Error: 'utf-8' codec can't decode byte 0xce in position 19: invalid continuation byte]
 │   │   ├── cb
 │   │   │   ├── 7174c9edcd3a24a91e08e1da8197549e9e3878
   [Error: 'utf-8' codec can't decode byte 0x95 in position 2: invalid start byte]
@@ -2081,6 +2116,8 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   │   │   └── e88f8027ef0713eb1337399cf0583cce7807dc
   [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   ├── f1
+│   │   │   ├── 5903b487fbbb855b00e65dcf3ed780b4cc9fa8
+  [Error: 'utf-8' codec can't decode byte 0x85 in position 14: invalid start byte]
 │   │   │   └── ff986145df45a58af6a01894577adbe7a20b87
   [Error: 'utf-8' codec can't decode byte 0xb5 in position 2: invalid start byte]
 │   │   ├── f3
@@ -2138,11 +2175,11 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
 │   └── refs
 │       ├── heads
 │       │   └── main
-  cf5a9153a7de0161c4283e61f859bacaf151f17c
+  5f47d338276b48df28786ecbbe6a83db788d0c80
 │       ├── remotes
 │       │   └── origin
 │       │       └── main
-  cf5a9153a7de0161c4283e61f859bacaf151f17c
+  5f47d338276b48df28786ecbbe6a83db788d0c80
 │       └── tags
 ├── .github
 │   └── workflows
@@ -3233,8 +3270,8 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
   
       /**
-       * ★ Build Mode — players in this set keep ALL placed blocks
-       *   (no auto-decay). Toggle with /housing buildmode
+       * Build Mode — players in this set keep ALL placed blocks
+       * (no auto-decay). Toggle with /housing buildmode
        */
       private final Set<UUID> buildModePlayers = new HashSet<UUID>();
   
@@ -3295,11 +3332,11 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   
           getServer().getPluginManager().registerEvents(new Welcome(this), this);
   
-          // ★ Custom death messages
+          // Custom death messages
           getServer().getPluginManager().registerEvents(
                   new DeathListener(this, this.gameModeManager), this);
   
-          // ★ Combat Tag + HP restore (LowMid real-damage modes)
+          // Combat Tag + HP restore (LowMid real-damage modes)
           this.combatManager = new CombatManager(this, this.gameModeManager);
           getServer().getPluginManager().registerEvents(this.combatManager, this);
   
@@ -3362,7 +3399,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  ★ Build Mode API
+      //  Build Mode API
       // ============================================================
   
       /**
@@ -3450,7 +3487,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
                 + "&b&m-------------------------------";
           setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
   
-          // ---- ★ Combat Tag ----
+          // ---- Combat Tag ----
           setIfMissing(cfg, "combat.duration-seconds", Long.valueOf(15L));
   
           // ---- Scoreboard ----
@@ -3495,6 +3532,24 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   
           // ---- Menu ----
           setIfMissing(cfg, "menu.enabled", Boolean.valueOf(true));
+  
+          // ============================================================
+          //  Permissions (used by dynamic /housing help)
+          // ============================================================
+          setIfMissing(cfg, "permissions.join",          "housing.join");
+          setIfMissing(cfg, "permissions.menu",          "housing.menu");
+          setIfMissing(cfg, "permissions.scoreboard",    "housing.scoreboard");
+  
+          setIfMissing(cfg, "permissions.setworld",      "housing.setworld");
+          setIfMissing(cfg, "permissions.setspawn",      "housing.setspawn");
+          setIfMissing(cfg, "permissions.setlobbyspawn", "housing.setlobbyspawn");
+          setIfMissing(cfg, "permissions.setvoid",       "housing.setvoid");
+          setIfMissing(cfg, "permissions.setzshowsword", "housing.setzshowsword");
+          setIfMissing(cfg, "permissions.setpvpzone",    "housing.setpvpzone");
+          setIfMissing(cfg, "permissions.reload",        "housing.reload");
+          setIfMissing(cfg, "permissions.kit",           "housing.kit");
+          setIfMissing(cfg, "permissions.buildmode",     "housing.buildmode");
+          setIfMissing(cfg, "permissions.bypass",        "housing.bypass");
   
           try {
               cfg.save(configFile);
@@ -3599,20 +3654,22 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
           String sub = args[0].toLowerCase();
   
           // ---- Player commands ----
-          if (sub.equals("help"))         { sendHelp(sender); return true; }
-          if (sub.equals("creator"))      { return handleCreator(sender); }
-          if (sub.equals("worlds"))       { return handleWorlds(sender); }
-          if (sub.equals("join"))         { return handleJoin(sender, args); }
-          if (sub.equals("menu"))         { return handleMenu(sender); }
-          if (sub.equals("lobby"))        { return handleLobby(sender); }
-          if (sub.equals("setlobbyspawn")){ return handleSetLobbySpawn(sender); }
+          if (sub.equals("help"))          { sendHelp(sender); return true; }
+          if (sub.equals("creator"))       { return handleCreator(sender); }
+          if (sub.equals("worlds"))        { return handleWorlds(sender); }
+          if (sub.equals("join"))          { return handleJoin(sender, args); }
+          if (sub.equals("menu"))          { return handleMenu(sender); }
+          if (sub.equals("lobby"))         { return handleLobby(sender); }
+          if (sub.equals("setlobbyspawn")) { return handleSetLobbySpawn(sender); }
   
-          // ★ NEW: /housing buildmode
-          if (sub.equals("buildmode"))    { return handleBuildMode(sender, args); }
+          // /housing buildmode
+          if (sub.equals("buildmode"))     { return handleBuildMode(sender, args); }
   
           // ---- Admin: reload ----
           if (sub.equals("reload")) {
-              if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
+              if (!sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                  sendNoPerm(sender); return true;
+              }
               this.plugin.reloadConfig();
               this.gameModeManager.reloadAll();
               if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
@@ -3656,7 +3713,21 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  ★ /housing buildmode — Toggle build mode
+      //  PERMISSION HELPER
+      //  Reads "permissions.<action>" from config.yml.
+      //  Falls back to the provided default if not set or empty.
+      // ============================================================
+      private String getPerm(String action, String defaultPerm) {
+          String path = "permissions." + action;
+          String value = plugin.getConfig().getString(path);
+          if (value == null || value.trim().isEmpty()) {
+              return defaultPerm;
+          }
+          return value.trim();
+      }
+  
+      // ============================================================
+      //  /housing buildmode — Toggle build mode
       // ============================================================
   
       private boolean handleBuildMode(CommandSender sender, String[] args) {
@@ -3664,7 +3735,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               sender.sendMessage(colorize("&cOnly players can use buildmode."));
               return true;
           }
-          if (!sender.hasPermission("housing.buildmode")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+              sendNoPerm(sender); return true;
+          }
   
           Player player = (Player) sender;
   
@@ -3704,7 +3777,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  ★ /housing (no args) — ALWAYS Platform in "world"
+      //  /housing (no args) — ALWAYS Platform in "world"
       // ============================================================
   
       private boolean joinDefaultWorld(CommandSender sender) {
@@ -3712,7 +3785,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               sender.sendMessage(colorize("&cOnly players can use /housing."));
               return true;
           }
-          if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+              sendNoPerm(sender); return true;
+          }
   
           final Player player = (Player) sender;
           final GameMode mode = GameMode.PLATFORM;
@@ -3776,7 +3851,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  ★ /housing lobby
+      //  /housing lobby
       // ============================================================
   
       private boolean handleLobby(CommandSender sender) {
@@ -3784,7 +3859,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               sender.sendMessage(colorize("&cOnly players can use /housing lobby."));
               return true;
           }
-          if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+              sendNoPerm(sender); return true;
+          }
   
           Player player = (Player) sender;
   
@@ -3802,11 +3879,13 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  ★ /housing setlobbyspawn
+      //  /housing setlobbyspawn
       // ============================================================
   
       private boolean handleSetLobbySpawn(CommandSender sender) {
-          if (!sender.hasPermission("housing.setlobbyspawn")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setlobbyspawn", "housing.setlobbyspawn"))) {
+              sendNoPerm(sender); return true;
+          }
           if (!(sender instanceof Player)) {
               sender.sendMessage(colorize("&cOnly players can use setlobbyspawn."));
               return true;
@@ -3831,7 +3910,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  Commands
+      //  Player commands
       // ============================================================
   
       private boolean handleWorlds(CommandSender sender) {
@@ -3851,7 +3930,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               sender.sendMessage(colorize("&cOnly players can open the mode menu."));
               return true;
           }
-          if (!sender.hasPermission("housing.menu")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("menu", "housing.menu"))) {
+              sendNoPerm(sender); return true;
+          }
   
           Player player = (Player) sender;
           if (plugin instanceof Housing) {
@@ -3869,7 +3950,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               return true;
           }
   
-          if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+              sendNoPerm(sender); return true;
+          }
   
           if (args.length < 2) {
               sender.sendMessage(colorize("&cUsage: /housing join <mode>"));
@@ -3948,7 +4031,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleSetWorld(CommandSender sender, String[] args) {
-          if (!sender.hasPermission("housing.setworld")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+              sendNoPerm(sender); return true;
+          }
   
           String worldName;
           GameMode mode;
@@ -4009,7 +4094,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
-          if (!sender.hasPermission("housing.setspawn")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+              sendNoPerm(sender); return true;
+          }
           if (!(sender instanceof Player)) {
               sender.sendMessage(colorize("&cOnly players can use setspawn."));
               return true;
@@ -4034,7 +4121,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleSetVoid(CommandSender sender, GameMode mode, String[] args) {
-          if (!sender.hasPermission("housing.setvoid")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+              sendNoPerm(sender); return true;
+          }
   
           double y;
           if (args.length >= 3) {
@@ -4062,7 +4151,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleSetZShowSword(CommandSender sender, GameMode mode, String[] args) {
-          if (!sender.hasPermission("housing.setzshowsword")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
+              sendNoPerm(sender); return true;
+          }
   
           if (mode != GameMode.ONEWIDE) {
               sender.sendMessage(colorize("&csetzshowsword is only for OneWide mode."));
@@ -4093,7 +4184,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
-          if (!sender.hasPermission("housing.setpvpzone")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
+              sendNoPerm(sender); return true;
+          }
   
           if (mode != GameMode.PLATFORM && mode != GameMode.ONEWIDE) {
               sender.sendMessage(colorize("&csetpvpzone is only for Platform and OneWide modes."));
@@ -4126,7 +4219,9 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
-          if (!sender.hasPermission("housing.kit")) { sendNoPerm(sender); return true; }
+          if (!sender.hasPermission(getPerm("kit", "housing.kit"))) {
+              sendNoPerm(sender); return true;
+          }
   
           Player target;
           if (args.length >= 3) {
@@ -4165,12 +4260,18 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
           Player player = (Player) sender;
   
           if (args.length >= 3 && args[2].equalsIgnoreCase("reload")) {
-              if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
+              if (!sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                  sendNoPerm(sender); return true;
+              }
               gameModeManager.reloadMode(mode);
               if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
               player.sendMessage(colorize("&b[" + mode.getDisplayName()
                       + "] &fScoreboard configuration reloaded."));
               return true;
+          }
+  
+          if (!sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+              sendNoPerm(sender); return true;
           }
   
           boolean nowVisible = this.scoreboardManager.toggleScoreboard(player);
@@ -4189,31 +4290,146 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       }
   
       // ============================================================
-      //  Help
+      //  HELP MENU — permission-aware
       // ============================================================
   
       private void sendHelp(CommandSender sender) {
+  
+          // ---- Load all permission nodes ----
+          String permJoin          = getPerm("join",          "housing.join");
+          String permMenu          = getPerm("menu",          "housing.menu");
+          String permScoreboard    = getPerm("scoreboard",    "housing.scoreboard");
+  
+          String permSetWorld      = getPerm("setworld",      "housing.setworld");
+          String permSetSpawn      = getPerm("setspawn",      "housing.setspawn");
+          String permSetLobbySpawn = getPerm("setlobbyspawn", "housing.setlobbyspawn");
+          String permSetVoid       = getPerm("setvoid",       "housing.setvoid");
+          String permSetZShowSword = getPerm("setzshowsword", "housing.setzshowsword");
+          String permSetPvpZone    = getPerm("setpvpzone",    "housing.setpvpzone");
+          String permReload        = getPerm("reload",        "housing.reload");
+          String permKit           = getPerm("kit",           "housing.kit");
+          String permBuildMode     = getPerm("buildmode",     "housing.buildmode");
+          String permBypass        = getPerm("bypass",        "housing.bypass");
+  
+          // ---- isAdmin = OR of all admin perms ----
+          boolean isAdmin =
+                  sender.hasPermission(permSetWorld)
+               || sender.hasPermission(permSetSpawn)
+               || sender.hasPermission(permSetLobbySpawn)
+               || sender.hasPermission(permSetVoid)
+               || sender.hasPermission(permSetZShowSword)
+               || sender.hasPermission(permSetPvpZone)
+               || sender.hasPermission(permReload)
+               || sender.hasPermission(permKit)
+               || sender.hasPermission(permBuildMode)
+               || sender.hasPermission(permBypass);
+  
+          // ---------------- HEADER ----------------
           sender.sendMessage(colorize("&b&m----------------------------------"));
-          sender.sendMessage(colorize("&bHousing &f- &bCommands"));
+          sender.sendMessage(colorize("&b&lHousing &f- &bCommands"));
           sender.sendMessage(colorize("&b&m----------------------------------"));
-          sender.sendMessage(colorize("&b/housing &f- Join the default mode (Platform)"));
-          sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
-          sender.sendMessage(colorize("&b/housing menu &f- Open the mode selection menu"));
-          sender.sendMessage(colorize("&b/housing lobby &f- Teleport to the lobby"));
-          sender.sendMessage(colorize("&b/housing buildmode &f- Toggle build mode"));
-          sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
-          sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
-          sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
-          sender.sendMessage(colorize("&b/housing setworld [world] <mode> &f- Assign a world"));
-          sender.sendMessage(colorize("&b/housing setlobbyspawn &f- Set the lobby spawn"));
-          sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+  
+          // ---------------- GENERAL COMMANDS ----------------
+          sender.sendMessage(colorize("&e&lGeneral Commands"));
+  
+          // /housing help — always shown
+          sender.sendMessage(colorize("  &b/housing help &8- &7Show this help"));
+  
+          // /housing creator — always shown
+          sender.sendMessage(colorize("  &b/housing creator &8- &7Show plugin credits"));
+  
+          // /housing worlds — always shown
+          sender.sendMessage(colorize("  &b/housing worlds &8- &7List loaded worlds"));
+  
+          // /housing — join default mode
+          if (sender.hasPermission(permJoin)) {
+              sender.sendMessage(colorize("  &b/housing &8- &7Join the default mode (Platform)"));
+          }
+  
+          // /housing join <mode>
+          if (sender.hasPermission(permJoin)) {
+              sender.sendMessage(colorize("  &b/housing join <mode> &8- &7Join a game mode"));
+          }
+  
+          // /housing menu
+          if (sender.hasPermission(permMenu)) {
+              sender.sendMessage(colorize("  &b/housing menu &8- &7Open the mode selection menu"));
+          }
+  
+          // /housing lobby
+          if (sender.hasPermission(permJoin)) {
+              sender.sendMessage(colorize("  &b/housing lobby &8- &7Teleport to the lobby"));
+          }
+  
+          // /housing buildmode
+          if (sender.hasPermission(permBuildMode)) {
+              sender.sendMessage(colorize("  &b/housing buildmode &8- &7Toggle build mode"));
+          }
+  
+          // Modes hint
+          sender.sendMessage(colorize("  &7Modes: &fplatform, lowmid, onewide, blockfight"));
+  
+          // ---------------- ADMIN COMMANDS ----------------
+          if (isAdmin) {
+              sender.sendMessage(colorize("&b&m----------------------------------"));
+              sender.sendMessage(colorize("&c&lAdmin Commands"));
+  
+              // reload
+              if (sender.hasPermission(permReload)) {
+                  sender.sendMessage(colorize("  &b/housing reload &8- &7Reload all configs"));
+              }
+  
+              // setworld
+              if (sender.hasPermission(permSetWorld)) {
+                  sender.sendMessage(colorize("  &b/housing setworld [world] <mode> &8- &7Assign a world"));
+              }
+  
+              // setlobbyspawn
+              if (sender.hasPermission(permSetLobbySpawn)) {
+                  sender.sendMessage(colorize("  &b/housing setlobbyspawn &8- &7Set the lobby spawn"));
+              }
+  
+              // ---- Per-mode commands ----
+              boolean anyModeCmd =
+                      sender.hasPermission(permSetSpawn)
+                   || sender.hasPermission(permSetVoid)
+                   || sender.hasPermission(permSetPvpZone)
+                   || sender.hasPermission(permSetZShowSword)
+                   || sender.hasPermission(permKit)
+                   || sender.hasPermission(permScoreboard);
+  
+              if (anyModeCmd) {
+                  sender.sendMessage(colorize("  &7&m-- &r&bPer-Mode Commands &7&m--"));
+  
+                  if (sender.hasPermission(permSetSpawn)) {
+                      sender.sendMessage(colorize("  &b/housing <mode> setspawn &8- &7Set spawn"));
+                  }
+                  if (sender.hasPermission(permSetVoid)) {
+                      sender.sendMessage(colorize("  &b/housing <mode> setvoid [y] &8- &7Set void Y"));
+                  }
+                  if (sender.hasPermission(permSetPvpZone)) {
+                      sender.sendMessage(colorize("  &b/housing <mode> setpvpzone <x> &8- &7Set PvP zone"));
+                  }
+                  if (sender.hasPermission(permKit)) {
+                      sender.sendMessage(colorize("  &b/housing <mode> kit [player] &8- &7Give kit"));
+                  }
+                  if (sender.hasPermission(permScoreboard)) {
+                      sender.sendMessage(colorize("  &b/housing <mode> sb &8- &7Toggle scoreboard"));
+                  }
+                  if (sender.hasPermission(permSetZShowSword)) {
+                      sender.sendMessage(colorize("  &b/housing onewide setzshowsword <z> &8- &7OneWide only"));
+                  }
+              }
+  
+              // bypass hint
+              if (sender.hasPermission(permBypass)) {
+                  sender.sendMessage(colorize("&7&oYou have full protection bypass."));
+              }
+          }
+  
+          // ---------------- FOOTER ----------------
           sender.sendMessage(colorize("&b&m----------------------------------"));
-          sender.sendMessage(colorize("&b/housing <mode> setspawn &f- Set spawn"));
-          sender.sendMessage(colorize("&b/housing <mode> setvoid [y] &f- Set void Y"));
-          sender.sendMessage(colorize("&b/housing <mode> setpvpzone <x> &f- Set PvP zone"));
-          sender.sendMessage(colorize("&b/housing <mode> kit [player] &f- Give kit"));
-          sender.sendMessage(colorize("&b/housing <mode> sb &f- Toggle scoreboard"));
-          sender.sendMessage(colorize("&b/housing onewide setzshowsword <z> &f- OneWide only"));
+          sender.sendMessage(colorize("&7Use &b/housing <mode> &7for mode-specific help."));
           sender.sendMessage(colorize("&b&m----------------------------------"));
       }
   
@@ -4221,22 +4437,36 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
           sender.sendMessage(colorize("&b&m----------------------------------"));
           sender.sendMessage(colorize("&bHousing &f- &b" + mode.getDisplayName()));
           sender.sendMessage(colorize("&b&m----------------------------------"));
-          sender.sendMessage(colorize("&b/housing join " + mode.getId()));
-          sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
-          sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
-          if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) {
+  
+          if (sender.hasPermission(getPerm("join", "housing.join"))) {
+              sender.sendMessage(colorize("&b/housing join " + mode.getId()));
+          }
+          if (sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+              sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
+          }
+          if (sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+              sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
+          }
+          if ((mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE)
+                  && sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
               sender.sendMessage(colorize("&b/housing " + mode.getId() + " setpvpzone <x>"));
           }
-          sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
-          sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));
-          if (mode == GameMode.ONEWIDE) {
+          if (sender.hasPermission(getPerm("kit", "housing.kit"))) {
+              sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
+          }
+          if (sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+              sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));
+          }
+          if (mode == GameMode.ONEWIDE
+                  && sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
               sender.sendMessage(colorize("&b/housing onewide setzshowsword <z>"));
           }
+  
           sender.sendMessage(colorize("&b&m----------------------------------"));
       }
   
       // ============================================================
-      //  Tab completion
+      //  Tab completion (permission-aware)
       // ============================================================
   
       @Override
@@ -4245,13 +4475,47 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   
           if (args.length == 1) {
               List<String> subs = new ArrayList<String>();
-              subs.add("creator"); subs.add("help"); subs.add("worlds");
-              subs.add("reload");  subs.add("setworld"); subs.add("join");
-              subs.add("menu");
-              subs.add("lobby");
-              subs.add("setlobbyspawn");
-              subs.add("buildmode");   // ★ NEW
-              subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
+  
+              // Always-available
+              subs.add("creator");
+              subs.add("help");
+              subs.add("worlds");
+  
+              // Permission-gated
+              if (sender.hasPermission(getPerm("join", "housing.join"))) {
+                  subs.add("join");
+                  subs.add("lobby");
+              }
+              if (sender.hasPermission(getPerm("menu", "housing.menu"))) {
+                  subs.add("menu");
+              }
+              if (sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+                  subs.add("buildmode");
+              }
+              if (sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                  subs.add("reload");
+              }
+              if (sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                  subs.add("setworld");
+              }
+              if (sender.hasPermission(getPerm("setlobbyspawn", "housing.setlobbyspawn"))) {
+                  subs.add("setlobbyspawn");
+              }
+  
+              // Modes (only if user has at least one mode permission)
+              boolean anyModePerm =
+                      sender.hasPermission(getPerm("setspawn", "housing.setspawn"))
+                   || sender.hasPermission(getPerm("setvoid", "housing.setvoid"))
+                   || sender.hasPermission(getPerm("kit", "housing.kit"))
+                   || sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))
+                   || sender.hasPermission(getPerm("join", "housing.join"));
+  
+              if (anyModePerm) {
+                  subs.add("platform");
+                  subs.add("lowmid");
+                  subs.add("onewide");
+                  subs.add("blockfight");
+              }
   
               String partial = args[0].toLowerCase();
               for (String s : subs) if (s.startsWith(partial)) out.add(s);
@@ -4261,9 +4525,11 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
           if (args.length == 2) {
               String sub = args[0].toLowerCase();
   
-              // ★ /housing buildmode <on|off|toggle>
+              // /housing buildmode <on|off|toggle>
               if (sub.equals("buildmode")) {
-                  out.add("on"); out.add("off"); out.add("toggle");
+                  if (sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+                      out.add("on"); out.add("off"); out.add("toggle");
+                  }
                   String partial = args[1].toLowerCase();
                   List<String> filtered = new ArrayList<String>();
                   for (String s : out) if (s.startsWith(partial)) filtered.add(s);
@@ -4271,23 +4537,45 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               }
   
               if (sub.equals("setworld")) {
-                  out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
-                  for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                  if (sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                      out.add("platform"); out.add("lowmid");
+                      out.add("onewide");  out.add("blockfight");
+                      for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                  }
                   return out;
               }
   
               if (sub.equals("join")) {
-                  out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
+                  if (sender.hasPermission(getPerm("join", "housing.join"))) {
+                      out.add("platform"); out.add("lowmid");
+                      out.add("onewide");  out.add("blockfight");
+                  }
                   return out;
               }
   
               GameMode mode = GameMode.fromId(sub);
               if (mode != null) {
                   List<String> actions = new ArrayList<String>();
-                  actions.add("setspawn"); actions.add("setvoid");
-                  actions.add("kit");      actions.add("sb");
-                  if (mode == GameMode.ONEWIDE) actions.add("setzshowsword");
-                  if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) actions.add("setpvpzone");
+                  if (sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+                      actions.add("setspawn");
+                  }
+                  if (sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+                      actions.add("setvoid");
+                  }
+                  if (sender.hasPermission(getPerm("kit", "housing.kit"))) {
+                      actions.add("kit");
+                  }
+                  if (sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+                      actions.add("sb");
+                  }
+                  if (mode == GameMode.ONEWIDE
+                          && sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
+                      actions.add("setzshowsword");
+                  }
+                  if ((mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE)
+                          && sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
+                      actions.add("setpvpzone");
+                  }
   
                   String partial = args[1].toLowerCase();
                   for (String s : actions) if (s.startsWith(partial)) out.add(s);
@@ -4299,17 +4587,23 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
               String sub = args[0].toLowerCase();
               String action = args[1].toLowerCase();
   
-              if (sub.equals("setworld")) {
-                  out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
+              if (sub.equals("setworld")
+                      && sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                  out.add("platform"); out.add("lowmid");
+                  out.add("onewide");  out.add("blockfight");
                   return out;
               }
-              if (action.equals("kit")) {
+              if (action.equals("kit")
+                      && sender.hasPermission(getPerm("kit", "housing.kit"))) {
                   String partial = args[2].toLowerCase();
                   for (Player p : Bukkit.getOnlinePlayers())
                       if (p.getName().toLowerCase().startsWith(partial)) out.add(p.getName());
                   return out;
               }
-              if (action.equals("sb")) { out.add("reload"); return out; }
+              if (action.equals("sb")
+                      && sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                  out.add("reload"); return out;
+              }
           }
   
           return out;
@@ -6426,7 +6720,6 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   #  When combat ends (kill, logout, or timeout) → full HP.
   # ----------------------------------------------------------
   combat:
-    # How long a combat tag lasts (in seconds)
     duration-seconds: 15
   
   # ----------------------------------------------------------
@@ -6447,34 +6740,23 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   #  Placeholders: %victim%, %killer%, %world%
   # ----------------------------------------------------------
   death:
-    # Enable custom death messages? (If false, vanilla messages are used)
     enabled: true
   
-    # Default death message (no killer)
     default: '&c%victim% &7died'
-  
-    # Killed by another player
     killed-by-player: '&c%victim% &7was slain by &c%killer%'
-  
-    # Killed by a mob / entity
     killed-by-mob: '&c%victim% &7was killed by &c%killer%'
   
-    # ★ Respawn behavior
-    #  true  → player respawns in the SAME world they died in
-    #          (only for modes with real damage — LowMid)
-    #  false → player always respawns in the lobby (Platform)
+    # true  → respawn in same world (LowMid)
+    # false → always respawn in lobby (Platform)
     respawn-in-same-world: true
   
-    # Modes where players CAN actually die (real damage).
-    # If a player dies in one of these modes, they respawn there.
-    # Any other mode → they respawn in the lobby.
+    # Modes where players CAN actually die (real damage)
     real-damage-modes:
       - lowmid
   
   # ----------------------------------------------------------
   #  PvP Zone (Platform only)
-  #  PvP is enabled only when the attacker's X >= pvpzone.x
-  #  Set with: /housing platform setpvpzone [x]
+  #  PvP enabled only when attacker's X >= pvpzone.x
   # ----------------------------------------------------------
   pvpzone:
     enabled: true
@@ -6482,48 +6764,21 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   
   # ----------------------------------------------------------
   #  Protection
-  #  locked-world: the DEFAULT world. It is:
-  #    - The destination of /housing (no args)
-  #    - NEVER modifiable (no break/place)
   # ----------------------------------------------------------
   protection:
-    # The world that must NEVER be modified (no break/place).
-    # This is also the DEFAULT world for /housing (no args).
     locked-world: "world"
-  
-    # Auto-remove player-placed blocks after this many seconds.
-    # Applies to every non-locked world.
     placed-decay-seconds: 5
-  
-    # Reserved for future use — natural block restore delay.
     natural-restore-seconds: 9
   
-    # ------------------------------------------------------
-    #  Block Freeze — prevents stack size from decreasing
-    # ------------------------------------------------------
     block-freeze:
-      # Master switch for the block-freeze feature.
       enabled: true
-  
-      # Force the hand stack back to this size after placing.
-      # Set to -1 to restore to the ORIGINAL stack size.
       force-stack-size: -1
-  
-      # ★ Apply the freeze to EVERYONE (including OP and
-      #   permission holders).
-      #   true  → OP and permission holders KEEP their blocks
-      #   false → OP and permission holders LOSE their blocks
       apply-to-everyone: true
-  
-      # ★ Permissions that can bypass the freeze.
-      #   Only used when `apply-to-everyone` is FALSE.
       bypass-permissions:
         - "housing.bypass.freeze"
   
   # ----------------------------------------------------------
-  #  Mode Selection Menu
-  #  - The item itself and the GUI are configured in menu.yml
-  #  - This section only controls a global on/off switch
+  #  Mode Selection Menu (item + GUI are in menu.yml)
   # ----------------------------------------------------------
   menu:
     enabled: true
@@ -6531,18 +6786,35 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   # ----------------------------------------------------------
   #  World -> Game Mode mapping
   #  Valid modes: platform, lowmid, onewide, blockfight
-  #  Assign with: /housing setworld [world] <mode>
-  #
-  #  IMPORTANT:
-  #    - "world" MUST be mapped to platform (default world)
-  #    - Each mode should have exactly ONE world
-  #    - Do NOT map a world named "platform" to Platform mode
   # ----------------------------------------------------------
   worlds:
     world: platform
     blockfight: blockfight
     lowmid: lowmid
     onewide: onewide
+  
+  # ==========================================================
+  #  Permission Nodes
+  #  Read by /housing help to decide which commands to show.
+  #  Override any node here to use a different permission name.
+  # ==========================================================
+  permissions:
+    # ---- Player ----
+    join:          "housing.join"
+    menu:          "housing.menu"
+    scoreboard:    "housing.scoreboard"
+  
+    # ---- Admin ----
+    setworld:      "housing.setworld"
+    setspawn:      "housing.setspawn"
+    setlobbyspawn: "housing.setlobbyspawn"
+    setvoid:       "housing.setvoid"
+    setzshowsword: "housing.setzshowsword"
+    setpvpzone:    "housing.setpvpzone"
+    reload:        "housing.reload"
+    kit:           "housing.kit"
+    buildmode:     "housing.buildmode"
+    bypass:        "housing.bypass"
             ├── kit-blockfight.yml
   # ==========================================================
   #  Housing — BlockFight Kit
@@ -6890,7 +7162,6 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
   main: org.housing.Housing
   author: Muvixo
   description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
-  api-version: 1.8
   
   commands:
     housing:
@@ -6938,7 +7209,7 @@ C:\Users\nasle javan\Downloads\r48jd4j98r498ej-main\r48jd4j98r498ej-main\Realsti
       description: Give the cosmetic kit
       default: op
   
-    # ★ Build Mode
+    # ---- Build Mode ----
     housing.buildmode:
       description: Toggle build mode (blocks stay forever)
       default: op

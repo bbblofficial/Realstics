@@ -26,17 +26,9 @@ public final class Housing extends JavaPlugin {
     private WorldLoader worldLoader;
     private ModeMenu modeMenu;
     private CombatManager combatManager;
+    private Messages messages;
 
-    /**
-     * Pending mode requests from external sources.
-     * Key = player UUID, Value = mode ID (e.g. "onewide").
-     */
     private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
-
-    /**
-     * Build Mode — players in this set keep ALL placed blocks
-     * (no auto-decay). Toggle with /housing buildmode
-     */
     private final Set<UUID> buildModePlayers = new HashSet<UUID>();
 
     @Override
@@ -50,12 +42,13 @@ public final class Housing extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
 
-        // Save default menu.yml if missing
+        // ★ Messages first — so every listener can use it
+        this.messages = new Messages(this);
+
         if (!new File(getDataFolder(), "menu.yml").exists()) {
             saveResource("menu.yml", false);
         }
 
-        // Save default kit files if missing
         String[] kitFiles = {
                 "kit-platform.yml",
                 "kit-lowmid.yml",
@@ -96,11 +89,9 @@ public final class Housing extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
-        // Custom death messages
         getServer().getPluginManager().registerEvents(
                 new DeathListener(this, this.gameModeManager), this);
 
-        // Combat Tag + HP restore (LowMid real-damage modes)
         this.combatManager = new CombatManager(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.combatManager, this);
 
@@ -112,7 +103,6 @@ public final class Housing extends JavaPlugin {
 
         this.scoreboardManager = new ScoreboardManager(this, this.gameModeManager);
 
-        // ---- Mode Menu (item + GUI) ----
         this.modeMenu = new ModeMenu(this, this.gameModeManager, this.playerJoin);
         getServer().getPluginManager().registerEvents(this.modeMenu, this);
 
@@ -166,10 +156,6 @@ public final class Housing extends JavaPlugin {
     //  Build Mode API
     // ============================================================
 
-    /**
-     * Toggle build mode for a player.
-     * @return true if build mode is now ENABLED, false if DISABLED
-     */
     public boolean toggleBuildMode(UUID uuid) {
         if (uuid == null) return false;
         if (this.buildModePlayers.contains(uuid)) {
@@ -221,7 +207,6 @@ public final class Housing extends JavaPlugin {
             cfg.setDefaults(defaults);
         }
 
-        // ---- Spawn ----
         setIfMissing(cfg, "spawn.world", "world");
         setIfMissing(cfg, "spawn.x", Double.valueOf(0.5D));
         setIfMissing(cfg, "spawn.y", Double.valueOf(100.0D));
@@ -229,16 +214,13 @@ public final class Housing extends JavaPlugin {
         setIfMissing(cfg, "spawn.yaw", Float.valueOf(0.0F));
         setIfMissing(cfg, "spawn.pitch", Float.valueOf(0.0F));
 
-        // ---- Void ----
         setIfMissing(cfg, "void.kill-height", Double.valueOf(-13.0D));
 
-        // ---- Messages ----
         setIfMissingOrEmpty(cfg, "join-message",
                 "&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)");
         setIfMissingOrEmpty(cfg, "quit-message",
                 "&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)");
 
-        // ---- Combo ----
         setIfMissing(cfg, "combo.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "combo.step", Integer.valueOf(10));
         setIfMissing(cfg, "combo.reset-time", Long.valueOf(3000L));
@@ -251,13 +233,9 @@ public final class Housing extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
-        // ---- Combat Tag ----
         setIfMissing(cfg, "combat.duration-seconds", Long.valueOf(15L));
-
-        // ---- Scoreboard ----
         setIfMissing(cfg, "scoreboard.update-interval", Integer.valueOf(10));
 
-        // ---- Death Messages ----
         setIfMissing(cfg, "death.enabled", Boolean.valueOf(true));
         setIfMissingOrEmpty(cfg, "death.default", "&c%victim% &7died");
         setIfMissingOrEmpty(cfg, "death.killed-by-player",
@@ -267,7 +245,6 @@ public final class Housing extends JavaPlugin {
         setIfMissing(cfg, "death.respawn-in-same-world", Boolean.valueOf(true));
         setIfMissing(cfg, "death.real-damage-modes", Arrays.asList("lowmid"));
 
-        // ---- PvP zone ----
         setIfMissing(cfg, "pvpzone.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "pvpzone.x", Double.valueOf(0.0D));
 
@@ -279,27 +256,19 @@ public final class Housing extends JavaPlugin {
             cfg.set("pvpzone.z", null);
         }
 
-        // ---- World mapping ----
         setIfMissing(cfg, "worlds.world", "platform");
-
-        // ---- Protection ----
         setIfMissing(cfg, "protection.locked-world", "world");
         setIfMissing(cfg, "protection.placed-decay-seconds", Integer.valueOf(5));
         setIfMissing(cfg, "protection.natural-restore-seconds", Integer.valueOf(9));
 
-        // ---- Block Freeze ----
         setIfMissing(cfg, "protection.block-freeze.enabled", Boolean.valueOf(true));
         setIfMissing(cfg, "protection.block-freeze.force-stack-size", Integer.valueOf(-1));
         setIfMissing(cfg, "protection.block-freeze.apply-to-everyone", Boolean.valueOf(true));
         setIfMissing(cfg, "protection.block-freeze.bypass-permissions",
                 Arrays.asList("housing.bypass.freeze"));
 
-        // ---- Menu ----
         setIfMissing(cfg, "menu.enabled", Boolean.valueOf(true));
 
-        // ============================================================
-        //  Permissions (used by dynamic /housing help)
-        // ============================================================
         setIfMissing(cfg, "permissions.join",          "housing.join");
         setIfMissing(cfg, "permissions.menu",          "housing.menu");
         setIfMissing(cfg, "permissions.scoreboard",    "housing.scoreboard");
@@ -358,4 +327,5 @@ public final class Housing extends JavaPlugin {
     public WorldLoader getWorldLoader()             { return worldLoader; }
     public ModeMenu getModeMenu()                   { return modeMenu; }
     public CombatManager getCombatManager()         { return combatManager; }
+    public Messages getMessages()                   { return messages; }
 }

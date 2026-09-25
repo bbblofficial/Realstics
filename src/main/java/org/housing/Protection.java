@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -31,7 +30,6 @@ public class Protection implements Listener {
     private final String lockedWorld;
     private final long placedDecaySeconds;
 
-    // ---- Block Freeze config ----
     private final boolean freezeEnabled;
     private final int freezeForceSize;
     private final boolean freezeApplyToEveryone;
@@ -49,7 +47,6 @@ public class Protection implements Listener {
         this.placedDecaySeconds = plugin.getConfig()
                 .getLong("protection.placed-decay-seconds", 5L);
 
-        // ---- Block Freeze ----
         this.freezeEnabled = plugin.getConfig()
                 .getBoolean("protection.block-freeze.enabled", true);
         this.freezeForceSize = plugin.getConfig()
@@ -57,17 +54,15 @@ public class Protection implements Listener {
         this.freezeApplyToEveryone = plugin.getConfig()
                 .getBoolean("protection.block-freeze.apply-to-everyone", true);
 
-        // Read bypass-permissions list
         List<String> perms = plugin.getConfig()
                 .getStringList("protection.block-freeze.bypass-permissions");
-        this.freezeBypassPermissions = (perms != null)
-                ? perms
-                : new ArrayList<String>();
+        this.freezeBypassPermissions = (perms != null) ? perms : new ArrayList<String>();
     }
 
-    // ============================================================
-    //  Helpers
-    // ============================================================
+    private Messages M() {
+        if (plugin instanceof Housing) return ((Housing) plugin).getMessages();
+        return null;
+    }
 
     private boolean hasBypass(Player player) {
         return player.hasPermission(PERM_BYPASS);
@@ -85,9 +80,6 @@ public class Protection implements Listener {
                 + ":" + loc.getBlockZ();
     }
 
-    /**
-     * ★ Decide whether the freeze should apply to this player.
-     */
     private boolean shouldFreeze(Player player) {
         if (!this.freezeEnabled) return false;
         if (this.freezeApplyToEveryone) return true;
@@ -100,19 +92,12 @@ public class Protection implements Listener {
         return true;
     }
 
-    /**
-     * ★ Check if the player has Build Mode enabled.
-     */
     private boolean isInBuildMode(Player player) {
         if (player == null) return false;
         if (!(plugin instanceof Housing)) return false;
         return ((Housing) plugin).isInBuildMode(player.getUniqueId());
     }
 
-    /**
-     * ★ Check if the block is the special "blue wool" (data 3).
-     *   In build mode, blue wool is the ONLY block that still decays.
-     */
     @SuppressWarnings("deprecation")
     private boolean isBlueWool(Block block) {
         if (block == null) return false;
@@ -120,25 +105,18 @@ public class Protection implements Listener {
         return block.getData() == 3;
     }
 
-    // ============================================================
-    //  Block place — freeze + track + auto-remove
-    // ============================================================
-
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(final BlockPlaceEvent event) {
         final Player player = event.getPlayer();
         final World world = event.getBlock().getWorld();
 
-        // ---- Locked world ----
         if (isLockedWorld(world) && !hasBypass(player)) {
             event.setCancelled(true);
-            player.sendMessage(colorize("&cYou cannot build in this world!"));
+            Messages m = M();
+            if (m != null) m.send(player, "protection.cannot-build");
             return;
         }
 
-        // ============================================================
-        //  BLOCK FREEZE
-        // ============================================================
         if (shouldFreeze(player)) {
             final int slot = player.getInventory().getHeldItemSlot();
             final ItemStack hand = player.getItemInHand();
@@ -175,9 +153,6 @@ public class Protection implements Listener {
             }
         }
 
-        // ============================================================
-        //  Track the placed block for auto-removal
-        // ============================================================
         final Block placedBlock = event.getBlockPlaced();
         final Location loc = placedBlock.getLocation().clone();
         final Material type = placedBlock.getType();
@@ -185,24 +160,13 @@ public class Protection implements Listener {
 
         this.placedBlocks.put(key, Long.valueOf(System.currentTimeMillis()));
 
-        // ============================================================
-        //  ★ BUILD MODE CHECK
-        //  If the player is in build mode AND the block is NOT blue
-        //  wool → skip auto-removal (keep the block forever).
-        //  Blue wool ALWAYS decays, even in build mode.
-        // ============================================================
         boolean buildMode = isInBuildMode(player);
         boolean blueWool = isBlueWool(placedBlock);
 
         if (buildMode && !blueWool) {
-            // Keep the block — no auto-removal
-            // Still track it so block-break protection works correctly
             return;
         }
 
-        // ============================================================
-        //  Auto-remove after N seconds
-        // ============================================================
         long delayTicks = this.placedDecaySeconds * 20L;
         if (delayTicks < 1L) delayTicks = 100L;
 
@@ -211,16 +175,12 @@ public class Protection implements Listener {
             public void run() {
                 Block b = loc.getBlock();
                 if (b.getType() == type) {
-                    b.setType(Material.AIR); // no drops
+                    b.setType(Material.AIR);
                 }
                 placedBlocks.remove(key);
             }
         }, delayTicks);
     }
-
-    // ============================================================
-    //  Block break — no drops
-    // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -230,14 +190,14 @@ public class Protection implements Listener {
 
         if (isLockedWorld(world) && !hasBypass(player)) {
             event.setCancelled(true);
-            player.sendMessage(colorize("&cYou cannot break blocks in this world!"));
+            Messages m = M();
+            if (m != null) m.send(player, "protection.cannot-break");
             return;
         }
 
         Location loc = block.getLocation().clone();
         String key = locKey(loc);
 
-        // Player-placed → remove WITHOUT drops
         if (this.placedBlocks.containsKey(key)) {
             event.setCancelled(true);
             block.setType(Material.AIR);
@@ -254,19 +214,17 @@ public class Protection implements Listener {
         }
 
         event.setCancelled(true);
-        player.sendMessage(colorize("&cYou can only break blocks placed by players!"));
+        Messages m = M();
+        if (m != null) m.send(player, "protection.cannot-break-natural");
     }
-
-    // ============================================================
-    //  Drop item
-    // ============================================================
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onDrop(PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
 
         event.setCancelled(true);
-        player.sendMessage(colorize("&cYou cannot drop items! Your kit has been reset."));
+        Messages m = M();
+        if (m != null) m.send(player, "protection.cannot-drop");
 
         Bukkit.getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable() {
             @Override
@@ -285,15 +243,7 @@ public class Protection implements Listener {
         }, 1L);
     }
 
-    // ============================================================
-    //  Utility
-    // ============================================================
-
     public boolean isPlayerPlaced(Block block) {
         return this.placedBlocks.containsKey(locKey(block.getLocation()));
-    }
-
-    private String colorize(String message) {
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }

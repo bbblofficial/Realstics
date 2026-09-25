@@ -1,0 +1,147 @@
+
+# ----------------------------------------------------------
+#  Join / Quit
+#  Placeholders: %player%, %online%, %max_online%
+# ----------------------------------------------------------
+join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
+quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
+
+# ----------------------------------------------------------
+#  Death Messages
+#  Placeholders: %victim%, %killer%, %world%
+# ----------------------------------------------------------
+death:
+  default: '&c%victim% &7died'
+  killed-by-player: '&c%victim% &7was slain by &c%killer%'
+  killed-by-mob: '&c%victim% &7was killed by &c%killer%'
+
+# ----------------------------------------------------------
+#  Combo System
+#  Placeholders: %combo%, %attacker%, %victim%
+# ----------------------------------------------------------
+combo:
+  broadcast: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
+
+# ----------------------------------------------------------
+#  General / Common
+# ----------------------------------------------------------
+general:
+  no-permission: '&cYou do not have permission to do this.'
+  player-only: '&cOnly players can use this command.'
+  unknown-subcommand: '&cUnknown subcommand. Use /housing help'
+  unknown-action: '&cUnknown action. Use /housing help'
+  unknown-mode: '&cUnknown mode: &e%mode%'
+  invalid-number: '&cInvalid number: &e%value%'
+  player-not-found: '&cPlayer not found: &e%player%'
+  reload-success: '&bHousing configuration reloaded.'
+
+# ----------------------------------------------------------
+#  Join / Leave Mode
+# ----------------------------------------------------------
+mode:
+  joined: '&bJoined &f%mode% &b(world: &f%world%&b)'
+  already-in: '&b&lHousing &f&l» &fYou are already in &b%mode%&f!'
+  no-world: '&bMode &f%mode% &bhas no world yet. Auto-creating...'
+  could-not-create: '&cCould not create world for &e%mode%'
+  world-not-available: '&cWorld not available: &e%world%'
+  world-not-loaded: '&cDefault world &e%world% &ccould not be loaded.'
+  lobby-teleport: '&bTeleported to the lobby.'
+  already-in-lobby: '&b&lHousing &f&l» &fYou are already in the &bLobby&f!'
+
+# ----------------------------------------------------------
+#  PvP Zone
+# ----------------------------------------------------------
+pvp:
+  must-enter-zone: '&bYou must enter the PvP zone first!'
+
+# ----------------------------------------------------------
+#  Protection
+# ----------------------------------------------------------
+protection:
+  cannot-build: '&cYou cannot build in this world!'
+  cannot-break: '&cYou cannot break blocks in this world!'
+  cannot-break-natural: '&cYou can only break blocks placed by players!'
+  cannot-drop: '&cYou cannot drop items! Your kit has been reset.'
+
+# ----------------------------------------------------------
+#  Kit
+# ----------------------------------------------------------
+kit:
+  restored-self: '&bYour &f%mode% &bkit has been restored.'
+  restored-other: '&bGave &f%mode% &bkit to &f%player%&b.'
+  restored-target: '&bYour &f%mode% &bkit has been restored.'
+  generic-restored: '&bYour kit has been restored.'
+  missing-file: '&cKit file missing for mode: %mode%'
+
+# ----------------------------------------------------------
+#  Scoreboard
+# ----------------------------------------------------------
+scoreboard:
+  enabled: '&bScoreboard &fENABLED&b.'
+  disabled: '&cScoreboard &fDISABLED&c.'
+  reloaded: '&b[%mode%] &fScoreboard configuration reloaded.'
+
+# ----------------------------------------------------------
+#  Build Mode
+# ----------------------------------------------------------
+buildmode:
+  header: '&b&m-------------------------------'
+  enabled-title: '&b&lBUILD MODE &f&l» &aENABLED'
+  enabled-desc: '&fAll placed blocks will &aSTAY&f.'
+  enabled-note: '&7(Blue wool still decays.)'
+  disabled-title: '&b&lBUILD MODE &f&l» &cDISABLED'
+  disabled-desc: '&fNormal mode restored.'
+  disabled-note: '&7(Blocks decay after %seconds%s.)'
+
+# ----------------------------------------------------------
+#  Spawn / Admin feedback
+# ----------------------------------------------------------
+spawn:
+  set-lobby: '&b[Lobby] &fLobby spawn set to &b%world% %x% %y% %z%&b.'
+  set-mode: '&b[%mode%] &fSpawn set to &b%world% %x% %y% %z%&b.'
+  void-set: '&b[%mode%] &fVoid kill height set to &b%y%&b.'
+  zshowsword-set: '&b[OneWide] &fSword will appear once Z passes &b%z%&b.'
+  pvpzone-set: '&b[%mode%] &fPvP zone set — PvP enabled from X &b%x%&f.'
+
+# ----------------------------------------------------------
+#  World Admin
+# ----------------------------------------------------------
+world:
+  auto-loading: '&bWorld &f%world% &bis not loaded. Auto-loading...'
+  could-not-load: '&cCould not load or create world: &e%world%'
+  set-success: '&bWorld &f%world% &bis now game mode &f%mode%&b.'
+
+# ----------------------------------------------------------
+#  Menu
+# ----------------------------------------------------------
+menu:
+  no-permission: '&cYou don''t have permission to use the mode menu.'
+
+# ----------------------------------------------------------
+#  Usage strings (shown when a command is missing args)
+# ----------------------------------------------------------
+usage:
+  join: '&cUsage: /housing join <mode>'
+  join-modes: '&7Modes: &fplatform, lowmid, onewide, blockfight'
+  setworld: '&cUsage: /housing setworld [world] <mode>'
+  setworld-console: '&cFrom console use: /housing setworld <world> <mode>'
+  setvoid-console: '&cUsage from console: /housing %mode% setvoid <y>'
+  zshowsword: '&cUsage: /housing onewide setzshowsword <z>'
+  pvpzone: '&cUsage: /housing %mode% setpvpzone <x>'
+  kit-console: '&cUsage from console: /housing %mode% kit <player>'
+
+# ----------------------------------------------------------
+#  Mode-specific errors
+# ----------------------------------------------------------
+mode-error:
+  setzshowsword-only-onewide: '&csetzshowsword is only for OneWide mode.'
+  setpvpzone-only-platform-onewide: '&csetpvpzone is only for Platform and OneWide modes.'
+
+# ----------------------------------------------------------
+#  Creator / Info
+# ----------------------------------------------------------
+creator:
+  header: '&b&m----------------------------------'
+  title: '&bHousing &f- &bCreated by &fMuvixo'
+  version: '&bVersion: &f1.0'
+  modes: '&bModes: &fPlatform, LowMid, OneWide, BlockFight'

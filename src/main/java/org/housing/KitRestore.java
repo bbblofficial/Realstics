@@ -1,7 +1,6 @@
 package org.housing;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,6 +24,11 @@ public class KitRestore implements Listener {
         this.plugin = plugin;
         this.playerJoin = playerJoin;
         startSafetyTask();
+    }
+
+    private Messages M() {
+        if (plugin instanceof Housing) return ((Housing) plugin).getMessages();
+        return null;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
@@ -74,7 +78,8 @@ public class KitRestore implements Listener {
         playerJoin.giveKit(player);
 
         if (notifyPlayer) {
-            player.sendMessage(colorize("&bYour kit has been restored."));
+            Messages m = M();
+            if (m != null) m.send(player, "kit.generic-restored");
         }
     }
 
@@ -88,9 +93,5 @@ public class KitRestore implements Listener {
             if (item != null && item.getType() != Material.AIR) return false;
         }
         return true;
-    }
-
-    private String colorize(String message) {
-        return ChatColor.translateAlternateColorCodes('&', message);
     }
 }
