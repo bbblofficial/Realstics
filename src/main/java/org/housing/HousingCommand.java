@@ -56,20 +56,22 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase();
 
         // ---- Player commands ----
-        if (sub.equals("help"))         { sendHelp(sender); return true; }
-        if (sub.equals("creator"))      { return handleCreator(sender); }
-        if (sub.equals("worlds"))       { return handleWorlds(sender); }
-        if (sub.equals("join"))         { return handleJoin(sender, args); }
-        if (sub.equals("menu"))         { return handleMenu(sender); }
-        if (sub.equals("lobby"))        { return handleLobby(sender); }
-        if (sub.equals("setlobbyspawn")){ return handleSetLobbySpawn(sender); }
+        if (sub.equals("help"))          { sendHelp(sender); return true; }
+        if (sub.equals("creator"))       { return handleCreator(sender); }
+        if (sub.equals("worlds"))        { return handleWorlds(sender); }
+        if (sub.equals("join"))          { return handleJoin(sender, args); }
+        if (sub.equals("menu"))          { return handleMenu(sender); }
+        if (sub.equals("lobby"))         { return handleLobby(sender); }
+        if (sub.equals("setlobbyspawn")) { return handleSetLobbySpawn(sender); }
 
-        // ★ NEW: /housing buildmode
-        if (sub.equals("buildmode"))    { return handleBuildMode(sender, args); }
+        // /housing buildmode
+        if (sub.equals("buildmode"))     { return handleBuildMode(sender, args); }
 
         // ---- Admin: reload ----
         if (sub.equals("reload")) {
-            if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
+            if (!sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                sendNoPerm(sender); return true;
+            }
             this.plugin.reloadConfig();
             this.gameModeManager.reloadAll();
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
@@ -113,7 +115,21 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing buildmode — Toggle build mode
+    //  PERMISSION HELPER
+    //  Reads "permissions.<action>" from config.yml.
+    //  Falls back to the provided default if not set or empty.
+    // ============================================================
+    private String getPerm(String action, String defaultPerm) {
+        String path = "permissions." + action;
+        String value = plugin.getConfig().getString(path);
+        if (value == null || value.trim().isEmpty()) {
+            return defaultPerm;
+        }
+        return value.trim();
+    }
+
+    // ============================================================
+    //  /housing buildmode — Toggle build mode
     // ============================================================
 
     private boolean handleBuildMode(CommandSender sender, String[] args) {
@@ -121,7 +137,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(colorize("&cOnly players can use buildmode."));
             return true;
         }
-        if (!sender.hasPermission("housing.buildmode")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+            sendNoPerm(sender); return true;
+        }
 
         Player player = (Player) sender;
 
@@ -161,7 +179,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing (no args) — ALWAYS Platform in "world"
+    //  /housing (no args) — ALWAYS Platform in "world"
     // ============================================================
 
     private boolean joinDefaultWorld(CommandSender sender) {
@@ -169,7 +187,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(colorize("&cOnly players can use /housing."));
             return true;
         }
-        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+            sendNoPerm(sender); return true;
+        }
 
         final Player player = (Player) sender;
         final GameMode mode = GameMode.PLATFORM;
@@ -233,7 +253,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing lobby
+    //  /housing lobby
     // ============================================================
 
     private boolean handleLobby(CommandSender sender) {
@@ -241,7 +261,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(colorize("&cOnly players can use /housing lobby."));
             return true;
         }
-        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+            sendNoPerm(sender); return true;
+        }
 
         Player player = (Player) sender;
 
@@ -259,11 +281,13 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  ★ /housing setlobbyspawn
+    //  /housing setlobbyspawn
     // ============================================================
 
     private boolean handleSetLobbySpawn(CommandSender sender) {
-        if (!sender.hasPermission("housing.setlobbyspawn")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setlobbyspawn", "housing.setlobbyspawn"))) {
+            sendNoPerm(sender); return true;
+        }
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use setlobbyspawn."));
             return true;
@@ -288,7 +312,7 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  Commands
+    //  Player commands
     // ============================================================
 
     private boolean handleWorlds(CommandSender sender) {
@@ -308,7 +332,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(colorize("&cOnly players can open the mode menu."));
             return true;
         }
-        if (!sender.hasPermission("housing.menu")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("menu", "housing.menu"))) {
+            sendNoPerm(sender); return true;
+        }
 
         Player player = (Player) sender;
         if (plugin instanceof Housing) {
@@ -326,7 +352,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!sender.hasPermission("housing.join")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("join", "housing.join"))) {
+            sendNoPerm(sender); return true;
+        }
 
         if (args.length < 2) {
             sender.sendMessage(colorize("&cUsage: /housing join <mode>"));
@@ -405,7 +433,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetWorld(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("housing.setworld")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+            sendNoPerm(sender); return true;
+        }
 
         String worldName;
         GameMode mode;
@@ -466,7 +496,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetSpawn(CommandSender sender, GameMode mode) {
-        if (!sender.hasPermission("housing.setspawn")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+            sendNoPerm(sender); return true;
+        }
         if (!(sender instanceof Player)) {
             sender.sendMessage(colorize("&cOnly players can use setspawn."));
             return true;
@@ -491,7 +523,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetVoid(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("housing.setvoid")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+            sendNoPerm(sender); return true;
+        }
 
         double y;
         if (args.length >= 3) {
@@ -519,7 +553,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetZShowSword(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("housing.setzshowsword")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
+            sendNoPerm(sender); return true;
+        }
 
         if (mode != GameMode.ONEWIDE) {
             sender.sendMessage(colorize("&csetzshowsword is only for OneWide mode."));
@@ -550,7 +586,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleSetPvpZone(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("housing.setpvpzone")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
+            sendNoPerm(sender); return true;
+        }
 
         if (mode != GameMode.PLATFORM && mode != GameMode.ONEWIDE) {
             sender.sendMessage(colorize("&csetpvpzone is only for Platform and OneWide modes."));
@@ -583,7 +621,9 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleKit(CommandSender sender, GameMode mode, String[] args) {
-        if (!sender.hasPermission("housing.kit")) { sendNoPerm(sender); return true; }
+        if (!sender.hasPermission(getPerm("kit", "housing.kit"))) {
+            sendNoPerm(sender); return true;
+        }
 
         Player target;
         if (args.length >= 3) {
@@ -622,12 +662,18 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         Player player = (Player) sender;
 
         if (args.length >= 3 && args[2].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission("housing.reload")) { sendNoPerm(sender); return true; }
+            if (!sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                sendNoPerm(sender); return true;
+            }
             gameModeManager.reloadMode(mode);
             if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
             player.sendMessage(colorize("&b[" + mode.getDisplayName()
                     + "] &fScoreboard configuration reloaded."));
             return true;
+        }
+
+        if (!sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+            sendNoPerm(sender); return true;
         }
 
         boolean nowVisible = this.scoreboardManager.toggleScoreboard(player);
@@ -646,31 +692,146 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
     }
 
     // ============================================================
-    //  Help
+    //  HELP MENU — permission-aware
     // ============================================================
 
     private void sendHelp(CommandSender sender) {
+
+        // ---- Load all permission nodes ----
+        String permJoin          = getPerm("join",          "housing.join");
+        String permMenu          = getPerm("menu",          "housing.menu");
+        String permScoreboard    = getPerm("scoreboard",    "housing.scoreboard");
+
+        String permSetWorld      = getPerm("setworld",      "housing.setworld");
+        String permSetSpawn      = getPerm("setspawn",      "housing.setspawn");
+        String permSetLobbySpawn = getPerm("setlobbyspawn", "housing.setlobbyspawn");
+        String permSetVoid       = getPerm("setvoid",       "housing.setvoid");
+        String permSetZShowSword = getPerm("setzshowsword", "housing.setzshowsword");
+        String permSetPvpZone    = getPerm("setpvpzone",    "housing.setpvpzone");
+        String permReload        = getPerm("reload",        "housing.reload");
+        String permKit           = getPerm("kit",           "housing.kit");
+        String permBuildMode     = getPerm("buildmode",     "housing.buildmode");
+        String permBypass        = getPerm("bypass",        "housing.bypass");
+
+        // ---- isAdmin = OR of all admin perms ----
+        boolean isAdmin =
+                sender.hasPermission(permSetWorld)
+             || sender.hasPermission(permSetSpawn)
+             || sender.hasPermission(permSetLobbySpawn)
+             || sender.hasPermission(permSetVoid)
+             || sender.hasPermission(permSetZShowSword)
+             || sender.hasPermission(permSetPvpZone)
+             || sender.hasPermission(permReload)
+             || sender.hasPermission(permKit)
+             || sender.hasPermission(permBuildMode)
+             || sender.hasPermission(permBypass);
+
+        // ---------------- HEADER ----------------
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&bHousing &f- &bCommands"));
+        sender.sendMessage(colorize("&b&lHousing &f- &bCommands"));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/housing &f- Join the default mode (Platform)"));
-        sender.sendMessage(colorize("&b/housing join <mode> &f- Join a game mode"));
-        sender.sendMessage(colorize("&b/housing menu &f- Open the mode selection menu"));
-        sender.sendMessage(colorize("&b/housing lobby &f- Teleport to the lobby"));
-        sender.sendMessage(colorize("&b/housing buildmode &f- Toggle build mode"));
-        sender.sendMessage(colorize("&b/housing worlds &f- List loaded worlds"));
-        sender.sendMessage(colorize("&b/housing creator &f- Show plugin credits"));
-        sender.sendMessage(colorize("&b/housing reload &f- Reload all configs"));
-        sender.sendMessage(colorize("&b/housing setworld [world] <mode> &f- Assign a world"));
-        sender.sendMessage(colorize("&b/housing setlobbyspawn &f- Set the lobby spawn"));
-        sender.sendMessage(colorize("&7Modes: &fplatform, lowmid, onewide, blockfight"));
+
+        // ---------------- GENERAL COMMANDS ----------------
+        sender.sendMessage(colorize("&e&lGeneral Commands"));
+
+        // /housing help — always shown
+        sender.sendMessage(colorize("  &b/housing help &8- &7Show this help"));
+
+        // /housing creator — always shown
+        sender.sendMessage(colorize("  &b/housing creator &8- &7Show plugin credits"));
+
+        // /housing worlds — always shown
+        sender.sendMessage(colorize("  &b/housing worlds &8- &7List loaded worlds"));
+
+        // /housing — join default mode
+        if (sender.hasPermission(permJoin)) {
+            sender.sendMessage(colorize("  &b/housing &8- &7Join the default mode (Platform)"));
+        }
+
+        // /housing join <mode>
+        if (sender.hasPermission(permJoin)) {
+            sender.sendMessage(colorize("  &b/housing join <mode> &8- &7Join a game mode"));
+        }
+
+        // /housing menu
+        if (sender.hasPermission(permMenu)) {
+            sender.sendMessage(colorize("  &b/housing menu &8- &7Open the mode selection menu"));
+        }
+
+        // /housing lobby
+        if (sender.hasPermission(permJoin)) {
+            sender.sendMessage(colorize("  &b/housing lobby &8- &7Teleport to the lobby"));
+        }
+
+        // /housing buildmode
+        if (sender.hasPermission(permBuildMode)) {
+            sender.sendMessage(colorize("  &b/housing buildmode &8- &7Toggle build mode"));
+        }
+
+        // Modes hint
+        sender.sendMessage(colorize("  &7Modes: &fplatform, lowmid, onewide, blockfight"));
+
+        // ---------------- ADMIN COMMANDS ----------------
+        if (isAdmin) {
+            sender.sendMessage(colorize("&b&m----------------------------------"));
+            sender.sendMessage(colorize("&c&lAdmin Commands"));
+
+            // reload
+            if (sender.hasPermission(permReload)) {
+                sender.sendMessage(colorize("  &b/housing reload &8- &7Reload all configs"));
+            }
+
+            // setworld
+            if (sender.hasPermission(permSetWorld)) {
+                sender.sendMessage(colorize("  &b/housing setworld [world] <mode> &8- &7Assign a world"));
+            }
+
+            // setlobbyspawn
+            if (sender.hasPermission(permSetLobbySpawn)) {
+                sender.sendMessage(colorize("  &b/housing setlobbyspawn &8- &7Set the lobby spawn"));
+            }
+
+            // ---- Per-mode commands ----
+            boolean anyModeCmd =
+                    sender.hasPermission(permSetSpawn)
+                 || sender.hasPermission(permSetVoid)
+                 || sender.hasPermission(permSetPvpZone)
+                 || sender.hasPermission(permSetZShowSword)
+                 || sender.hasPermission(permKit)
+                 || sender.hasPermission(permScoreboard);
+
+            if (anyModeCmd) {
+                sender.sendMessage(colorize("  &7&m-- &r&bPer-Mode Commands &7&m--"));
+
+                if (sender.hasPermission(permSetSpawn)) {
+                    sender.sendMessage(colorize("  &b/housing <mode> setspawn &8- &7Set spawn"));
+                }
+                if (sender.hasPermission(permSetVoid)) {
+                    sender.sendMessage(colorize("  &b/housing <mode> setvoid [y] &8- &7Set void Y"));
+                }
+                if (sender.hasPermission(permSetPvpZone)) {
+                    sender.sendMessage(colorize("  &b/housing <mode> setpvpzone <x> &8- &7Set PvP zone"));
+                }
+                if (sender.hasPermission(permKit)) {
+                    sender.sendMessage(colorize("  &b/housing <mode> kit [player] &8- &7Give kit"));
+                }
+                if (sender.hasPermission(permScoreboard)) {
+                    sender.sendMessage(colorize("  &b/housing <mode> sb &8- &7Toggle scoreboard"));
+                }
+                if (sender.hasPermission(permSetZShowSword)) {
+                    sender.sendMessage(colorize("  &b/housing onewide setzshowsword <z> &8- &7OneWide only"));
+                }
+            }
+
+            // bypass hint
+            if (sender.hasPermission(permBypass)) {
+                sender.sendMessage(colorize("&7&oYou have full protection bypass."));
+            }
+        }
+
+        // ---------------- FOOTER ----------------
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/housing <mode> setspawn &f- Set spawn"));
-        sender.sendMessage(colorize("&b/housing <mode> setvoid [y] &f- Set void Y"));
-        sender.sendMessage(colorize("&b/housing <mode> setpvpzone <x> &f- Set PvP zone"));
-        sender.sendMessage(colorize("&b/housing <mode> kit [player] &f- Give kit"));
-        sender.sendMessage(colorize("&b/housing <mode> sb &f- Toggle scoreboard"));
-        sender.sendMessage(colorize("&b/housing onewide setzshowsword <z> &f- OneWide only"));
+        sender.sendMessage(colorize("&7Use &b/housing <mode> &7for mode-specific help."));
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
@@ -678,22 +839,36 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&bHousing &f- &b" + mode.getDisplayName()));
         sender.sendMessage(colorize("&b&m----------------------------------"));
-        sender.sendMessage(colorize("&b/housing join " + mode.getId()));
-        sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
-        sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
-        if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) {
+
+        if (sender.hasPermission(getPerm("join", "housing.join"))) {
+            sender.sendMessage(colorize("&b/housing join " + mode.getId()));
+        }
+        if (sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " setspawn"));
+        }
+        if (sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " setvoid [y]"));
+        }
+        if ((mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE)
+                && sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
             sender.sendMessage(colorize("&b/housing " + mode.getId() + " setpvpzone <x>"));
         }
-        sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
-        sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));
-        if (mode == GameMode.ONEWIDE) {
+        if (sender.hasPermission(getPerm("kit", "housing.kit"))) {
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " kit [player]"));
+        }
+        if (sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+            sender.sendMessage(colorize("&b/housing " + mode.getId() + " sb [reload]"));
+        }
+        if (mode == GameMode.ONEWIDE
+                && sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
             sender.sendMessage(colorize("&b/housing onewide setzshowsword <z>"));
         }
+
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
     // ============================================================
-    //  Tab completion
+    //  Tab completion (permission-aware)
     // ============================================================
 
     @Override
@@ -702,13 +877,47 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             List<String> subs = new ArrayList<String>();
-            subs.add("creator"); subs.add("help"); subs.add("worlds");
-            subs.add("reload");  subs.add("setworld"); subs.add("join");
-            subs.add("menu");
-            subs.add("lobby");
-            subs.add("setlobbyspawn");
-            subs.add("buildmode");   // ★ NEW
-            subs.add("platform"); subs.add("lowmid"); subs.add("onewide"); subs.add("blockfight");
+
+            // Always-available
+            subs.add("creator");
+            subs.add("help");
+            subs.add("worlds");
+
+            // Permission-gated
+            if (sender.hasPermission(getPerm("join", "housing.join"))) {
+                subs.add("join");
+                subs.add("lobby");
+            }
+            if (sender.hasPermission(getPerm("menu", "housing.menu"))) {
+                subs.add("menu");
+            }
+            if (sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+                subs.add("buildmode");
+            }
+            if (sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                subs.add("reload");
+            }
+            if (sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                subs.add("setworld");
+            }
+            if (sender.hasPermission(getPerm("setlobbyspawn", "housing.setlobbyspawn"))) {
+                subs.add("setlobbyspawn");
+            }
+
+            // Modes (only if user has at least one mode permission)
+            boolean anyModePerm =
+                    sender.hasPermission(getPerm("setspawn", "housing.setspawn"))
+                 || sender.hasPermission(getPerm("setvoid", "housing.setvoid"))
+                 || sender.hasPermission(getPerm("kit", "housing.kit"))
+                 || sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))
+                 || sender.hasPermission(getPerm("join", "housing.join"));
+
+            if (anyModePerm) {
+                subs.add("platform");
+                subs.add("lowmid");
+                subs.add("onewide");
+                subs.add("blockfight");
+            }
 
             String partial = args[0].toLowerCase();
             for (String s : subs) if (s.startsWith(partial)) out.add(s);
@@ -718,9 +927,11 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
 
-            // ★ /housing buildmode <on|off|toggle>
+            // /housing buildmode <on|off|toggle>
             if (sub.equals("buildmode")) {
-                out.add("on"); out.add("off"); out.add("toggle");
+                if (sender.hasPermission(getPerm("buildmode", "housing.buildmode"))) {
+                    out.add("on"); out.add("off"); out.add("toggle");
+                }
                 String partial = args[1].toLowerCase();
                 List<String> filtered = new ArrayList<String>();
                 for (String s : out) if (s.startsWith(partial)) filtered.add(s);
@@ -728,23 +939,45 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             }
 
             if (sub.equals("setworld")) {
-                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
-                for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                if (sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                    out.add("platform"); out.add("lowmid");
+                    out.add("onewide");  out.add("blockfight");
+                    for (World w : Bukkit.getWorlds()) out.add(w.getName().toLowerCase());
+                }
                 return out;
             }
 
             if (sub.equals("join")) {
-                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
+                if (sender.hasPermission(getPerm("join", "housing.join"))) {
+                    out.add("platform"); out.add("lowmid");
+                    out.add("onewide");  out.add("blockfight");
+                }
                 return out;
             }
 
             GameMode mode = GameMode.fromId(sub);
             if (mode != null) {
                 List<String> actions = new ArrayList<String>();
-                actions.add("setspawn"); actions.add("setvoid");
-                actions.add("kit");      actions.add("sb");
-                if (mode == GameMode.ONEWIDE) actions.add("setzshowsword");
-                if (mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE) actions.add("setpvpzone");
+                if (sender.hasPermission(getPerm("setspawn", "housing.setspawn"))) {
+                    actions.add("setspawn");
+                }
+                if (sender.hasPermission(getPerm("setvoid", "housing.setvoid"))) {
+                    actions.add("setvoid");
+                }
+                if (sender.hasPermission(getPerm("kit", "housing.kit"))) {
+                    actions.add("kit");
+                }
+                if (sender.hasPermission(getPerm("scoreboard", "housing.scoreboard"))) {
+                    actions.add("sb");
+                }
+                if (mode == GameMode.ONEWIDE
+                        && sender.hasPermission(getPerm("setzshowsword", "housing.setzshowsword"))) {
+                    actions.add("setzshowsword");
+                }
+                if ((mode == GameMode.PLATFORM || mode == GameMode.ONEWIDE)
+                        && sender.hasPermission(getPerm("setpvpzone", "housing.setpvpzone"))) {
+                    actions.add("setpvpzone");
+                }
 
                 String partial = args[1].toLowerCase();
                 for (String s : actions) if (s.startsWith(partial)) out.add(s);
@@ -756,17 +989,23 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             String sub = args[0].toLowerCase();
             String action = args[1].toLowerCase();
 
-            if (sub.equals("setworld")) {
-                out.add("platform"); out.add("lowmid"); out.add("onewide"); out.add("blockfight");
+            if (sub.equals("setworld")
+                    && sender.hasPermission(getPerm("setworld", "housing.setworld"))) {
+                out.add("platform"); out.add("lowmid");
+                out.add("onewide");  out.add("blockfight");
                 return out;
             }
-            if (action.equals("kit")) {
+            if (action.equals("kit")
+                    && sender.hasPermission(getPerm("kit", "housing.kit"))) {
                 String partial = args[2].toLowerCase();
                 for (Player p : Bukkit.getOnlinePlayers())
                     if (p.getName().toLowerCase().startsWith(partial)) out.add(p.getName());
                 return out;
             }
-            if (action.equals("sb")) { out.add("reload"); return out; }
+            if (action.equals("sb")
+                    && sender.hasPermission(getPerm("reload", "housing.reload"))) {
+                out.add("reload"); return out;
+            }
         }
 
         return out;

@@ -3,7 +3,6 @@ version: 1.0
 main: org.housing.Housing
 author: Muvixo
 description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
-api-version: 1.8
 
 commands:
   housing:
@@ -51,7 +50,7 @@ permissions:
     description: Give the cosmetic kit
     default: op
 
-  # ★ Build Mode
+  # ---- Build Mode ----
   housing.buildmode:
     description: Toggle build mode (blocks stay forever)
     default: op

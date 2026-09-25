@@ -42,7 +42,6 @@ combo:
 #  When combat ends (kill, logout, or timeout) → full HP.
 # ----------------------------------------------------------
 combat:
-  # How long a combat tag lasts (in seconds)
   duration-seconds: 15
 
 # ----------------------------------------------------------
@@ -63,34 +62,23 @@ quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
 #  Placeholders: %victim%, %killer%, %world%
 # ----------------------------------------------------------
 death:
-  # Enable custom death messages? (If false, vanilla messages are used)
   enabled: true
 
-  # Default death message (no killer)
   default: '&c%victim% &7died'
-
-  # Killed by another player
   killed-by-player: '&c%victim% &7was slain by &c%killer%'
-
-  # Killed by a mob / entity
   killed-by-mob: '&c%victim% &7was killed by &c%killer%'
 
-  # ★ Respawn behavior
-  #  true  → player respawns in the SAME world they died in
-  #          (only for modes with real damage — LowMid)
-  #  false → player always respawns in the lobby (Platform)
+  # true  → respawn in same world (LowMid)
+  # false → always respawn in lobby (Platform)
   respawn-in-same-world: true
 
-  # Modes where players CAN actually die (real damage).
-  # If a player dies in one of these modes, they respawn there.
-  # Any other mode → they respawn in the lobby.
+  # Modes where players CAN actually die (real damage)
   real-damage-modes:
     - lowmid
 
 # ----------------------------------------------------------
 #  PvP Zone (Platform only)
-#  PvP is enabled only when the attacker's X >= pvpzone.x
-#  Set with: /housing platform setpvpzone [x]
+#  PvP enabled only when attacker's X >= pvpzone.x
 # ----------------------------------------------------------
 pvpzone:
   enabled: true
@@ -98,48 +86,21 @@ pvpzone:
 
 # ----------------------------------------------------------
 #  Protection
-#  locked-world: the DEFAULT world. It is:
-#    - The destination of /housing (no args)
-#    - NEVER modifiable (no break/place)
 # ----------------------------------------------------------
 protection:
-  # The world that must NEVER be modified (no break/place).
-  # This is also the DEFAULT world for /housing (no args).
   locked-world: "world"
-
-  # Auto-remove player-placed blocks after this many seconds.
-  # Applies to every non-locked world.
   placed-decay-seconds: 5
-
-  # Reserved for future use — natural block restore delay.
   natural-restore-seconds: 9
 
-  # ------------------------------------------------------
-  #  Block Freeze — prevents stack size from decreasing
-  # ------------------------------------------------------
   block-freeze:
-    # Master switch for the block-freeze feature.
     enabled: true
-
-    # Force the hand stack back to this size after placing.
-    # Set to -1 to restore to the ORIGINAL stack size.
     force-stack-size: -1
-
-    # ★ Apply the freeze to EVERYONE (including OP and
-    #   permission holders).
-    #   true  → OP and permission holders KEEP their blocks
-    #   false → OP and permission holders LOSE their blocks
     apply-to-everyone: true
-
-    # ★ Permissions that can bypass the freeze.
-    #   Only used when `apply-to-everyone` is FALSE.
     bypass-permissions:
       - "housing.bypass.freeze"
 
 # ----------------------------------------------------------
-#  Mode Selection Menu
-#  - The item itself and the GUI are configured in menu.yml
-#  - This section only controls a global on/off switch
+#  Mode Selection Menu (item + GUI are in menu.yml)
 # ----------------------------------------------------------
 menu:
   enabled: true
@@ -147,15 +108,32 @@ menu:
 # ----------------------------------------------------------
 #  World -> Game Mode mapping
 #  Valid modes: platform, lowmid, onewide, blockfight
-#  Assign with: /housing setworld [world] <mode>
-#
-#  IMPORTANT:
-#    - "world" MUST be mapped to platform (default world)
-#    - Each mode should have exactly ONE world
-#    - Do NOT map a world named "platform" to Platform mode
 # ----------------------------------------------------------
 worlds:
   world: platform
   blockfight: blockfight
   lowmid: lowmid
   onewide: onewide
+
+# ==========================================================
+#  Permission Nodes
+#  Read by /housing help to decide which commands to show.
+#  Override any node here to use a different permission name.
+# ==========================================================
+permissions:
+  # ---- Player ----
+  join:          "housing.join"
+  menu:          "housing.menu"
+  scoreboard:    "housing.scoreboard"
+
+  # ---- Admin ----
+  setworld:      "housing.setworld"
+  setspawn:      "housing.setspawn"
+  setlobbyspawn: "housing.setlobbyspawn"
+  setvoid:       "housing.setvoid"
+  setzshowsword: "housing.setzshowsword"
+  setpvpzone:    "housing.setpvpzone"
+  reload:        "housing.reload"
+  kit:           "housing.kit"
+  buildmode:     "housing.buildmode"
+  bypass:        "housing.bypass"

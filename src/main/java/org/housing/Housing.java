@@ -34,8 +34,8 @@ public final class Housing extends JavaPlugin {
     private final Map<UUID, String> pendingModes = new HashMap<UUID, String>();
 
     /**
-     * ★ Build Mode — players in this set keep ALL placed blocks
-     *   (no auto-decay). Toggle with /housing buildmode
+     * Build Mode — players in this set keep ALL placed blocks
+     * (no auto-decay). Toggle with /housing buildmode
      */
     private final Set<UUID> buildModePlayers = new HashSet<UUID>();
 
@@ -96,11 +96,11 @@ public final class Housing extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new Welcome(this), this);
 
-        // ★ Custom death messages
+        // Custom death messages
         getServer().getPluginManager().registerEvents(
                 new DeathListener(this, this.gameModeManager), this);
 
-        // ★ Combat Tag + HP restore (LowMid real-damage modes)
+        // Combat Tag + HP restore (LowMid real-damage modes)
         this.combatManager = new CombatManager(this, this.gameModeManager);
         getServer().getPluginManager().registerEvents(this.combatManager, this);
 
@@ -163,7 +163,7 @@ public final class Housing extends JavaPlugin {
     }
 
     // ============================================================
-    //  ★ Build Mode API
+    //  Build Mode API
     // ============================================================
 
     /**
@@ -251,7 +251,7 @@ public final class Housing extends JavaPlugin {
               + "&b&m-------------------------------";
         setIfMissingOrEmpty(cfg, "combo.broadcast-message", defaultComboMsg);
 
-        // ---- ★ Combat Tag ----
+        // ---- Combat Tag ----
         setIfMissing(cfg, "combat.duration-seconds", Long.valueOf(15L));
 
         // ---- Scoreboard ----
@@ -296,6 +296,24 @@ public final class Housing extends JavaPlugin {
 
         // ---- Menu ----
         setIfMissing(cfg, "menu.enabled", Boolean.valueOf(true));
+
+        // ============================================================
+        //  Permissions (used by dynamic /housing help)
+        // ============================================================
+        setIfMissing(cfg, "permissions.join",          "housing.join");
+        setIfMissing(cfg, "permissions.menu",          "housing.menu");
+        setIfMissing(cfg, "permissions.scoreboard",    "housing.scoreboard");
+
+        setIfMissing(cfg, "permissions.setworld",      "housing.setworld");
+        setIfMissing(cfg, "permissions.setspawn",      "housing.setspawn");
+        setIfMissing(cfg, "permissions.setlobbyspawn", "housing.setlobbyspawn");
+        setIfMissing(cfg, "permissions.setvoid",       "housing.setvoid");
+        setIfMissing(cfg, "permissions.setzshowsword", "housing.setzshowsword");
+        setIfMissing(cfg, "permissions.setpvpzone",    "housing.setpvpzone");
+        setIfMissing(cfg, "permissions.reload",        "housing.reload");
+        setIfMissing(cfg, "permissions.kit",           "housing.kit");
+        setIfMissing(cfg, "permissions.buildmode",     "housing.buildmode");
+        setIfMissing(cfg, "permissions.bypass",        "housing.bypass");
 
         try {
             cfg.save(configFile);
