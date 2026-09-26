@@ -145,3 +145,6 @@ creator:
   title: '&bHousing &f- &bCreated by &fMuvixo'
   version: '&bVersion: &f1.0'
   modes: '&bModes: &fPlatform, LowMid, OneWide, BlockFight'
+
+death-message: '&7%victim% &fdied in &b%mode%'
+death-message-pvp: '&7%victim% &fwas killed by &c%killer% &fin &b%mode%'
