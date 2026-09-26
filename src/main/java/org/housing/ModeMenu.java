@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -241,10 +242,27 @@ public class ModeMenu implements Listener {
         return item;
     }
 
+    // ============================================================
+    //  ★ FIX: buildButton now also resolves %online% — the live
+    //  player count of that mode's world — so the new GUI can show
+    //  it in a button's name/lore via menu.yml.
+    // ============================================================
     private ItemStack buildButton(Player viewer, String path) {
         String matName = this.menuConfig.getString(path + ".material", "STONE");
         Material mat = Material.matchMaterial(matName);
         if (mat == null) return null;
+
+        // ★ FIX: figure out which mode this button belongs to,
+        // so we can count how many players are currently in it.
+        String modeId = path.substring(path.lastIndexOf('.') + 1);
+        GameMode modeForButton = GameMode.fromId(modeId);
+        int online = 0;
+        if (modeForButton != null) {
+            String worldName = gameModeManager.getWorldForMode(modeForButton);
+            World w = (worldName != null) ? Bukkit.getWorld(worldName) : null;
+            if (w != null) online = w.getPlayers().size();
+        }
+        final String onlineStr = String.valueOf(online);
 
         int data = this.menuConfig.getInt(path + ".data", 0);
 
@@ -252,13 +270,17 @@ public class ModeMenu implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             String name = this.menuConfig.getString(path + ".name", "&bMode");
-            meta.setDisplayName(colorize(name.replace("%player%", viewer.getName())));
+            meta.setDisplayName(colorize(name
+                    .replace("%player%", viewer.getName())
+                    .replace("%online%", onlineStr))); // ★ FIX
 
             List<String> lore = this.menuConfig.getStringList(path + ".lore");
             if (lore != null && !lore.isEmpty()) {
                 List<String> colored = new ArrayList<String>();
                 for (String line : lore) {
-                    colored.add(colorize(line.replace("%player%", viewer.getName())));
+                    colored.add(colorize(line
+                            .replace("%player%", viewer.getName())
+                            .replace("%online%", onlineStr))); // ★ FIX
                 }
                 meta.setLore(colored);
             }

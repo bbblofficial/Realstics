@@ -26,6 +26,15 @@ public class PlayerJoin implements Listener {
     // ============================================================
     //  JOIN
     // ============================================================
+    //  ★ FIX: was scheduled with a 40-tick (2s) delay, which meant
+    //  the player was visibly standing in whatever world they had
+    //  logged out in (e.g. lowmid) before finally being moved to
+    //  the lobby (Platform). Bukkit always places a returning
+    //  player back at their last-saved location before any plugin
+    //  event fires, so we can't prevent that first frame — but we
+    //  CAN make the corrective teleport happen almost instantly
+    //  (1 tick = 0.05s) instead of after a very noticeable 2s wait.
+    // ============================================================
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(final PlayerJoinEvent event) {
@@ -49,7 +58,7 @@ public class PlayerJoin implements Listener {
 
                 joinLobby(player);
             }
-        }, 40L);
+        }, 1L); // ★ FIX: was 40L
     }
 
     // ============================================================

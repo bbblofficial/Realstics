@@ -1,149 +1,107 @@
 # ==========================================================
-#  Housing — Mode Selection Menu
-#  Version: 1.0
-#  Theme: Aqua + White
-# ==========================================================
-#  AUTO-MERGED on plugin update. Existing values are preserved.
-#
-#  Placeholders available in name/lore:
-#    %player%  → player name
+#  Housing — Mode Selection Menu (REDESIGN v2)
+#  Theme: Cyan Control-Panel
 # ==========================================================
 
-# ----------------------------------------------------------
-#  Menu Item (given to player in their hotbar)
-#  Right-click it to open the mode selection GUI.
-# ----------------------------------------------------------
 item:
-  # Should the menu item be given on join/respawn?
   enabled: true
-
-  # Hotbar slot (0-8). Default = 8 (last slot).
   slot: 8
-
-  # Material for the item.
-  # 1.8.8 compatible: COMPASS, NETHER_STAR, BOOK, etc.
-  material: COMPASS
-
-  # Display name
-  name: '&b&l✦ Mode Selector ✦'
-
-  # Lore (each line separate). Use '&' for color codes.
+  material: NETHER_STAR
+  name: '&b&l⚔ Game Modes ⚔'
   lore:
     - '&7Right-click to open the'
-    - '&7mode selection menu.'
+    - '&7mode selection panel.'
     - ''
-    - '&bAvailable Modes:'
-    - '&f• &bPlatform'
-    - '&f• &bLowMid'
-    - '&f• &bOneWide'
-    - '&f• &bBlockFight'
-
-  # Should the item glow (enchantment effect)? (1.8.8 compatible)
+    - '&f» &bPlatform &f· &bLowMid'
+    - '&f» &bOneWide &f· &bBlockFight'
   glow: true
-
-  # Hide all vanilla attributes (1.8.8 compatible)
   hide-attributes: true
 
-# ----------------------------------------------------------
-#  Menu GUI
-# ----------------------------------------------------------
 gui:
-  # Title of the inventory
-  title: '&8&lSelect a Game Mode'
-
-  # Inventory size (must be multiple of 9): 9, 18, 27, 36, 45, 54
-  size: 27
-
-  # Fill empty slots with this material (use AIR to skip)
+  title: '&8» &b&lGAME MODES &8«'
+  size: 45
   filler-material: 'STAINED_GLASS_PANE'
-  filler-data: 7
+  filler-data: 9        # cyan border
   filler-name: ' '
-
-  # Should players be able to close with ESC?
   close-with-esc: true
-
-  # Play sound on open?
   sound-open: true
   sound-open-name: 'CLICK'
   sound-open-volume: 1.0
-  sound-open-pitch: 1.5
-
-  # Play sound on mode click?
+  sound-open-pitch: 2.0
   sound-click: true
   sound-click-name: 'LEVEL_UP'
   sound-click-volume: 1.0
-  sound-click-pitch: 1.2
+  sound-click-pitch: 1.4
 
-# ----------------------------------------------------------
-#  Mode Buttons
-#  Each mode has a slot in the GUI.
-# ----------------------------------------------------------
 buttons:
   platform:
-    # GUI slot (0-based, relative to GUI size)
     slot: 10
     material: 'GRASS'
     data: 0
-    name: '&b&lPlatform'
+    name: '&b&l✦ PLATFORM'
     lore:
-      - '&7The classic PvP platform.'
+      - '&7Classic PvP platform.'
       - '&7Cosmetic damage, no death.'
       - ''
-      - '&eClick to join!'
-    # Enchantment glow
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
     glow: false
 
   lowmid:
     slot: 12
     material: 'IRON_CHESTPLATE'
     data: 0
-    name: '&b&lLowMid'
+    name: '&b&l✦ LOWMID'
     lore:
-      - '&7Leather armor + iron legs.'
+      - '&7Leather + iron legs.'
       - '&7Real PvP damage enabled.'
       - ''
-      - '&eClick to join!'
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
     glow: false
 
   onewide:
     slot: 14
     material: 'IRON_SWORD'
     data: 0
-    name: '&b&lOneWide'
+    name: '&b&l✦ ONEWIDE'
     lore:
       - '&7Narrow bridge PvP.'
       - '&7Cosmetic damage, no death.'
       - ''
-      - '&eClick to join!'
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
     glow: false
 
   blockfight:
     slot: 16
     material: 'DIAMOND_SWORD'
     data: 0
-    name: '&b&lBlockFight'
+    name: '&b&l✦ BLOCKFIGHT'
     lore:
       - '&7Wool-based combat.'
       - '&7Cosmetic damage, no death.'
       - ''
-      - '&eClick to join!'
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
     glow: true
 
-# ----------------------------------------------------------
-#  Close Button
-# ----------------------------------------------------------
 close-button:
-  # Set to false to remove the close button entirely
   enabled: true
-  slot: 22
+  slot: 40
   material: 'BARRIER'
   data: 0
-  name: '&c&lClose'
+  name: '&c&l✖ Close'
   lore:
     - '&7Click to close this menu.'
 
 # ----------------------------------------------------------
-#  Extra decorative slots
-#  Any slot not used by a button or close-button will be
-#  filled with the filler material above.
+#  Accent slots (between buttons + around the info piece)
+#  These just override the border filler with a 2nd color
+#  to frame the buttons — handled automatically by ModeMenu,
+#  no extra code needed since unset slots use filler-data.
 # ----------------------------------------------------------
