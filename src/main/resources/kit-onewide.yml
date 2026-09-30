@@ -1,0 +1,17 @@
+# ==========================================================
+#  Housing — OneWide Kit
+#  Theme: Aqua + White
+# ==========================================================
+
+armor: {}
+
+items:
+  sword:
+    slot: 0
+    material: IRON_SWORD
+    amount: 1
+    unbreakable: true
+
+food:
+  level: 20
+  saturation: 20.0

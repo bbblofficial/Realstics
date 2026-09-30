@@ -1,0 +1,107 @@
+# ==========================================================
+#  Housing — Mode Selection Menu (REDESIGN v2)
+#  Theme: Cyan Control-Panel
+# ==========================================================
+
+item:
+  enabled: true
+  slot: 8
+  material: NETHER_STAR
+  name: '&b&l⚔ Game Modes ⚔'
+  lore:
+    - '&7Right-click to open the'
+    - '&7mode selection panel.'
+    - ''
+    - '&f» &bPlatform &f· &bLowMid'
+    - '&f» &bOneWide &f· &bBlockFight'
+  glow: true
+  hide-attributes: true
+
+gui:
+  title: '&8» &b&lGAME MODES &8«'
+  size: 45
+  filler-material: 'STAINED_GLASS_PANE'
+  filler-data: 9        # cyan border
+  filler-name: ' '
+  close-with-esc: true
+  sound-open: true
+  sound-open-name: 'CLICK'
+  sound-open-volume: 1.0
+  sound-open-pitch: 2.0
+  sound-click: true
+  sound-click-name: 'LEVEL_UP'
+  sound-click-volume: 1.0
+  sound-click-pitch: 1.4
+
+buttons:
+  platform:
+    slot: 10
+    material: 'GRASS'
+    data: 0
+    name: '&b&l✦ PLATFORM'
+    lore:
+      - '&7Classic PvP platform.'
+      - '&7Cosmetic damage, no death.'
+      - ''
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
+    glow: false
+
+  lowmid:
+    slot: 12
+    material: 'IRON_CHESTPLATE'
+    data: 0
+    name: '&b&l✦ LOWMID'
+    lore:
+      - '&7Leather + iron legs.'
+      - '&7Real PvP damage enabled.'
+      - ''
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
+    glow: false
+
+  onewide:
+    slot: 14
+    material: 'IRON_SWORD'
+    data: 0
+    name: '&b&l✦ ONEWIDE'
+    lore:
+      - '&7Narrow bridge PvP.'
+      - '&7Cosmetic damage, no death.'
+      - ''
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
+    glow: false
+
+  blockfight:
+    slot: 16
+    material: 'DIAMOND_SWORD'
+    data: 0
+    name: '&b&l✦ BLOCKFIGHT'
+    lore:
+      - '&7Wool-based combat.'
+      - '&7Cosmetic damage, no death.'
+      - ''
+      - '&f▪ &7Online: &b%online%'
+      - ''
+      - '&e» Click to join!'
+    glow: true
+
+close-button:
+  enabled: true
+  slot: 40
+  material: 'BARRIER'
+  data: 0
+  name: '&c&l✖ Close'
+  lore:
+    - '&7Click to close this menu.'
+
+# ----------------------------------------------------------
+#  Accent slots (between buttons + around the info piece)
+#  These just override the border filler with a 2nd color
+#  to frame the buttons — handled automatically by ModeMenu,
+#  no extra code needed since unset slots use filler-data.
+# ----------------------------------------------------------

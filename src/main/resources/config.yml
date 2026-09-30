@@ -1,0 +1,139 @@
+# ==========================================================
+#  Housing Configuration — Platform (default mode)
+#  Version: 1.0
+# ==========================================================
+#  AUTO-MERGED on plugin update. Existing values are preserved.
+# ==========================================================
+
+# ----------------------------------------------------------
+#  Spawn (Platform mode)
+#  Set with: /housing platform setspawn
+# ----------------------------------------------------------
+spawn:
+  world: world
+  x: 0.5
+  y: 100.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
+# ----------------------------------------------------------
+#  Void (Platform)
+#  Set with: /housing platform setvoid [y]
+# ----------------------------------------------------------
+void:
+  kill-height: -13.0
+
+# ----------------------------------------------------------
+#  Combo System (global — all modes)
+#  Placeholders: %combo%, %attacker%, %victim%
+#  Use "\n" inside double quotes for a new line.
+# ----------------------------------------------------------
+combo:
+  enabled: true
+  step: 10
+  reset-time: 3000
+  sound-enabled: true
+  broadcast-message: "&b&m-------------------------------\n&bCOMBO &f%combo%x\n&b%attacker% &fcomboed &b%victim% &7(&f%combo% &7combo)\n&b&m-------------------------------"
+
+# ----------------------------------------------------------
+#  Combat Tag (LowMid — real-damage modes)
+#  When two players hit each other, both are "in combat".
+#  When combat ends (kill, logout, or timeout) → full HP.
+# ----------------------------------------------------------
+combat:
+  duration-seconds: 15
+
+# ----------------------------------------------------------
+#  Scoreboard (global)
+# ----------------------------------------------------------
+scoreboard:
+  update-interval: 10
+
+# ----------------------------------------------------------
+#  Join / Quit messages (global — all modes)
+#  Placeholders: %player%, %online%, %max_online%
+# ----------------------------------------------------------
+join-message: '&b%player% &fjoined the game &7(&b%online%&7/&b%max_online%&7)'
+quit-message: '&b%player% &fleft the game &7(&b%online%&7/&b%max_online%&7)'
+
+# ----------------------------------------------------------
+#  Death Messages (global)
+#  Placeholders: %victim%, %killer%, %world%
+# ----------------------------------------------------------
+death:
+  enabled: true
+
+  default: '&c%victim% &7died'
+  killed-by-player: '&c%victim% &7was slain by &c%killer%'
+  killed-by-mob: '&c%victim% &7was killed by &c%killer%'
+
+  # true  → respawn in same world (LowMid)
+  # false → always respawn in lobby (Platform)
+  respawn-in-same-world: true
+
+  # Modes where players CAN actually die (real damage)
+  real-damage-modes:
+    - lowmid
+
+# ----------------------------------------------------------
+#  PvP Zone (Platform only)
+#  PvP enabled only when attacker's X >= pvpzone.x
+# ----------------------------------------------------------
+pvpzone:
+  enabled: true
+  x: 0.0
+
+# ----------------------------------------------------------
+#  Protection
+# ----------------------------------------------------------
+protection:
+  locked-world: "world"
+  placed-decay-seconds: 5
+  natural-restore-seconds: 9
+
+  block-freeze:
+    enabled: true
+    force-stack-size: -1
+    apply-to-everyone: true
+    bypass-permissions:
+      - "housing.bypass.freeze"
+
+# ----------------------------------------------------------
+#  Mode Selection Menu (item + GUI are in menu.yml)
+# ----------------------------------------------------------
+menu:
+  enabled: true
+
+# ----------------------------------------------------------
+#  World -> Game Mode mapping
+#  Valid modes: platform, lowmid, onewide, blockfight
+# ----------------------------------------------------------
+worlds:
+  world: platform
+  blockfight: blockfight
+  lowmid: lowmid
+  onewide: onewide
+
+# ==========================================================
+#  Permission Nodes
+#  Read by /housing help to decide which commands to show.
+#  Override any node here to use a different permission name.
+# ==========================================================
+permissions:
+  # ---- Player ----
+  join:          "housing.join"
+  menu:          "housing.menu"
+  scoreboard:    "housing.scoreboard"
+
+  # ---- Admin ----
+  setworld:      "housing.setworld"
+  setspawn:      "housing.setspawn"
+  setlobbyspawn: "housing.setlobbyspawn"
+  setvoid:       "housing.setvoid"
+  setzshowsword: "housing.setzshowsword"
+  setpvpzone:    "housing.setpvpzone"
+  reload:        "housing.reload"
+  kit:           "housing.kit"
+  buildmode:     "housing.buildmode"
+  bypass:        "housing.bypass"

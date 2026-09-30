@@ -1,0 +1,37 @@
+# ==========================================================
+#  Housing Scoreboard — LowMid mode
+#  Theme: Aqua + White (no bold)
+# ==========================================================
+enabled: true
+update-interval: 10
+join-delay: 5
+
+title:
+  animated: true
+  static: '&bLowMid'
+  frames:
+    - '&bL&fowmid'
+    - '&bLo&f&lwmid'
+    - '&bLow&fmid'
+    - '&bLowM&fid'
+    - '&bLowMi&fd'
+    - '&bLowMid'
+    - '&fLowMid'
+    - '&bLowMid'
+
+lines:
+  - '&b&m---------------------'
+  - '&bLowMid &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
+
+allow-toggle: true
+toggle-permission: 'housing.scoreboard'

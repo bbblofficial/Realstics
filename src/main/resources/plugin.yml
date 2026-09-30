@@ -1,0 +1,70 @@
+name: Housing
+version: 1.0
+main: org.housing.Housing
+author: Muvixo
+description: Multi-gamemode cosmetic PvP plugin (Platform, LowMid, OneWide, BlockFight)
+
+commands:
+  housing:
+    description: Main Housing command
+    usage: /housing [join|menu|worlds|creator|reload|...]
+    aliases:
+      - hs
+      - hg
+
+permissions:
+  # ---- Player commands ----
+  housing.join:
+    description: Join a game mode world
+    default: true
+  housing.menu:
+    description: Open the mode selection menu
+    default: true
+  housing.scoreboard:
+    description: Toggle the scoreboard
+    default: true
+
+  # ---- Admin commands ----
+  housing.setworld:
+    description: Assign a world to a mode (auto-loads if missing)
+    default: op
+  housing.setspawn:
+    description: Set spawn for a mode
+    default: op
+  housing.setlobbyspawn:
+    description: Set the lobby spawn point
+    default: op
+  housing.setvoid:
+    description: Set void Y level
+    default: op
+  housing.setzshowsword:
+    description: Set OneWide Z threshold for showing sword
+    default: op
+  housing.setpvpzone:
+    description: Set the PvP zone for a mode (Platform/OneWide)
+    default: op
+  housing.reload:
+    description: Reload all configs
+    default: op
+  housing.kit:
+    description: Give the cosmetic kit
+    default: op
+
+  # ---- Build Mode ----
+  housing.buildmode:
+    description: Toggle build mode (blocks stay forever)
+    default: op
+
+  # ---- Protection ----
+  housing.bypass:
+    description: Bypass ALL protection (build/drop/break)
+    default: op
+  housing.bypass.freeze:
+    description: Bypass block-freeze (only if apply-to-everyone is false)
+    default: false
+  housing.break:
+    description: Allow breaking blocks
+    default: false
+  housing.place:
+    description: Allow placing blocks
+    default: false

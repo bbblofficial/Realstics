@@ -1,0 +1,31 @@
+# ==========================================================
+#  Housing — BlockFight Kit
+#  Theme: Aqua + White
+# ==========================================================
+
+armor: {}
+
+items:
+  sword:
+    slot: 0
+    material: DIAMOND_SWORD
+    amount: 1
+    unbreakable: true
+    enchantments:
+      DAMAGE_ALL: 4
+
+  wool:
+    slot: 1
+    material: WOOL
+    data: 3
+    amount: 64
+
+  shears:
+    slot: 2
+    material: SHEARS
+    amount: 1
+    unbreakable: true
+
+food:
+  level: 20
+  saturation: 20.0

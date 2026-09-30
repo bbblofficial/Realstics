@@ -1,0 +1,41 @@
+# ==========================================================
+#  Housing Scoreboard — BlockFight mode
+#  Theme: Aqua + White (no bold)
+# ==========================================================
+enabled: true
+update-interval: 10
+join-delay: 5
+
+title:
+  animated: true
+  static: '&bBlockFight'
+  frames:
+    - '&bB&flockFight'
+    - '&bBl&fockFight'
+    - '&bBlo&fckFight'
+    - '&bBloc&fkFight'
+    - '&bBlock&fFight'
+    - '&bBlockF&fight'
+    - '&bBlockFi&fght'
+    - '&bBlockFig&fht'
+    - '&bBlockFigh&ft'
+    - '&bBlockFight'
+    - '&fBlockFight'
+    - '&bBlockFight'
+
+lines:
+  - '&b&m---------------------'
+  - '&bBlockFight &fPVP'
+  - '&b&m---------------------'
+  - '&b▪ &fPlayer &b» &f%player%'
+  - '&b▪ &fWorld  &b» &f%world%'
+  - '&b▪ &fPing   &b» &f%ping%ms'
+  - '&b▪ &fY      &b» &f%y%'
+  - '&b&m---------------------'
+  - '&b▪ &fOnline &b» &f%online%&b/&f%max_online%'
+  - '&b&m---------------------'
+  - '&fPlay.&bMineStorm&f.iR'
+  - '&b&m---------------------'
+
+allow-toggle: true
+toggle-permission: 'housing.scoreboard'

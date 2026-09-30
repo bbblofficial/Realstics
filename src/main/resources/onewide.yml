@@ -1,0 +1,27 @@
+# ==========================================================
+#  Housing — OneWide mode
+#  Theme: Aqua + White
+# ==========================================================
+#  AUTO-MERGED on plugin update. Existing values are preserved.
+# ==========================================================
+
+spawn:
+  world: onewide
+  x: 0.5
+  y: 100.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
+void:
+  kill-height: -13.0
+
+# Z threshold from which the sword becomes visible
+zshowsword: 0.0
+
+# PvP Zone (OneWide only)
+# PvP is enabled only when the attacker's X >= pvpzone.x
+# Set with: /housing onewide setpvpzone [x]
+pvpzone:
+  enabled: true
+  x: 0.0
