@@ -42,13 +42,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return null;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  COMMAND HANDLER
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
@@ -75,7 +68,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
             if (!sender.hasPermission(getPerm("reload", "housing.reload"))) {
                 sendNoPerm(sender); return true;
             }
-<<<<<<< HEAD
 
             this.plugin.reloadConfig();
 
@@ -123,18 +115,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
                 if (this.voidSystem != null) {
                     this.voidSystem.reloadConfig();
                 }
-=======
-            this.plugin.reloadConfig();
-            this.gameModeManager.reloadAll();
-            if (this.scoreboardManager != null) this.scoreboardManager.reloadConfig();
-            if (this.voidSystem != null) this.voidSystem.reloadConfig();
-
-            if (plugin instanceof Housing) {
-                Housing h = (Housing) plugin;
-                if (h.getMessages() != null) h.getMessages().reload();
-                ModeMenu menu = h.getModeMenu();
-                if (menu != null) menu.reloadConfig();
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
             }
 
             Messages m = M();
@@ -170,12 +150,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  PERMISSION HELPER
-    // ============================================================
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private String getPerm(String action, String defaultPerm) {
         String path = "permissions." + action;
         String value = plugin.getConfig().getString(path);
@@ -191,13 +165,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         else sender.sendMessage(ChatColor.RED + "No permission.");
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  BUILD MODE
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private boolean handleBuildMode(CommandSender sender, String[] args) {
         Messages m = M();
         if (!(sender instanceof Player)) {
@@ -245,13 +212,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  /housing (no args)
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private boolean joinDefaultWorld(CommandSender sender) {
         Messages m = M();
         if (!(sender instanceof Player)) {
@@ -324,13 +284,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  /housing lobby
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private boolean handleLobby(CommandSender sender) {
         Messages m = M();
         if (!(sender instanceof Player)) {
@@ -356,13 +309,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  /housing setlobbyspawn
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private boolean handleSetLobbySpawn(CommandSender sender) {
         Messages m = M();
         if (!sender.hasPermission(getPerm("setlobbyspawn", "housing.setlobbyspawn"))) {
@@ -393,13 +339,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  Player commands
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private boolean handleWorlds(CommandSender sender) {
         sender.sendMessage(colorize("&b&m----------------------------------"));
         sender.sendMessage(colorize("&bHousing &f- &bLoaded Worlds"));
@@ -806,13 +745,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  HELP MENU — still hardcoded (uses perms), but messages from yml
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     private void sendHelp(CommandSender sender) {
 
         String permJoin          = getPerm("join",          "housing.join");
@@ -954,13 +886,6 @@ public class HousingCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(colorize("&b&m----------------------------------"));
     }
 
-<<<<<<< HEAD
-=======
-    // ============================================================
-    //  Tab completion (unchanged)
-    // ============================================================
-
->>>>>>> 11459877ec061dbef2fc8ffd30d01bb622aa2081
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<String>();
